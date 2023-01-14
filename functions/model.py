@@ -428,21 +428,26 @@ class SMX:
     @time_elapsed_decorator
     def extract_stg_columns(self):
         def stg_columns(row):
-            table = Table.get_instance(_key=(schema.id, row.table_name))
-            if table:
+            stg_table = Table.get_instance(_key=(stg_schema.id, row.table_name))
+            srci_table = Table.get_instance(_key=(srci_schema.id, row.table_name))
+
+            if srci_table:
+                Column(table_id=srci_table.id, column_name=row.column_name)
+
+            if stg_table and row.natural_key != '':
                 data_type_lst = row.data_type.split(sep='(')
                 _data_type = data_type_lst[0]
                 data_type = DataType.get_instance(_key=_data_type)
                 if data_type:
                     pk = 1 if row.pk.upper() == 'Y' else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-                    Column(table_id=table.id, column_name=row.column_name, is_pk=pk, data_type_id=data_type.id, dt_precision=precision)
+                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, data_type_id=data_type.id, dt_precision=precision)
 
-        schema = Schema.get_instance(_key='gdev1t_stg')
+        stg_schema = Schema.get_instance(_key='gdev1t_stg')
+        srci_schema = Schema.get_instance(_key='gdev1v_srci')
         df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'natural_key', 'pk']].drop_duplicates()
-        q = """ with t1 as (select * from df_stg_tables) select distinct table_name, column_name, data_type, pk from t1 where natural_key = ''; """
-        df_stg_cols = sqldf(q, locals())
-        df_stg_cols.apply(stg_columns, axis=1)
+        df_stg_tables.apply(stg_columns, axis=1)
 
-
-
+        # q = """select distinct table_name, column_name, data_type, pk , natural_key from df_stg_tables; """
+        # df_stg_cols = sqldf(q, locals())
+        # df_stg_cols.apply(stg_columns, axis=1)
