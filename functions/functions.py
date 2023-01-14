@@ -4,6 +4,9 @@ import traceback
 import functools
 from datetime import datetime
 from pandasql import sqldf
+import configparser
+import concurrent.futures
+import time
 
 
 def list_to_string(list, separator=None, quotes=0):
@@ -33,3 +36,30 @@ def time_elapsed_decorator(function):
         return x
 
     return wrapper
+
+
+def Logging_decorator(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except:
+            print("Error!!", traceback.format_exc())
+
+    return wrapper
+
+
+def processes(target_func, iterator, max_workers=None):
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        return executor.map(target_func, iterator)
+
+
+def threads(target_func, iterator, max_workers=None):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return executor.map(target_func, iterator)
+
+
+def read_config_file(file):
+    parser = configparser.ConfigParser()
+    parser.read(file)
+    return parser
