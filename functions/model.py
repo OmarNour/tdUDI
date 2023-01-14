@@ -428,6 +428,7 @@ class SMX:
     @time_elapsed_decorator
     def extract_stg_columns(self):
         def stg_columns(row):
+            src_table = Table.get_instance(_key=(src_schema.id, row.table_name))
             stg_table = Table.get_instance(_key=(stg_schema.id, row.table_name))
             srci_table = Table.get_instance(_key=(srci_schema.id, row.table_name))
 
@@ -442,7 +443,9 @@ class SMX:
                     pk = 1 if row.pk.upper() == 'Y' else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
                     Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, data_type_id=data_type.id, dt_precision=precision)
+                    Column(table_id=src_table.id, column_name=row.column_name)
 
+        src_schema = Schema.get_instance(_key='gdev1v_stg_online')
         stg_schema = Schema.get_instance(_key='gdev1t_stg')
         srci_schema = Schema.get_instance(_key='gdev1v_srci')
         df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'natural_key', 'pk']].drop_duplicates()
