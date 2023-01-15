@@ -276,7 +276,7 @@ class DomainValue(MyID):
 
 
 class Column(MyID):
-    def __init__(self, table_id: int, column_name: str, is_pk: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
+    def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
                  , is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0, is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0, scd_type: int = 1, domain_id=None, data_type_id=None,
                  dt_precision=None, active=1, *args, **kwargs):
@@ -284,6 +284,7 @@ class Column(MyID):
         self.table_id = table_id
         self.column_name = column_name
         self.is_pk = is_pk
+        self.mandatory = mandatory
         self.is_start_date = is_start_date
         self.is_end_date = is_end_date
         self.is_created_at = is_created_at
@@ -315,6 +316,8 @@ class SMX:
         Schema(schema_name='gdev1t_stg')
         Schema(schema_name='gdev1t_utlfw')
         Schema(schema_name='gdev1v_srci')
+        Schema(schema_name='gdev1t_base')
+
         DataSetType(set_type='bkey')
         DataSetType(set_type='BMAP')
 
@@ -339,11 +342,13 @@ class SMX:
     def extract_all(self):
         self.extract_data_sources()
         self.extract_staging_tables()
+        self.extract_core_tables()
         self.extract_bkeys()
         self.extract_bmaps()
         self.extract_bmap_values()
         self.extract_data_types()
         self.extract_stg_columns()
+        self.extract_core_columns()
 
     @time_elapsed_decorator
     def extract_bmaps(self):
@@ -418,6 +423,14 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_tables, axis=1)
 
     @time_elapsed_decorator
+    def extract_core_tables(self):
+        def core_tables(row):
+            Table(schema_id=core_schema.id, table_name=row.table_name, table_kind='T')
+
+        core_schema = Schema.get_instance(_key='gdev1t_base')
+        self.data['core_tables'][['table_name']].drop_duplicates().apply(core_tables, axis=1)
+
+    @time_elapsed_decorator
     def extract_data_types(self):
         def data_types(row):
             data_type_lst = row.data_type.split(sep='(')
@@ -441,16 +454,37 @@ class SMX:
                 data_type = DataType.get_instance(_key=_data_type)
                 if data_type:
                     pk = 1 if row.pk.upper() == 'Y' else 0
+                    mandatory = 1 if row.pk.upper() == 'Y' else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, data_type_id=data_type.id, dt_precision=precision)
+                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
                     Column(table_id=src_table.id, column_name=row.column_name)
 
         src_schema = Schema.get_instance(_key='gdev1v_stg_online')
         stg_schema = Schema.get_instance(_key='gdev1t_stg')
         srci_schema = Schema.get_instance(_key='gdev1v_srci')
-        df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'natural_key', 'pk']].drop_duplicates()
+        df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates()
         df_stg_tables.apply(stg_columns, axis=1)
 
         # q = """select distinct table_name, column_name, data_type, pk , natural_key from df_stg_tables; """
         # df_stg_cols = sqldf(q, locals())
         # df_stg_cols.apply(stg_columns, axis=1)
+
+    @time_elapsed_decorator
+    def extract_core_columns(self):
+        def core_columns(row):
+            core_table = Table.get_instance(_key=(core_schema.id, row.table_name))
+            data_type_lst = row.data_type.split(sep='(')
+            _data_type = data_type_lst[0]
+            data_type = DataType.get_instance(_key=_data_type)
+            if data_type:
+                pk = 1 if row.pk.upper() == 'Y' else 0
+                mandatory = 1 if row.mandatory.upper() == 'Y' else 0
+                is_start_date = 1 if row.historization_key.upper() == 'S' else 0
+                is_end_date = 1 if row.historization_key.upper() == 'E' else 0
+                precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
+                       , data_type_id=data_type.id, dt_precision=precision
+                       , is_start_date=is_start_date, is_end_date=is_end_date)
+
+        core_schema = Schema.get_instance(_key='gdev1t_base')
+        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(core_columns, axis=1)
