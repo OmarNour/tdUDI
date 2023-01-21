@@ -7,9 +7,11 @@ def start():
     smx.parse_file()
     smx.extract_all()
 
+    print('Layer count:', len(Layer.get_instance()))
     print('Schema count:', len(Schema.get_instance()))
     print('DataSource count:', len(DataSource.get_instance()))
     print('Table count:', len(Table.get_instance()))
+    print('LayerTable count:', len(LayerTable.get_instance()))
     print('DataSetType count:', len(DataSetType.get_instance()))
     print('DataSet count:', len(DataSet.get_instance()))
     print('Domain count:', len(Domain.get_instance()))

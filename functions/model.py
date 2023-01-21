@@ -440,13 +440,27 @@ class SMX:
         def stg_tables(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
-                Table(schema_id=src_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                Table(schema_id=stg_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                Table(schema_id=srci_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
 
-        src_schema = Schema.get_instance(_key='gdev1v_stg_online')
-        stg_schema = Schema.get_instance(_key='gdev1t_stg')
-        srci_schema = Schema.get_instance(_key='gdev1v_srci')
+                LayerTable(layer_id=src_layer.id,table_id=src_v.id)
+                LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
+                LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
+                LayerTable(layer_id=srci_layer.id, table_id=srci_v.id)
+
+        src_layer = Layer(layer_name='SRC')
+        stg_layer = Layer(layer_name='STG')
+        srci_layer = Layer(layer_name='SRCI')
+
+        src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
+
+        stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
+        stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+
+        srci_v_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].v_db)
+        srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_tables, axis=1)
 
