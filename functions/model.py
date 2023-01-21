@@ -17,6 +17,8 @@ class Meta(type):
         , 'DomainValue': ('domain_id', 'source_key')
         , 'Column': ('table_id', 'column_name')
         , 'DataType': 'data_type'
+        , 'Layer': 'layer_name'
+        , 'LayerTable': ('layer_id', 'table_id')
     }
 
     def __call__(cls, *args, **kwargs):
@@ -303,20 +305,46 @@ class Column(MyID):
         self.active = active
 
 
+class Layer(MyID):
+    def __init__(self, layer_name, abbrev=None, layer_level=None, active=1, notes=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.layer_name = layer_name
+        self.abbrev = abbrev
+        self.layer_level = layer_level
+        self.active = active
+        self.notes = notes
+
+
+class LayerTable(MyID):
+    def __init__(self, layer_id: int, table_id: int, active: int = 1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.layer_id = layer_id
+        self.table_id = table_id
+        self.active = active
+
+
 class SMX:
     SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping']
+
+    LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
+    LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
+        , 'STG': LayerDtl(1, 'GDEV1V_STG', 'GDEV1T_STG')
+        , 'BKEY': LayerDtl(2, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+        , 'BMAP': LayerDtl(2, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+        , 'SRCI': LayerDtl(3, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
+        , 'CORE': LayerDtl(4, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
     @time_elapsed_decorator
     def __init__(self, path):
         self.path = path
         self.xls = pd.ExcelFile(path)
         self.data = {}
-        Schema(schema_name='gdev1v_stg_online')
-        Schema(schema_name='gdev1t_stg')
-        Schema(schema_name='gdev1t_utlfw')
-        Schema(schema_name='gdev1v_srci')
-        Schema(schema_name='gdev1t_base')
+
+        for layer_key, layer_value in self.LAYERS.items():
+            Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
+            Schema(schema_name=layer_value.t_db)
+            Schema(schema_name=layer_value.v_db)
 
         DataSetType(set_type='bkey')
         DataSetType(set_type='BMAP')

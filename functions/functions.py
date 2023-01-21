@@ -7,6 +7,7 @@ from pandasql import sqldf
 import configparser
 import concurrent.futures
 import time
+from collections import namedtuple
 
 
 def list_to_string(list, separator=None, quotes=0):
