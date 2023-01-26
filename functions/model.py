@@ -330,10 +330,12 @@ class SMX:
     LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
     LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
         , 'STG': LayerDtl(1, 'GDEV1V_STG', 'GDEV1T_STG')
-        , 'BKEY': LayerDtl(2, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-        , 'BMAP': LayerDtl(2, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-        , 'SRCI': LayerDtl(3, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
-        , 'CORE': LayerDtl(4, 'GDEV1V_BASE', 'GDEV1T_BASE')}
+        , 'TXF_BKEY': LayerDtl(2, 'GDEV1V_INP', '')
+        , 'BKEY': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+        , 'BMAP': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+        , 'SRCI': LayerDtl(4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
+        , 'TXF_CORE': LayerDtl(5, 'GDEV1V_INP', '')
+        , 'CORE': LayerDtl(6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
     @time_elapsed_decorator
     def __init__(self, path):
@@ -445,7 +447,7 @@ class SMX:
                 stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                 srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
 
-                LayerTable(layer_id=src_layer.id,table_id=src_v.id)
+                LayerTable(layer_id=src_layer.id, table_id=src_v.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
                 LayerTable(layer_id=srci_layer.id, table_id=srci_v.id)
