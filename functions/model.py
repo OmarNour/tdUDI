@@ -237,6 +237,7 @@ class Table(MyID):
     def ddl(self):
         return None
 
+
 class DataSetType(MyID):
     def __init__(self, set_type: str, **kwargs):
         super().__init__(**kwargs)
@@ -327,7 +328,8 @@ class LayerTable(MyID):
 
 class SMX:
     SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
-        , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping']
+        , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
+        , 'supplements']
 
     LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
     LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
@@ -343,6 +345,7 @@ class SMX:
     def __init__(self, path):
         self.path = path
         self.xls = pd.ExcelFile(path)
+        self.reserved_words = {}
         self.data = {}
 
         for layer_key, layer_value in self.LAYERS.items():
@@ -357,6 +360,10 @@ class SMX:
     def parse_file(self):
         for sheet in self.xls.sheet_names:
             self.parse_sheet(sheet)
+
+        reserved_words_df = self.data['supplements']
+        for key in reserved_words_df['reserved_words_source'].drop_duplicates():
+            self.reserved_words[key] = reserved_words_df[reserved_words_df['reserved_words_source'] == key]['reserved_words'].unique().tolist()
 
     def parse_sheet(self, sheet):
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
