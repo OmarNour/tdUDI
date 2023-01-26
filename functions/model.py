@@ -214,13 +214,16 @@ class Table(MyID):
     key is: schema_id & table_name
     """
 
-    def __init__(self, schema_id: int, table_name: str, table_kind: str, source_id: int = None, active: int = 1, *args, **kwargs):
+    def __init__(self, schema_id: int, table_name: str, table_kind: str
+                 , source_id: int = None, multiset: int = 1, active: int = 1, ddl: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.schema_id = schema_id
         self._table_name = table_name
         self.source_id = source_id
         self._table_kind = table_kind
         self.active = active
+        self.multiset = multiset
+        self.ddl = ddl
 
     @property
     def table_kind(self):
@@ -233,10 +236,6 @@ class Table(MyID):
     @property
     def schema(self):
         return Schema.get_instance(_key=None, _id=self.schema_id)
-
-    @property
-    def ddl(self):
-        return None
 
 
 class DataSetType(MyID):
@@ -285,7 +284,7 @@ class Column(MyID):
     def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
                  , is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0, is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0, scd_type: int = 1, domain_id=None, data_type_id=None,
-                 dt_precision=None, active=1, *args, **kwargs):
+                 dt_precision=None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.table_id = table_id
         self.column_name = column_name
@@ -307,6 +306,8 @@ class Column(MyID):
         self.data_type_id = data_type_id
         self.dt_precision = dt_precision
         self.active = active
+        self.unicode = unicode
+        self.case_sensitive = case_sensitive
 
 
 class Layer(MyID):
@@ -333,7 +334,19 @@ class SMX:
         , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
         , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
     ]
-
+    DDL_TABLE_TEMPLATE = """ 
+CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
+     NO BEFORE JOURNAL,
+     NO AFTER JOURNAL,
+     CHECKSUM = DEFAULT,
+     DEFAULT MERGEBLOCKRATIO
+     (
+      {col_dtype}
+      )
+{pi_index}
+{si_index}
+ """
+    DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
     SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
         , 'supplements']
@@ -458,7 +471,11 @@ class SMX:
         def stg_tables(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
-                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                src_v_ddl = self.DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
+                                                          , view_name=row.table_name
+                                                          , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
+                                                          )
+                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
                 stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
                 stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                 srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
@@ -473,6 +490,7 @@ class SMX:
         srci_layer = Layer(layer_name='SRCI')
 
         src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
+        src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
 
         stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
         stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
