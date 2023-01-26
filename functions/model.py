@@ -234,6 +234,7 @@ class Table(MyID):
     def schema(self):
         return Schema.get_instance(_key=None, _id=self.schema_id)
 
+    @property
     def ddl(self):
         return None
 
@@ -327,9 +328,11 @@ class LayerTable(MyID):
 
 
 class SMX:
-    SPECIAL_CHARACTERS = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
-        , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`'
-        , '{', '|', '}', '~']
+    SPECIAL_CHARACTERS = [
+        '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
+        , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
+        , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
+    ]
 
     SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
