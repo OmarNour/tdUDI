@@ -234,6 +234,8 @@ class Table(MyID):
     def schema(self):
         return Schema.get_instance(_key=None, _id=self.schema_id)
 
+    def ddl(self):
+        return None
 
 class DataSetType(MyID):
     def __init__(self, set_type: str, **kwargs):
