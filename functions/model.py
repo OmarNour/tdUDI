@@ -5,8 +5,10 @@ SPECIAL_CHARACTERS = [
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
     , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
 ]
+PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
+COL_DTYPE_TEMPLATE = """\n{col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC {comma} """
 DDL_TABLE_TEMPLATE = """ 
-CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
+CREATE {set_multiset} TABLE {schema_name}.{table_name} ,FALLBACK ,
      NO BEFORE JOURNAL,
      NO AFTER JOURNAL,
      CHECKSUM = DEFAULT,
@@ -249,19 +251,6 @@ class Table(MyID):
         return [Column.get_instance(_key=key) for key in Column.get_instance().keys() if self.id == key[0]]
 
     @property
-    def ddl(self):
-        col_type_template = """ {col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC """
-        if self.table_kind == 'T':
-            col: Column
-            for col in self.columns:
-                col_name = col.column_name
-                data_type = col.data_type.data_type
-                precision = "("+str(col.dt_precision)+")" if col.dt_precision else ''
-                latin_unicode = "unicode" if col.unicode == 1 else "latin"
-                not_case_sensitive = "not" if col.case_sensitive == 0 else ''
-        return self._ddl
-
-    @property
     def table_kind(self):
         return self._table_kind.strip().upper()
 
@@ -272,6 +261,37 @@ class Table(MyID):
     @property
     def schema(self) -> Schema:
         return Schema.get_instance(_key=None, _id=self.schema_id)
+
+    @property
+    def ddl(self):
+        if self.table_kind == 'T':
+            col_dtype = ''
+            set_multiset = 'multiset' if self.multiset == 1 else 'set'
+            schema_name = self.schema.schema_name
+            table_name = self.table_name
+            pi_cols_lst = []
+            col: Column
+            for idx, col in enumerate(self.columns, start=1):
+                comma = '' if idx == len(self.columns) else ','
+                col_name = col.column_name
+                data_type = col.data_type.data_type
+                precision = "(" + str(col.dt_precision) + ")" if col.dt_precision else ''
+                latin_unicode = "unicode" if col.unicode == 1 else "latin"
+                not_case_sensitive = "not" if col.case_sensitive == 0 else ''
+                col_dtype = col_dtype + COL_DTYPE_TEMPLATE.format(col_name=col_name
+                                                                  , data_type=data_type, precision=precision, latin_unicode=latin_unicode
+                                                                  , not_case_sensitive=not_case_sensitive, comma=comma)
+                pi_cols_lst.append(col.column_name) if col.is_pk else None
+
+            pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(pi_cols_lst)) if len(pi_cols_lst) > 0 else 'No Primary Index'
+            self._ddl = DDL_TABLE_TEMPLATE.format(set_multiset=set_multiset
+                                                  ,schema_name=schema_name
+                                                  ,table_name=table_name
+                                                  ,col_dtype=col_dtype
+                                                  ,pi_index=pi_index
+                                                  ,si_index='')
+
+        return self._ddl
 
 
 class DataSetType(MyID):
