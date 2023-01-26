@@ -1,5 +1,24 @@
 from functions.functions import *
 
+SPECIAL_CHARACTERS = [
+    '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
+    , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
+    , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
+]
+DDL_TABLE_TEMPLATE = """ 
+CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
+     NO BEFORE JOURNAL,
+     NO AFTER JOURNAL,
+     CHECKSUM = DEFAULT,
+     DEFAULT MERGEBLOCKRATIO
+     (
+      {col_dtype}
+      )
+{pi_index}
+{si_index}
+ """
+DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
+
 
 class Meta(type):
     """
@@ -200,7 +219,7 @@ class Schema(MyID):
 
     @property
     def tables(self):
-        return [Table.get_instance(key) for key in Table.get_instance().keys() if self.schema_name == key[0]]
+        return [Table.get_instance(_key=key) for key in Table.get_instance().keys() if self.id == key[0]]
 
 
 class DataType(MyID):
@@ -223,7 +242,24 @@ class Table(MyID):
         self._table_kind = table_kind
         self.active = active
         self.multiset = multiset
-        self.ddl = ddl
+        self._ddl = ddl
+
+    @property
+    def columns(self):
+        return [Column.get_instance(_key=key) for key in Column.get_instance().keys() if self.id == key[0]]
+
+    @property
+    def ddl(self):
+        col_type_template = """ {col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC """
+        if self.table_kind == 'T':
+            col: Column
+            for col in self.columns:
+                col_name = col.column_name
+                data_type = col.data_type.data_type
+                precision = "("+str(col.dt_precision)+")" if col.dt_precision else ''
+                latin_unicode = "unicode" if col.unicode == 1 else "latin"
+                not_case_sensitive = "not" if col.case_sensitive == 0 else ''
+        return self._ddl
 
     @property
     def table_kind(self):
@@ -234,7 +270,7 @@ class Table(MyID):
         return self._table_name.strip().lower()
 
     @property
-    def schema(self):
+    def schema(self) -> Schema:
         return Schema.get_instance(_key=None, _id=self.schema_id)
 
 
@@ -284,7 +320,7 @@ class Column(MyID):
     def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
                  , is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0, is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0, scd_type: int = 1, domain_id=None, data_type_id=None,
-                 dt_precision=None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
+                 dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.table_id = table_id
         self.column_name = column_name
@@ -309,6 +345,10 @@ class Column(MyID):
         self.unicode = unicode
         self.case_sensitive = case_sensitive
 
+    @property
+    def data_type(self) -> DataType:
+        return DataType.get_instance(_id=self.data_type_id)
+
 
 class Layer(MyID):
     def __init__(self, layer_name, abbrev=None, layer_level=None, active=1, notes=None, *args, **kwargs):
@@ -329,24 +369,6 @@ class LayerTable(MyID):
 
 
 class SMX:
-    SPECIAL_CHARACTERS = [
-        '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
-        , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
-        , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
-    ]
-    DDL_TABLE_TEMPLATE = """ 
-CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
-     NO BEFORE JOURNAL,
-     NO AFTER JOURNAL,
-     CHECKSUM = DEFAULT,
-     DEFAULT MERGEBLOCKRATIO
-     (
-      {col_dtype}
-      )
-{pi_index}
-{si_index}
- """
-    DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
     SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
         , 'supplements']
@@ -471,19 +493,21 @@ CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
         def stg_tables(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
-                src_v_ddl = self.DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
-                                                          , view_name=row.table_name
-                                                          , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
-                                                          )
+                src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
+                                                     , view_name=row.table_name
+                                                     , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
+                                                     )
                 src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
                 stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
                 stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                 srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                srci_t = Table(schema_id=srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
 
                 LayerTable(layer_id=src_layer.id, table_id=src_v.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
                 LayerTable(layer_id=srci_layer.id, table_id=srci_v.id)
+                LayerTable(layer_id=srci_layer.id, table_id=srci_t.id)
 
         src_layer = Layer(layer_name='SRC')
         stg_layer = Layer(layer_name='STG')
@@ -519,14 +543,10 @@ CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
     @time_elapsed_decorator
     def extract_stg_columns(self):
         def stg_columns(row):
-            src_table = Table.get_instance(_key=(src_schema.id, row.table_name))
-            stg_table = Table.get_instance(_key=(stg_schema.id, row.table_name))
-            srci_table = Table.get_instance(_key=(srci_schema.id, row.table_name))
+            stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+            srci_table = Table.get_instance(_key=(srci_t_schema.id, row.table_name))
 
-            if srci_table:
-                Column(table_id=srci_table.id, column_name=row.column_name)
-
-            if stg_table and row.natural_key != '':
+            if stg_table:
                 data_type_lst = row.data_type.split(sep='(')
                 _data_type = data_type_lst[0]
                 data_type = DataType.get_instance(_key=_data_type)
@@ -534,12 +554,13 @@ CREATE {set_multiset} TABLE {schema_name}.{view_name} ,FALLBACK ,
                     pk = 1 if row.pk.upper() == 'Y' else 0
                     mandatory = 1 if row.pk.upper() == 'Y' else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
-                    Column(table_id=src_table.id, column_name=row.column_name)
+                    if row.natural_key == '':
+                        Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
-        src_schema = Schema.get_instance(_key='gdev1v_stg_online')
-        stg_schema = Schema.get_instance(_key='gdev1t_stg')
-        srci_schema = Schema.get_instance(_key='gdev1v_srci')
+                    Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+        stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
+        srci_t_schema = Schema.get_instance(_key='gdev1t_srci')
         df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates()
         df_stg_tables.apply(stg_columns, axis=1)
 
