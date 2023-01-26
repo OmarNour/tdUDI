@@ -327,6 +327,10 @@ class LayerTable(MyID):
 
 
 class SMX:
+    SPECIAL_CHARACTERS = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
+        , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`'
+        , '{', '|', '}', '~']
+
     SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
         , 'supplements']
