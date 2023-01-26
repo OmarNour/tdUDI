@@ -6,16 +6,15 @@ SPECIAL_CHARACTERS = [
     , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
 ]
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
-COL_DTYPE_TEMPLATE = """\n{col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC {comma} """
+COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC {not_null}\n """
 DDL_TABLE_TEMPLATE = """ 
-CREATE {set_multiset} TABLE {schema_name}.{table_name} ,FALLBACK ,
-     NO BEFORE JOURNAL,
-     NO AFTER JOURNAL,
-     CHECKSUM = DEFAULT,
-     DEFAULT MERGEBLOCKRATIO
-     (
-      {col_dtype}
-      )
+CREATE {set_multiset} TABLE {schema_name}.{table_name}
+    ,FALLBACK
+    ,NO BEFORE JOURNAL
+    ,NO AFTER JOURNAL
+    ,CHECKSUM = DEFAULT
+    ,DEFAULT MERGEBLOCKRATIO
+(\n{col_dtype})
 {pi_index}
 {si_index}
  """
@@ -272,24 +271,27 @@ class Table(MyID):
             pi_cols_lst = []
             col: Column
             for idx, col in enumerate(self.columns, start=1):
-                comma = '' if idx == len(self.columns) else ','
+                comma = ',' if idx > 1 else ''
                 col_name = col.column_name
                 data_type = col.data_type.data_type
                 precision = "(" + str(col.dt_precision) + ")" if col.dt_precision else ''
                 latin_unicode = "unicode" if col.unicode == 1 else "latin"
                 not_case_sensitive = "not" if col.case_sensitive == 0 else ''
+                not_null = 'not null' if col.mandatory == 1 else ''
                 col_dtype = col_dtype + COL_DTYPE_TEMPLATE.format(col_name=col_name
                                                                   , data_type=data_type, precision=precision, latin_unicode=latin_unicode
-                                                                  , not_case_sensitive=not_case_sensitive, comma=comma)
+                                                                  , not_case_sensitive=not_case_sensitive
+                                                                  , not_null=not_null
+                                                                  , comma=comma)
                 pi_cols_lst.append(col.column_name) if col.is_pk else None
 
-            pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(pi_cols_lst)) if len(pi_cols_lst) > 0 else 'No Primary Index'
+            pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
             self._ddl = DDL_TABLE_TEMPLATE.format(set_multiset=set_multiset
-                                                  ,schema_name=schema_name
-                                                  ,table_name=table_name
-                                                  ,col_dtype=col_dtype
-                                                  ,pi_index=pi_index
-                                                  ,si_index='')
+                                                  , schema_name=schema_name
+                                                  , table_name=table_name
+                                                  , col_dtype=col_dtype
+                                                  , pi_index=pi_index
+                                                  , si_index='')
 
         return self._ddl
 
