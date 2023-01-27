@@ -25,7 +25,8 @@ def start():
 
         table:Table
         for table in tables:
-            print(table.schema.schema_name, table.table_name, table.ddl)
+            if table.ddl:
+                print(table.schema.schema_name, table.table_name, table.ddl)
 
     # s = Schema.get_instance(_key='gdev1t_stg')
     # print(s.tables)

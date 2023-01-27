@@ -12,6 +12,7 @@ class MyTestCase(unittest.TestCase):
         smx.parse_file()
         smx.extract_all()
 
+        assert len(Column.get_instance()) > 0
         print('Schema count:', len(Schema.get_instance()))
         print('DataSource count:', len(DataSource.get_instance()))
         print('Table count:', len(Table.get_instance()))
