@@ -355,11 +355,16 @@ class Column(MyID):
 class Layer(MyID):
     def __init__(self, layer_name, abbrev=None, layer_level=None, active=1, notes=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        assert layer_level is not None
         self.layer_name = layer_name
         self.abbrev = abbrev
         self.layer_level = layer_level
         self.active = active
         self.notes = notes
+
+    @property
+    def tables(self) -> []:
+        return [lt.table for lt in LayerTable.get_instance().values() if lt.layer_id == self.id]
 
 
 class LayerTable(MyID):
@@ -369,3 +374,10 @@ class LayerTable(MyID):
         self.table_id = table_id
         self.active = active
 
+    @property
+    def table(self) -> Table:
+        return Table.get_instance(_id=self.table_id)
+
+    @property
+    def layer(self) -> Layer:
+        return Layer.get_instance(_id=self.layer_id)

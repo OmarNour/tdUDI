@@ -162,9 +162,9 @@ class SMX:
                 LayerTable(layer_id=srci_layer.id, table_id=srci_v.id)
                 LayerTable(layer_id=srci_layer.id, table_id=srci_t.id)
 
-        src_layer = Layer(layer_name='SRC')
-        stg_layer = Layer(layer_name='STG')
-        srci_layer = Layer(layer_name='SRCI')
+        src_layer = Layer.get_instance(_key='SRC')
+        stg_layer = Layer.get_instance(_key='STG')
+        srci_layer = Layer.get_instance(_key='SRCI')
 
         src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
         src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
@@ -180,8 +180,10 @@ class SMX:
     @time_elapsed_decorator
     def extract_core_tables(self):
         def core_tables(row):
-            Table(schema_id=core_schema.id, table_name=row.table_name, table_kind='T')
+            core_t = Table(schema_id=core_schema.id, table_name=row.table_name, table_kind='T')
+            LayerTable(layer_id=core_layer.id, table_id=core_t.id)
 
+        core_layer = Layer.get_instance(_key='CORE')
         core_schema = Schema.get_instance(_key='gdev1t_base')
         self.data['core_tables'][['table_name']].drop_duplicates().apply(core_tables, axis=1)
 
@@ -244,4 +246,16 @@ class SMX:
     @time_elapsed_decorator
     def generate_scripts(self):
         self.gs_start_time = dt.datetime.now()
-        create_folder(self.scripts_path)
+        run_id = str(generate_run_id())
+        current_scripts_path = os.path.join(self.scripts_path, run_id)
+        create_folder(current_scripts_path)
+
+        layer: Layer
+        for layer in Layer.get_instance().values():
+            file_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
+            f = WriteFile(current_scripts_path, file_name, "sql")
+            table: Table
+            for table in layer.tables:
+                f.write(f"{table.ddl};\n") if table.ddl else None
+            f.close()
+

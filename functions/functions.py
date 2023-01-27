@@ -48,6 +48,10 @@ class WriteFile:
         self.f.close()
 
 
+def generate_run_id():
+    return int(str(time.time()).replace('.', ''))
+
+
 def create_folder(path):
     try:
         os.makedirs(path)
@@ -61,6 +65,7 @@ def remove_folder(path):
         shutil.rmtree(path)
     except FileNotFoundError:
         pass
+
 
 def list_to_string(list, separator=None, quotes=0):
     if separator is None:
