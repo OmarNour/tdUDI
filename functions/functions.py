@@ -1,7 +1,7 @@
 import os
 import datetime as dt
 import shutil
-
+import sys, subprocess
 import pandas as pd
 import numpy as np
 import traceback
@@ -50,6 +50,14 @@ class WriteFile:
 
 def generate_run_id():
     return int(str(time.time()).replace('.', ''))
+
+
+def open_folder(path):
+    if sys.platform == "win32":
+        os.startfile(path)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.call([opener, path])
 
 
 def create_folder(path):

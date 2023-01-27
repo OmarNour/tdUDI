@@ -245,7 +245,6 @@ class SMX:
 
     @time_elapsed_decorator
     def generate_scripts(self):
-        self.gs_start_time = dt.datetime.now()
         run_id = str(generate_run_id())
         current_scripts_path = os.path.join(self.scripts_path, run_id)
         create_folder(current_scripts_path)
@@ -259,3 +258,4 @@ class SMX:
                 f.write(f"{table.ddl};\n") if table.ddl else None
             f.close()
 
+        open_folder(current_scripts_path)
