@@ -184,7 +184,8 @@ class DataSource(MyID):
 
     @property
     def tables(self):
-        return [Table.get_instance(key) for key in Table.get_instance().keys() if self.source_name == Table.get_instance(key).source_name]
+        table: Table
+        return [table for table in Table.get_instance().values() if self.id == table.data_source.id]
 
 
 class Schema(MyID):
@@ -200,7 +201,8 @@ class Schema(MyID):
 
     @property
     def tables(self):
-        return [Table.get_instance(_key=key) for key in Table.get_instance().keys() if self.id == key[0]]
+        table: Table
+        return [table for table in Table.get_instance().values() if self.id == table.schema.id]
 
 
 class DataType(MyID):
@@ -226,8 +228,13 @@ class Table(MyID):
         self._ddl = ddl
 
     @property
-    def columns(self):
-        return [Column.get_instance(_key=key) for key in Column.get_instance().keys() if self.id == key[0]]
+    def data_source(self) -> DataSource:
+        return DataSource.get_instance(_id=self.source_id)
+
+    @property
+    def columns(self) -> []:
+        col: Column
+        return [col for col in Column.get_instance().values() if col.table_id == self.id]
 
     @property
     def table_kind(self):
@@ -239,7 +246,7 @@ class Table(MyID):
 
     @property
     def schema(self) -> Schema:
-        return Schema.get_instance(_key=None, _id=self.schema_id)
+        return Schema.get_instance(_id=self.schema_id)
 
     @property
     def ddl(self):
@@ -319,7 +326,7 @@ class DomainValue(MyID):
 
 
 class Column(MyID):
-    def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
+    def __init__(self, table_id: int, column_name: str, column_trx: str = None, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
                  , is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0, is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0, scd_type: int = 1, domain_id=None, data_type_id=None,
                  dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
@@ -346,6 +353,7 @@ class Column(MyID):
         self.active = active
         self.unicode = unicode
         self.case_sensitive = case_sensitive
+        self.column_trx = column_trx
 
     @property
     def data_type(self) -> DataType:
