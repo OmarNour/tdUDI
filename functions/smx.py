@@ -1,0 +1,222 @@
+from functions.model import *
+
+
+class SMX:
+    SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
+        , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
+        , 'supplements']
+
+    LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
+    LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
+        , 'STG': LayerDtl(1, 'GDEV1V_STG', 'GDEV1T_STG')
+        , 'TXF_BKEY': LayerDtl(2, 'GDEV1V_INP', '')
+        , 'BKEY': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+        , 'BMAP': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+        , 'SRCI': LayerDtl(4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
+        , 'TXF_CORE': LayerDtl(5, 'GDEV1V_INP', '')
+        , 'CORE': LayerDtl(6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
+
+    @time_elapsed_decorator
+    def __init__(self, path):
+        self.path = path
+        self.xls = pd.ExcelFile(path)
+        self.reserved_words = {}
+        self.data = {}
+
+        for layer_key, layer_value in self.LAYERS.items():
+            Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
+            Schema(schema_name=layer_value.t_db)
+            Schema(schema_name=layer_value.v_db)
+
+        DataSetType(set_type='bkey')
+        DataSetType(set_type='BMAP')
+
+    @time_elapsed_decorator
+    def parse_file(self):
+        for sheet in self.xls.sheet_names:
+            self.parse_sheet(sheet)
+
+        reserved_words_df = self.data['supplements']
+        for key in reserved_words_df['reserved_words_source'].drop_duplicates():
+            self.reserved_words[key] = reserved_words_df[reserved_words_df['reserved_words_source'] == key]['reserved_words'].unique().tolist()
+
+    def parse_sheet(self, sheet):
+        sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
+        if sheet_name in self.SHEETS:
+            df = self.xls.parse(sheet).replace(np.nan, value='', regex=True)
+            df = df.applymap(lambda x: x.strip() if type(x) is str else int(x) if type(x) is float else x)
+            df.drop_duplicates()
+            df.columns = [c.replace('  ', ' ').replace(' ', '_').lower() for c in df]
+            self.data[sheet_name] = df
+
+    @property
+    def sheet_names(self):
+        return self.data.keys()
+
+    def extract_all(self):
+        self.extract_data_sources()
+        self.extract_staging_tables()
+        self.extract_core_tables()
+        self.extract_bkeys()
+        self.extract_bmaps()
+        self.extract_bmap_values()
+        self.extract_data_types()
+        self.extract_stg_columns()
+        self.extract_core_columns()
+
+    @time_elapsed_decorator
+    def extract_bmaps(self):
+        def bmap_tables(row):
+            Table(schema_id=utlfw_schema.id, table_name=row.physical_table, table_kind='T')
+
+        def bmap(row):
+            table = Table.get_instance(_key=(utlfw_schema.id, row.physical_table))
+            DataSet(set_type_id=set_type.id, set_code=row.code_set_id, set_name=row.code_set_name, table_id=table.id)
+
+        def domain(row):
+            data_set = DataSet.get_instance(_key=(set_type.id, row.code_set_id))
+            Domain(data_set_id=data_set.id, domain_code=row.code_domain_id, domain_name=row.code_domain_name)
+
+        utlfw_schema = Schema.get_instance(_key='gdev1t_utlfw')
+        self.data['bmap'][['physical_table']].drop_duplicates().apply(bmap_tables, axis=1)
+
+        set_type = DataSetType.get_instance(_key='bmap')
+        self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(bmap, axis=1)
+        self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(domain, axis=1)
+
+    @time_elapsed_decorator
+    def extract_bmap_values(self):
+        def bmap_values(row):
+            data_set_lst = [ds for ds in bmaps_lst if ds.set_name == row.code_set_name]
+            if len(data_set_lst) > 0:
+                data_set = data_set_lst[0]
+                domain = Domain.get_instance(_key=(data_set.id, row.code_domain_id))
+                if domain:
+                    DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
+
+        bmaps_lst = DataSet.get_bmaps()
+        self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(bmap_values, axis=1)
+
+    @time_elapsed_decorator
+    def extract_bkeys(self):
+        def bkey_tables(row):
+            Table(schema_id=utlfw_schema.id, table_name=row.physical_table, table_kind='T')
+
+        def bkey(row):
+            table = Table.get_instance(_key=(utlfw_schema.id, row.physical_table))
+            DataSet(set_type_id=set_type.id, set_code=row.key_set_id, set_name=row.key_set_name, table_id=table.id)
+
+        def domain(row):
+            data_set = DataSet.get_instance(_key=(set_type.id, row.key_set_id))
+            Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
+
+        utlfw_schema = Schema.get_instance(_key='gdev1t_utlfw')
+        self.data['bkey'][['physical_table']].drop_duplicates().apply(bkey_tables, axis=1)
+
+        set_type = DataSetType.get_instance(_key='bkey')
+        self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(bkey, axis=1)
+        self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(domain, axis=1)
+
+    @time_elapsed_decorator
+    def extract_data_sources(self):
+        self.data['system'].apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
+
+    @time_elapsed_decorator
+    def extract_staging_tables(self):
+        def stg_tables(row):
+            ds = DataSource.get_instance(_key=row.schema)
+            if ds:
+                src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
+                                                     , view_name=row.table_name
+                                                     , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
+                                                     )
+                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
+                stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                srci_t = Table(schema_id=srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+
+                LayerTable(layer_id=src_layer.id, table_id=src_v.id)
+                LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
+                LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
+                LayerTable(layer_id=srci_layer.id, table_id=srci_v.id)
+                LayerTable(layer_id=srci_layer.id, table_id=srci_t.id)
+
+        src_layer = Layer(layer_name='SRC')
+        stg_layer = Layer(layer_name='STG')
+        srci_layer = Layer(layer_name='SRCI')
+
+        src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
+        src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
+
+        stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
+        stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+
+        srci_v_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].v_db)
+        srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
+
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_tables, axis=1)
+
+    @time_elapsed_decorator
+    def extract_core_tables(self):
+        def core_tables(row):
+            Table(schema_id=core_schema.id, table_name=row.table_name, table_kind='T')
+
+        core_schema = Schema.get_instance(_key='gdev1t_base')
+        self.data['core_tables'][['table_name']].drop_duplicates().apply(core_tables, axis=1)
+
+    @time_elapsed_decorator
+    def extract_data_types(self):
+        def data_types(row):
+            data_type_lst = row.data_type.split(sep='(')
+            DataType(data_type=data_type_lst[0])
+
+        self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
+
+    @time_elapsed_decorator
+    def extract_stg_columns(self):
+        def stg_columns(row):
+            stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+            srci_table = Table.get_instance(_key=(srci_t_schema.id, row.table_name))
+
+            if stg_table:
+                data_type_lst = row.data_type.split(sep='(')
+                _data_type = data_type_lst[0]
+                data_type = DataType.get_instance(_key=_data_type)
+                if data_type:
+                    pk = 1 if row.pk.upper() == 'Y' else 0
+                    mandatory = 1 if row.pk.upper() == 'Y' else 0
+                    precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                    if row.natural_key == '':
+                        Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+                    Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+        stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
+        srci_t_schema = Schema.get_instance(_key='gdev1t_srci')
+        df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates()
+        df_stg_tables.apply(stg_columns, axis=1)
+
+        # q = """select distinct table_name, column_name, data_type, pk , natural_key from df_stg_tables; """
+        # df_stg_cols = sqldf(q, locals())
+        # df_stg_cols.apply(stg_columns, axis=1)
+
+    @time_elapsed_decorator
+    def extract_core_columns(self):
+        def core_columns(row):
+            core_table = Table.get_instance(_key=(core_schema.id, row.table_name))
+            data_type_lst = row.data_type.split(sep='(')
+            _data_type = data_type_lst[0]
+            data_type = DataType.get_instance(_key=_data_type)
+            if data_type:
+                pk = 1 if row.pk.upper() == 'Y' else 0
+                mandatory = 1 if row.mandatory.upper() == 'Y' else 0
+                is_start_date = 1 if row.historization_key.upper() == 'S' else 0
+                is_end_date = 1 if row.historization_key.upper() == 'E' else 0
+                precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
+                       , data_type_id=data_type.id, dt_precision=precision
+                       , is_start_date=is_start_date, is_end_date=is_end_date)
+
+        core_schema = Schema.get_instance(_key='gdev1t_base')
+        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(core_columns, axis=1)

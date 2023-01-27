@@ -9,6 +9,26 @@ import concurrent.futures
 import time
 from collections import namedtuple
 
+SPECIAL_CHARACTERS = [
+    '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
+    , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
+    , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
+]
+PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
+COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC {not_null}\n """
+DDL_TABLE_TEMPLATE = """ 
+CREATE {set_multiset} TABLE {schema_name}.{table_name}
+    ,FALLBACK
+    ,NO BEFORE JOURNAL
+    ,NO AFTER JOURNAL
+    ,CHECKSUM = DEFAULT
+    ,DEFAULT MERGEBLOCKRATIO
+(\n{col_dtype})
+{pi_index}
+{si_index}
+ """
+DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
+
 
 def list_to_string(list, separator=None, quotes=0):
     if separator is None:

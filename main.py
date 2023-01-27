@@ -1,4 +1,4 @@
-from functions.model import *
+from functions.smx import *
 
 
 @time_elapsed_decorator
@@ -19,14 +19,14 @@ def start():
     print('DomainValue count:', len(DomainValue.get_instance()))
     print('Column count:', len(Column.get_instance()))
 
-    for key in Schema.get_instance().keys():
-        print('s key:', key, 'id:', Schema.get_instance(_key=key).id)
-        tables = Schema.get_instance(_key=key).tables
-
-        table:Table
-        for table in tables:
-            if table.ddl:
-                print(table.schema.schema_name, table.table_name, table.ddl)
+    # for key in Schema.get_instance().keys():
+    #     print('s key:', key, 'id:', Schema.get_instance(_key=key).id)
+    #     tables = Schema.get_instance(_key=key).tables
+    #
+    #     table:Table
+    #     for table in tables:
+    #         if table.ddl:
+    #             print(table.schema.schema_name, table.table_name, table.ddl)
 
     # s = Schema.get_instance(_key='gdev1t_stg')
     # print(s.tables)
