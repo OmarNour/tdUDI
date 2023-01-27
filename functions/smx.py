@@ -251,11 +251,19 @@ class SMX:
 
         layer: Layer
         for layer in Layer.get_instance().values():
-            file_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
-            f = WriteFile(current_scripts_path, file_name, "sql")
+            layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
+            layer_path = os.path.join(current_scripts_path, layer_folder_name)
+            create_folder(layer_path)
+
+            tables_file = WriteFile(layer_path, 'tables', "sql")
+            views_file = WriteFile(layer_path, 'views', "sql")
             table: Table
             for table in layer.tables:
-                f.write(f"{table.ddl};\n") if table.ddl else None
-            f.close()
+                if table.table_kind == 'T':
+                    tables_file.write(f"{table.ddl};\n") if table.ddl else None
+                elif table.table_kind == 'V':
+                    views_file.write(f"{table.ddl};\n") if table.ddl else None
+            tables_file.close()
+            views_file.close()
 
         open_folder(current_scripts_path)
