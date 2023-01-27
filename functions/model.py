@@ -115,15 +115,15 @@ class MyID(metaclass=Meta):
         instance_id = _id
         if cls.__name__ in cls.__instances.keys():
 
-            if instance_id is not None:
-                if instance_id in cls.__ids[cls.__name__].keys():
-                    instance_key = cls.__ids[cls.__name__][instance_id]
+            if instance_id in cls.__ids[cls.__name__].keys():
+                instance_key = cls.__ids[cls.__name__][instance_id]
 
-            if instance_key is not None:
-                if instance_key in cls.__instances[cls.__name__].keys():
-                    return cls.__instances[cls.__name__][instance_key]
-            else:
+            if instance_key is None:
                 return cls.__instances[cls.__name__].values()
+
+            if instance_key in cls.__instances[cls.__name__].keys():
+                return cls.__instances[cls.__name__][instance_key]
+
 
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
@@ -149,7 +149,6 @@ class MyID(metaclass=Meta):
         key = kwargs.get('_key', '_')  # The key to identify the instance
         override = kwargs.get('_override', 1)  # Flag to indicate whether to override an existing instance or not
         instance = cls.get_instance(_key=key)  # Check if an instance with the same key already exists
-
         if instance and override == 1:
             cls.__del_instance(key)  # delete the existing instance if override is set to 1
 
