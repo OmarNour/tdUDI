@@ -250,7 +250,7 @@ class SMX:
         create_folder(current_scripts_path)
 
         layer: Layer
-        for layer in Layer.get_instance().values():
+        for layer in Layer.get_instance():
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(current_scripts_path, layer_folder_name)
             create_folder(layer_path)

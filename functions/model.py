@@ -115,14 +115,15 @@ class MyID(metaclass=Meta):
         instance_id = _id
         if cls.__name__ in cls.__instances.keys():
 
-            if instance_id is not None and instance_key is None:
-                instance_key = cls.__ids[cls.__name__][instance_id]
+            if instance_id is not None:
+                if instance_id in cls.__ids[cls.__name__].keys():
+                    instance_key = cls.__ids[cls.__name__][instance_id]
 
-            if instance_key is None:
-                return cls.__instances[cls.__name__]
-
-            if instance_key in cls.__instances[cls.__name__].keys():
-                return cls.__instances[cls.__name__][instance_key]
+            if instance_key is not None:
+                if instance_key in cls.__instances[cls.__name__].keys():
+                    return cls.__instances[cls.__name__][instance_key]
+            else:
+                return cls.__instances[cls.__name__].values()
 
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
@@ -185,7 +186,7 @@ class DataSource(MyID):
     @property
     def tables(self):
         table: Table
-        return [table for table in Table.get_instance().values() if self.id == table.data_source.id]
+        return [table for table in Table.get_instance() if self.id == table.data_source.id]
 
 
 class Schema(MyID):
@@ -202,7 +203,7 @@ class Schema(MyID):
     @property
     def tables(self):
         table: Table
-        return [table for table in Table.get_instance().values() if self.id == table.schema.id]
+        return [table for table in Table.get_instance() if self.id == table.schema.id]
 
 
 class DataType(MyID):
@@ -234,7 +235,7 @@ class Table(MyID):
     @property
     def columns(self) -> []:
         col: Column
-        return [col for col in Column.get_instance().values() if col.table_id == self.id]
+        return [col for col in Column.get_instance() if col.table_id == self.id]
 
     @property
     def table_kind(self):
@@ -300,12 +301,12 @@ class DataSet(MyID):
     @classmethod
     def get_bmaps(cls):
         set_type = DataSetType.get_instance(_key='BMAP')
-        return [ds for ds in cls.get_instance().values() if ds.set_type_id == set_type.id]
+        return [ds for ds in cls.get_instance() if ds.set_type_id == set_type.id]
 
     @classmethod
     def get_bkeys(cls):
         set_type = DataSetType.get_instance(_key='bkey')
-        return [ds for ds in cls.get_instance().values() if ds.set_type_id == set_type.id]
+        return [ds for ds in cls.get_instance() if ds.set_type_id == set_type.id]
 
 
 class Domain(MyID):
@@ -372,7 +373,7 @@ class Layer(MyID):
 
     @property
     def tables(self) -> []:
-        return [lt.table for lt in LayerTable.get_instance().values() if lt.layer_id == self.id]
+        return [lt.table for lt in LayerTable.get_instance() if lt.layer_id == self.id]
 
 
 class LayerTable(MyID):
