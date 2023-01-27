@@ -124,7 +124,6 @@ class MyID(metaclass=Meta):
             if instance_key in cls.__instances[cls.__name__].keys():
                 return cls.__instances[cls.__name__][instance_key]
 
-
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
         """
@@ -353,11 +352,19 @@ class Column(MyID):
         self.active = active
         self.unicode = unicode
         self.case_sensitive = case_sensitive
-        self.column_trx = column_trx
+        self.__column_trx = column_trx
 
     @property
     def data_type(self) -> DataType:
         return DataType.get_instance(_id=self.data_type_id)
+
+    @property
+    def table(self) -> Table:
+        return Table.get_instance(_id=self.table_id)
+
+    @property
+    def column_trx(self):
+        return self.__column_trx
 
 
 class Layer(MyID):

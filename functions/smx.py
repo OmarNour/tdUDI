@@ -148,6 +148,7 @@ class SMX:
                                                      , view_name=row.table_name
                                                      , query_txt=f"select * from {stg_t_schema.schema_name}.{row.table_name}"
                                                      )
+                src_t = Table(schema_id=src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
                 src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
 
                 stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
@@ -156,6 +157,7 @@ class SMX:
                 srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                 srci_t = Table(schema_id=srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
 
+                LayerTable(layer_id=src_layer.id, table_id=src_t.id)
                 LayerTable(layer_id=src_layer.id, table_id=src_v.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
@@ -198,26 +200,34 @@ class SMX:
     @time_elapsed_decorator
     def extract_stg_columns(self):
         def stg_columns(row):
+            src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
             stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
             srci_table = Table.get_instance(_key=(srci_t_schema.id, row.table_name))
 
-            if stg_table:
-                data_type_lst = row.data_type.split(sep='(')
-                _data_type = data_type_lst[0]
-                data_type = DataType.get_instance(_key=_data_type)
-                if data_type:
-                    pk = 1 if row.pk.upper() == 'Y' else 0
-                    mandatory = 1 if row.pk.upper() == 'Y' else 0
-                    precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-                    if row.natural_key == '':
+            data_type_lst = row.data_type.split(sep='(')
+            _data_type = data_type_lst[0]
+            data_type = DataType.get_instance(_key=_data_type)
+            if data_type:
+                pk = 1 if row.pk.upper() == 'Y' else 0
+                mandatory = 1 if row.pk.upper() == 'Y' else 0
+                precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+
+                if row.natural_key == '':
+                    if src_table:
+                        Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+                    if stg_table:
                         Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
+                if srci_table:
                     Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
+        src_t_schema = Schema.get_instance(_key='stg_online')
         stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
         srci_t_schema = Schema.get_instance(_key='gdev1t_srci')
-        df_stg_tables = self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates()
-        df_stg_tables.apply(stg_columns, axis=1)
+        self.data['stg_tables'][['table_name', 'column_name', 'data_type'
+                                , 'mandatory', 'natural_key', 'pk'
+                                 ]].drop_duplicates().apply(stg_columns, axis=1)
 
         # q = """select distinct table_name, column_name, data_type, pk , natural_key from df_stg_tables; """
         # df_stg_cols = sqldf(q, locals())
