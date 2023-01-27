@@ -3,9 +3,12 @@ from functions.smx import *
 
 @time_elapsed_decorator
 def start():
-    smx = SMX("/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx")
-    smx.parse_file()
-    smx.extract_all()
+    smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
+    scripts_path = "/Users/omarnour/Downloads/smx_scripts"
+    smx = SMX(smx_path, scripts_path)
+    # smx.parse_file()
+    # smx.extract_all()
+    smx.generate_scripts()
 
     print('DataSetType count:', len(DataSetType.get_instance()))
     print('Layer count:', len(Layer.get_instance()))

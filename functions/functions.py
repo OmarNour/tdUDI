@@ -1,3 +1,7 @@
+import os
+import datetime as dt
+import shutil
+
 import pandas as pd
 import numpy as np
 import traceback
@@ -29,6 +33,34 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
  """
 DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
 
+
+class WriteFile:
+    def __init__(self, file_path, file_name, ext, f_mode="w+", new_line=False):
+        self.new_line = new_line
+        self.f = open(os.path.join(file_path, file_name + "." + ext), f_mode, encoding="utf-8")
+
+    def write(self, txt, new_line=None):
+        self.f.write(txt)
+        new_line = self.new_line if new_line is None else None
+        self.f.write("\n") if new_line else None
+
+    def close(self):
+        self.f.close()
+
+
+def create_folder(path):
+    try:
+        os.makedirs(path)
+    except FileExistsError:
+        remove_folder(path)
+        create_folder(path)
+
+
+def remove_folder(path):
+    try:
+        shutil.rmtree(path)
+    except FileNotFoundError:
+        pass
 
 def list_to_string(list, separator=None, quotes=0):
     if separator is None:

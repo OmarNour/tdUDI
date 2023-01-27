@@ -17,9 +17,10 @@ class SMX:
         , 'CORE': LayerDtl(6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
     @time_elapsed_decorator
-    def __init__(self, path):
-        self.path = path
-        self.xls = pd.ExcelFile(path)
+    def __init__(self, smx_path, scripts_path):
+        self.path = smx_path
+        self.scripts_path = scripts_path
+        self.xls = None
         self.reserved_words = {}
         self.data = {}
 
@@ -33,6 +34,7 @@ class SMX:
 
     @time_elapsed_decorator
     def parse_file(self):
+        self.xls = pd.ExcelFile(self.path)
         for sheet in self.xls.sheet_names:
             self.parse_sheet(sheet)
 
@@ -130,9 +132,15 @@ class SMX:
                                                      , view_name=row.table_name
                                                      , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
                                                      )
+                stg_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=stg_v_schema.schema_name
+                                                     , view_name=row.table_name
+                                                     , query_txt=f"select * from {stg_t_schema.schema_name}.{row.table_name}"
+                                                     )
                 src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
+
                 stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=stg_v_ddl)
+
                 srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                 srci_t = Table(schema_id=srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
 
@@ -220,3 +228,8 @@ class SMX:
 
         core_schema = Schema.get_instance(_key='gdev1t_base')
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(core_columns, axis=1)
+
+    @time_elapsed_decorator
+    def generate_scripts(self):
+        self.gs_start_time = dt.datetime.now()
+        create_folder(self.scripts_path)
