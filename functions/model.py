@@ -19,6 +19,8 @@ class Meta(type):
         , 'DataType': 'data_type'
         , 'Layer': 'layer_name'
         , 'LayerTable': ('layer_id', 'table_id')
+        , 'Pipelines': ('src_lyr_table_id', 'tgt_lyr_table_id')
+        , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
     }
 
     def __call__(cls, *args, **kwargs):
@@ -55,7 +57,7 @@ class Meta(type):
                 list_keys = []
                 for key in cls_key:
                     key_value = kwargs.get(key)
-                    assert key_value is not None, f"{key} not found!"
+                    assert key_value is not None, f"Key value cannot be None!"
                     n_key_value = cls._normalize_key(key_value)
                     list_keys.append(n_key_value)
                 return tuple(list_keys)
@@ -396,3 +398,22 @@ class LayerTable(MyID):
     @property
     def layer(self) -> Layer:
         return Layer.get_instance(_id=self.layer_id)
+
+
+class Pipelines(MyID):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, schema_id: int, active: int = 1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.src_lyr_table_id = src_lyr_table_id
+        self.tgt_lyr_table_id = tgt_lyr_table_id
+        self.schema_id = schema_id
+        self.active = active
+
+
+class ColumnMapping(MyID):
+    def __init__(self, pipeline_id, tgt_col_id, col_seq: int = 0, src_col_id=None, src_col_trx=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pipeline_id = pipeline_id
+        self.tgt_col_id = tgt_col_id
+        self.col_seq = col_seq
+        self.src_col_id = src_col_id
+        self.src_col_trx = src_col_trx
