@@ -57,13 +57,18 @@ class SMX:
 
     def extract_all(self):
         self.extract_data_sources()
-        self.extract_staging_tables()
-        self.extract_core_tables()
+
         self.extract_bkeys()
         self.extract_bmaps()
         self.extract_bmap_values()
         self.extract_data_types()
+
+        self.extract_staging_tables()
         self.extract_stg_columns()
+
+        self.extract_staging_views()
+
+        self.extract_core_tables()
         self.extract_core_columns()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
@@ -135,9 +140,8 @@ class SMX:
     def extract_data_sources(self):
         self.data['system'].apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
 
-    @time_elapsed_decorator
-    def extract_staging_tables(self):
-        def stg_tables(row):
+    def extract_staging_views(self):
+        def stg_views(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
                 src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
@@ -148,25 +152,15 @@ class SMX:
                                                      , view_name=row.table_name
                                                      , query_txt=f"select * from {stg_t_schema.schema_name}.{row.table_name}"
                                                      )
-                src_t = Table(schema_id=src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
 
-                stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
                 stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=stg_v_ddl)
 
-                srci_v = Table(schema_id=srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                srci_t = Table(schema_id=srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-
-                LayerTable(layer_id=src_layer.id, table_id=src_t.id)
                 LayerTable(layer_id=src_layer.id, table_id=src_v.id)
-                LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
                 LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
-                LayerTable(layer_id=srci_layer.id, table_id=srci_v.id)
-                LayerTable(layer_id=srci_layer.id, table_id=srci_t.id)
 
         src_layer = Layer.get_instance(_key='SRC')
         stg_layer = Layer.get_instance(_key='STG')
-        srci_layer = Layer.get_instance(_key='SRCI')
 
         src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
         src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
@@ -174,8 +168,24 @@ class SMX:
         stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
         stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
 
-        srci_v_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].v_db)
-        srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_views, axis=1)
+
+    @time_elapsed_decorator
+    def extract_staging_tables(self):
+        def stg_tables(row):
+            ds = DataSource.get_instance(_key=row.schema)
+            if ds:
+                src_t = Table(schema_id=src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+
+                LayerTable(layer_id=src_layer.id, table_id=src_t.id)
+                LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
+
+        src_layer = Layer.get_instance(_key='SRC')
+        stg_layer = Layer.get_instance(_key='STG')
+
+        src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
+        stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_tables, axis=1)
 
@@ -226,7 +236,7 @@ class SMX:
         stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
         srci_t_schema = Schema.get_instance(_key='gdev1t_srci')
         self.data['stg_tables'][['table_name', 'column_name', 'data_type'
-                                , 'mandatory', 'natural_key', 'pk'
+            , 'mandatory', 'natural_key', 'pk'
                                  ]].drop_duplicates().apply(stg_columns, axis=1)
 
         # q = """select distinct table_name, column_name, data_type, pk , natural_key from df_stg_tables; """
