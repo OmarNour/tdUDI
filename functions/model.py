@@ -327,7 +327,7 @@ class DomainValue(MyID):
 
 
 class Column(MyID):
-    def __init__(self, table_id: int, column_name: str, column_trx: str = None, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
+    def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0, is_start_date: int = 0, is_end_date: int = 0, is_created_at: int = 0
                  , is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0, is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0, scd_type: int = 1, domain_id=None, data_type_id=None,
                  dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
@@ -354,7 +354,6 @@ class Column(MyID):
         self.active = active
         self.unicode = unicode
         self.case_sensitive = case_sensitive
-        self.__column_trx = column_trx
 
     @property
     def data_type(self) -> DataType:
