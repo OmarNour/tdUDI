@@ -363,10 +363,6 @@ class Column(MyID):
     def table(self) -> Table:
         return Table.get_instance(_id=self.table_id)
 
-    @property
-    def column_trx(self):
-        return self.__column_trx
-
 
 class Layer(MyID):
     def __init__(self, layer_name, abbrev=None, layer_level=None, active=1, notes=None, *args, **kwargs):
@@ -407,6 +403,18 @@ class Pipeline(MyID):
         self.schema_id = schema_id
         self.active = active
 
+    @property
+    def schema(self) -> Schema:
+        return Schema.get_instance(_id=self.schema_id)
+
+    @property
+    def src_lyr_table(self) -> LayerTable:
+        return LayerTable.get_instance(_id=self.src_lyr_table_id)
+
+    @property
+    def tgt_lyr_table(self) -> LayerTable:
+        return LayerTable.get_instance(_id=self.tgt_lyr_table_id)
+
 
 class ColumnMapping(MyID):
     def __init__(self, pipeline_id, tgt_col_id, col_seq: int = 0, src_col_id=None, src_col_trx=None, *args, **kwargs):
@@ -416,3 +424,15 @@ class ColumnMapping(MyID):
         self.col_seq = col_seq
         self.src_col_id = src_col_id
         self.src_col_trx = src_col_trx
+
+    @property
+    def pipeline(self) -> Pipeline:
+        return Pipeline.get_instance(_id=self.pipeline_id)
+
+    @property
+    def tgt_col(self) -> Column:
+        return Column.get_instance(_id=self.tgt_col_id)
+
+    @property
+    def src_col(self) -> Column:
+        return Column.get_instance(_id=self.src_col_id)

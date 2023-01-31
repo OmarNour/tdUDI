@@ -64,9 +64,10 @@ class SMX:
         self.extract_data_types()
 
         self.extract_staging_tables()
-        self.extract_stg_columns()
+        self.extract_stg_tables_columns()
 
         self.extract_staging_views()
+        self.extract_stg_views_columns()
 
         self.extract_core_tables()
         self.extract_core_columns()
@@ -146,7 +147,6 @@ class SMX:
         then create the ColumnMapping
         :return:
         """
-
         def stg_views(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
@@ -156,7 +156,7 @@ class SMX:
                 src_lt = LayerTable.get_instance(_key=(src_layer.id, src_t.id))
                 stg_lt = LayerTable.get_instance(_key=(stg_layer.id, stg_t.id))
 
-                pipeline = Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, schema_id=src_v_schema.id)
+                Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, schema_id=src_v_schema.id)
             #     src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
             #                                          , view_name=row.table_name
             #                                          , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
@@ -221,7 +221,7 @@ class SMX:
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
 
     @time_elapsed_decorator
-    def extract_stg_columns(self):
+    def extract_stg_tables_columns(self):
         def stg_columns(row):
             src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
             stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
