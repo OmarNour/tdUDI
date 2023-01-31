@@ -84,6 +84,7 @@ class SMX:
         print('DomainValue count:', len(DomainValue.get_instance()))
         print('Column count:', len(Column.get_instance()))
         print('Pipeline count:', len(Pipeline.get_instance()))
+
     @time_elapsed_decorator
     def extract_bmaps(self):
         def bmap_tables(row):
@@ -147,6 +148,7 @@ class SMX:
         then create the ColumnMapping
         :return:
         """
+
         def stg_views(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
@@ -219,6 +221,19 @@ class SMX:
             DataType(data_type=data_type_lst[0])
 
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
+
+    @time_elapsed_decorator
+    def extract_stg_views_columns(self):
+        def stg_columns(row):
+            src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
+            stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+
+        src_t_schema = Schema.get_instance(_key='stg_online')
+        stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
+
+        self.data['stg_tables'][['table_name', 'column_name', 'data_type'
+                                , 'mandatory', 'natural_key', 'pk'
+                                , 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
 
     @time_elapsed_decorator
     def extract_stg_tables_columns(self):

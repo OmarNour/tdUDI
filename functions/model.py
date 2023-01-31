@@ -420,9 +420,9 @@ class ColumnMapping(MyID):
     def __init__(self, pipeline_id, tgt_col_id, col_seq: int = 0, src_col_id=None, src_col_trx=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pipeline_id = pipeline_id
-        self.tgt_col_id = tgt_col_id
         self.col_seq = col_seq
         self.src_col_id = src_col_id
+        self.tgt_col_id = tgt_col_id
         self.src_col_trx = src_col_trx
 
     @property
@@ -436,3 +436,7 @@ class ColumnMapping(MyID):
     @property
     def src_col(self) -> Column:
         return Column.get_instance(_id=self.src_col_id)
+
+    @property
+    def valid_src_col_trx(self) -> bool:
+        return True
