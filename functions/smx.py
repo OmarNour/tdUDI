@@ -82,7 +82,7 @@ class SMX:
         print('Domain count:', len(Domain.get_instance()))
         print('DomainValue count:', len(DomainValue.get_instance()))
         print('Column count:', len(Column.get_instance()))
-
+        print('Pipeline count:', len(Pipeline.get_instance()))
     @time_elapsed_decorator
     def extract_bmaps(self):
         def bmap_tables(row):
@@ -141,23 +141,38 @@ class SMX:
         self.data['system'].apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
 
     def extract_staging_views(self):
+        """
+        get Layer & Table then LayerTable to create Pipeline
+        then create the ColumnMapping
+        :return:
+        """
+
         def stg_views(row):
+            print(src_t_schema, row.table_name)
+
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
-                src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
-                                                     , view_name=row.table_name
-                                                     , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
-                                                     )
-                stg_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=stg_v_schema.schema_name
-                                                     , view_name=row.table_name
-                                                     , query_txt=f"select * from {stg_t_schema.schema_name}.{row.table_name}"
-                                                     )
+                src_t = Table.get_instance(_key=(src_t_schema.id, row.table_name))
+                stg_t = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
 
-                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
-                stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=stg_v_ddl)
+                src_lt = LayerTable.get_instance(_key=(src_layer.id, src_t.id))
+                stg_lt = LayerTable.get_instance(_key=(stg_layer.id, stg_t.id))
 
-                LayerTable(layer_id=src_layer.id, table_id=src_v.id)
-                LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
+                pipeline = Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, schema_id=src_v_schema.id)
+            #     src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
+            #                                          , view_name=row.table_name
+            #                                          , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
+            #                                          )
+            #     stg_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=stg_v_schema.schema_name
+            #                                          , view_name=row.table_name
+            #                                          , query_txt=f"select * from {stg_t_schema.schema_name}.{row.table_name}"
+            #                                          )
+            #
+            #     src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
+            #     stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=stg_v_ddl)
+            #
+            #     LayerTable(layer_id=src_layer.id, table_id=src_v.id)
+            #     LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
 
         src_layer = Layer.get_instance(_key='SRC')
         stg_layer = Layer.get_instance(_key='STG')
@@ -166,7 +181,7 @@ class SMX:
         src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
 
         stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
-        stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+        # stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_views, axis=1)
 

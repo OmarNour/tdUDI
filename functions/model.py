@@ -19,7 +19,7 @@ class Meta(type):
         , 'DataType': 'data_type'
         , 'Layer': 'layer_name'
         , 'LayerTable': ('layer_id', 'table_id')
-        , 'Pipelines': ('src_lyr_table_id', 'tgt_lyr_table_id')
+        , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
         , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
     }
 
@@ -399,7 +399,7 @@ class LayerTable(MyID):
         return Layer.get_instance(_id=self.layer_id)
 
 
-class Pipelines(MyID):
+class Pipeline(MyID):
     def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, schema_id: int, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.src_lyr_table_id = src_lyr_table_id
