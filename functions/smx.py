@@ -148,8 +148,6 @@ class SMX:
         """
 
         def stg_views(row):
-            print(src_t_schema, row.table_name)
-
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
                 src_t = Table.get_instance(_key=(src_t_schema.id, row.table_name))
