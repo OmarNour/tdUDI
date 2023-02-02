@@ -3,14 +3,11 @@ from functions.smx import *
 
 @time_elapsed_decorator
 def start():
-    smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
-    scripts_path = "/Users/omarnour/Downloads/smx_scripts"
+
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
     smx.extract_all()
     smx.generate_scripts()
-
-
 
     # for key in Schema.get_instance().keys():
     #     print('s key:', key, 'id:', Schema.get_instance(_key=key).id)

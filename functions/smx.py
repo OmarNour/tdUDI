@@ -84,6 +84,7 @@ class SMX:
         print('DomainValue count:', len(DomainValue.get_instance()))
         print('Column count:', len(Column.get_instance()))
         print('Pipeline count:', len(Pipeline.get_instance()))
+        print('ColumnMapping count:', len(ColumnMapping.get_instance()))
 
     @time_elapsed_decorator
     def extract_bmaps(self):
@@ -223,17 +224,38 @@ class SMX:
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
 
     @time_elapsed_decorator
+    @log_error_decorator
     def extract_stg_views_columns(self):
         def stg_columns(row):
-            src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
-            stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+            if row.natural_key == '':
+                ds = DataSource.get_instance(_key=row.schema)
+                if ds:
+                    print(row.table_name, row.column_name)
+                    src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
+                    stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+
+                    src_lyr_table = LayerTable.get_instance(_key=(src_layer.id, src_table.id))
+                    stg_lyr_table = LayerTable.get_instance(_key=(stg_layer.id, stg_table.id))
+
+                    pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
+                    src_col = Column.get_instance(_key=(src_table.id, row.column_name))
+                    stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+
+                    ColumnMapping(pipeline_id=pipeline.id
+                                  , col_seq=0
+                                  , src_col_id=src_col.id
+                                  , tgt_col_id=stg_col.id
+                                  , src_col_trx = row.column_transformation_rule
+                                  )
 
         src_t_schema = Schema.get_instance(_key='stg_online')
         stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
 
-        self.data['stg_tables'][['table_name', 'column_name', 'data_type'
-                                , 'mandatory', 'natural_key', 'pk'
-                                , 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
+        src_layer = Layer.get_instance(_key='SRC')
+        stg_layer = Layer.get_instance(_key='STG')
+
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key'
+            , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
 
     @time_elapsed_decorator
     def extract_stg_tables_columns(self):

@@ -13,6 +13,10 @@ import concurrent.futures
 import time
 from collections import namedtuple
 
+smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
+scripts_path = "/Users/omarnour/Downloads/smx_scripts"
+error_log_path = scripts_path
+
 SPECIAL_CHARACTERS = [
     '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
@@ -104,15 +108,40 @@ def time_elapsed_decorator(function):
     return wrapper
 
 
-def Logging_decorator(function):
+class TemplateLogError(WriteFile):
+    def __init__(self, log_error_path, file_name_path, error_file_name, error):
+        self.log_error_path = log_error_path
+        self.log_file_name = "log"
+        self.ext = "txt"
+        super().__init__(self.log_error_path, self.log_file_name, self.ext, "a+", True)
+        self.file_name_path = file_name_path
+        self.error_file_name = error_file_name
+        self.error = error
+
+    def log_error(self):
+        error_separator = "##############################################################################"
+        self.write(str(dt.datetime.now()))
+        self.write(self.file_name_path)
+        self.write(self.error_file_name)
+        self.write(self.error)
+        self.write(error_separator)
+
+
+def log_error_decorator(function):
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
+        # cf = args[0]
+        # source_output_path = args[1]
+        file_name = get_file_name(__file__)
         try:
-            return function(*args, **kwargs)
+            function(*args, **kwargs)
         except:
-            print("Error!!", traceback.format_exc())
-
+            TemplateLogError(error_log_path, '', file_name, traceback.format_exc()).log_error()
     return wrapper
+
+
+def get_file_name(file):
+    return os.path.splitext(os.path.basename(file))[0]
 
 
 def processes(target_func, iterator, max_workers=None):
