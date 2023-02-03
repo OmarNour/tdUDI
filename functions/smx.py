@@ -33,7 +33,7 @@ class SMX:
             Schema(schema_name=layer_value.t_db)
             Schema(schema_name=layer_value.v_db)
 
-        DataSetType(set_type='bkey')
+        DataSetType(set_type='BKEY')
         DataSetType(set_type='BMAP')
 
     @time_elapsed_decorator
@@ -120,7 +120,8 @@ class SMX:
                 if domain:
                     DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
 
-        bmaps_lst = DataSet.get_bmaps()
+        bmaps_lst = DataSetType.get_instance(_key='BMAP').data_sets
+
         self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(bmap_values, axis=1)
 
     @time_elapsed_decorator
@@ -331,12 +332,12 @@ class SMX:
 
             tables_file = WriteFile(layer_path, 'tables', "sql")
             views_file = WriteFile(layer_path, 'views', "sql")
-            table: Table
-            for table in layer.tables:
-                if table.table_kind == 'T':
-                    tables_file.write(f"{table.ddl};\n") if table.ddl else None
-                elif table.table_kind == 'V':
-                    views_file.write(f"{table.ddl};\n") if table.ddl else None
+            layer_table: LayerTable
+            for layer_table in layer.layer_tables:
+                if layer_table.table.table_kind == 'T':
+                    tables_file.write(f"{layer_table.table.ddl};\n") if layer_table.table.ddl else None
+                elif layer_table.table.table_kind == 'V':
+                    views_file.write(f"{layer_table.table.ddl};\n") if layer_table.table.ddl else None
             tables_file.close()
             views_file.close()
 

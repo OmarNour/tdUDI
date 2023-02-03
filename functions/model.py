@@ -218,9 +218,9 @@ class Table(MyID):
     def __init__(self, schema_id: int, table_name: str, table_kind: str
                  , source_id: int = None, multiset: int = 1, active: int = 1, ddl: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.schema_id = schema_id
+        self._schema_id = schema_id
         self._table_name = table_name
-        self.source_id = source_id
+        self._source_id = source_id
         self._table_kind = table_kind
         self.active = active
         self.multiset = multiset
@@ -228,7 +228,7 @@ class Table(MyID):
 
     @property
     def data_source(self) -> DataSource:
-        return DataSource.get_instance(_id=self.source_id)
+        return DataSource.get_instance(_id=self._source_id)
 
     @property
     def columns(self) -> []:
@@ -245,7 +245,7 @@ class Table(MyID):
 
     @property
     def schema(self) -> Schema:
-        return Schema.get_instance(_id=self.schema_id)
+        return Schema.get_instance(_id=self._schema_id)
 
     @property
     def ddl(self) -> str:
@@ -287,45 +287,55 @@ class DataSetType(MyID):
         super().__init__(**kwargs)
         self.set_type = set_type
 
+    @property
+    def data_sets(self) -> []:
+        return [ds for ds in DataSet.get_instance() if ds.data_set_type.id == self.id]
+
 
 class DataSet(MyID):
     def __init__(self, set_type_id: int, set_code: str, set_name: str, table_id: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_type_id = set_type_id
+        self._set_type_id = set_type_id
         self.set_code = set_code
         self.set_name = set_name
-        self.table_id = table_id
-
-    @classmethod
-    def get_bmaps(cls) -> []:
-        set_type = DataSetType.get_instance(_key='BMAP')
-        return [ds for ds in cls.get_instance() if ds.set_type_id == set_type.id]
-
-    @classmethod
-    def get_bkeys(cls) -> []:
-        set_type = DataSetType.get_instance(_key='bkey')
-        return [ds for ds in cls.get_instance() if ds.set_type_id == set_type.id]
+        self._table_id = table_id
 
     @property
     def data_set_type(self) -> DataSetType:
-        return DataSetType.get_instance(_id=self.set_type_id)
+        return DataSetType.get_instance(_id=self._set_type_id)
+
+    @property
+    def table(self):
+        return Table.get_instance(_id=self._table_id)
+
+    @property
+    def domains(self) -> []:
+        return [domain for domain in Domain.get_instance() if domain.data_set.id == self.id]
 
 
 class Domain(MyID):
     def __init__(self, data_set_id, domain_code, domain_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data_set_id = data_set_id
+        self._data_set_id = data_set_id
         self.domain_code = domain_code
         self.domain_name = domain_name
+
+    @property
+    def data_set(self) -> DataSet:
+        return DataSet.get_instance(_id=self._data_set_id)
 
 
 class DomainValue(MyID):
     def __init__(self, domain_id, source_key, edw_key, description, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.domain_id = domain_id
+        self._domain_id = domain_id
         self.source_key = source_key
         self.edw_key = edw_key
         self.description = description
+
+    @property
+    def domain(self) -> Domain:
+        return Domain.get_instance(_id=self._domain_id)
 
 
 class Column(MyID):
@@ -334,7 +344,7 @@ class Column(MyID):
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0, scd_type: int = 1, domain_id=None, data_type_id=None,
                  dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.table_id = table_id
+        self._table_id = table_id
         self.column_name = column_name
         self.is_pk = is_pk
         self.mandatory = mandatory
@@ -351,7 +361,7 @@ class Column(MyID):
         self.is_row_identity = is_row_identity
         self.scd_type = scd_type
         self.domain_id = domain_id
-        self.data_type_id = data_type_id
+        self._data_type_id = data_type_id
         self.dt_precision = dt_precision
         self.active = active
         self.unicode = unicode
@@ -359,11 +369,11 @@ class Column(MyID):
 
     @property
     def data_type(self) -> DataType:
-        return DataType.get_instance(_id=self.data_type_id)
+        return DataType.get_instance(_id=self._data_type_id)
 
     @property
     def table(self) -> Table:
-        return Table.get_instance(_id=self.table_id)
+        return Table.get_instance(_id=self._table_id)
 
 
 class Layer(MyID):
@@ -377,93 +387,129 @@ class Layer(MyID):
         self.notes = notes
 
     @property
-    def tables(self) -> []:
-        return [lt.table for lt in LayerTable.get_instance() if lt.layer_id == self.id]
+    def layer_tables(self) -> []:
+        return [lt for lt in LayerTable.get_instance() if lt.layer.id == self.id]
 
 
 class LayerTable(MyID):
     def __init__(self, layer_id: int, table_id: int, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.layer_id = layer_id
-        self.table_id = table_id
+        self._layer_id = layer_id
+        self._table_id = table_id
         self.active = active
 
     @property
-    def table(self) -> Table:
-        return Table.get_instance(_id=self.table_id)
+    def layer(self) -> Layer:
+        return Layer.get_instance(_id=self._layer_id)
 
     @property
-    def layer(self) -> Layer:
-        return Layer.get_instance(_id=self.layer_id)
+    def table(self) -> Table:
+        return Table.get_instance(_id=self._table_id)
+
+    @property
+    def src_pipelines(self) -> []:
+        return [pipe for pipe in Pipeline.get_instance() if pipe.src_lyr_table.id == self.id]
+
+    @property
+    def tgt_pipelines(self) -> []:
+        return [pipe for pipe in Pipeline.get_instance() if pipe.tgt_lyr_table.id == self.id]
 
 
 class Pipeline(MyID):
     def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, schema_id: int, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.src_lyr_table_id = src_lyr_table_id
-        self.tgt_lyr_table_id = tgt_lyr_table_id
-        self.schema_id = schema_id
+        self._src_lyr_table_id = src_lyr_table_id
+        self._tgt_lyr_table_id = tgt_lyr_table_id
+        self._schema_id = schema_id
         self.active = active
 
     @property
     def schema(self) -> Schema:
-        return Schema.get_instance(_id=self.schema_id)
+        return Schema.get_instance(_id=self._schema_id)
 
     @property
     def src_lyr_table(self) -> LayerTable:
-        return LayerTable.get_instance(_id=self.src_lyr_table_id)
+        return LayerTable.get_instance(_id=self._src_lyr_table_id)
 
     @property
     def tgt_lyr_table(self) -> LayerTable:
-        return LayerTable.get_instance(_id=self.tgt_lyr_table_id)
+        return LayerTable.get_instance(_id=self._tgt_lyr_table_id)
 
     @property
     def column_mapping(self) -> []:
-        return [cm for cm in ColumnMapping.get_instance() if cm.pipeline_id == self.id]
+        return [cm for cm in ColumnMapping.get_instance() if cm.pipeline.id == self.id]
 
     @property
     def query(self):
         # DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
-        col_mapping_template = """{comma}{src_col_name} {cast_dtype} {alias}"""
+        cast_dtype_template = """({dtype_name} {precise})"""
+        col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
+
+        distinct = ''
         col_mapping = ''
         with_clause = ''
         from_clause = self.src_lyr_table.table.table_name
         join_clause = ''
         where_clause = ''
+        group_by_clause = ''
+        having_clause = ''
 
-        col_m:ColumnMapping
+        col_m: ColumnMapping
         for index, col_m in enumerate(self.column_mapping):
-            comma = ',' if index > 0 else ''
-            cast_dtype = col_m.tgt_col.data_type.dt_name
+            src_col = col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name
+            dtype_name = ''
+            precise = ''
+            alias = ''
+            comma = '\n,' if index > 0 else ''
+            if col_m.tgt_col:
+                alias = col_m.tgt_col.column_name
+                dtype_name = col_m.tgt_col.data_type.dt_name
+                if col_m.tgt_col.dt_precision:
+                    precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
+
+            cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
             col_mapping = col_mapping + col_mapping_template.format(comma=comma
-                                                                    , src_col_name = col_m.src_col.column_name
-                                                                    , cast_dtype=None
+                                                                    , src_col_name=src_col
+                                                                    , cast_dtype=cast_dtype
+                                                                    , alias=alias
                                                                     )
-        query = """ {with_clause} select {columns} from {from_clause} {join_clause} {where_clause} """
+        query = f""" {with_clause} 
+                    select {distinct} 
+                    {col_mapping} 
+                    from {from_clause} 
+                        {join_clause} 
+                    {where_clause}
+                    {group_by_clause}
+                    {having_clause} 
+                    """
         return query
 
 
 class ColumnMapping(MyID):
     def __init__(self, pipeline_id, tgt_col_id, col_seq: int = 0, src_col_id=None, src_col_trx=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pipeline_id = pipeline_id
+        self._pipeline_id = pipeline_id
         self.col_seq = col_seq
-        self.src_col_id = src_col_id
-        self.tgt_col_id = tgt_col_id
-        self.src_col_trx = src_col_trx
+        self._src_col_id = src_col_id
+        self._tgt_col_id = tgt_col_id
+        self._src_col_trx = src_col_trx
 
     @property
     def pipeline(self) -> Pipeline:
-        return Pipeline.get_instance(_id=self.pipeline_id)
+        return Pipeline.get_instance(_id=self._pipeline_id)
 
     @property
     def tgt_col(self) -> Column:
-        return Column.get_instance(_id=self.tgt_col_id)
+        return Column.get_instance(_id=self._tgt_col_id)
 
     @property
     def src_col(self) -> Column:
-        return Column.get_instance(_id=self.src_col_id)
+        return Column.get_instance(_id=self._src_col_id)
 
     @property
     def valid_src_col_trx(self) -> bool:
-        return True
+        return True if self._src_col_trx else False
+
+    @property
+    def src_col_trx(self):
+        return self._src_col_trx
