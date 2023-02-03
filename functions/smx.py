@@ -20,6 +20,10 @@ class SMX:
     def __init__(self, smx_path, scripts_path):
         self.path = smx_path
         self.scripts_path = scripts_path
+        self.run_id = str(generate_run_id())
+        self.current_scripts_path = os.path.join(self.scripts_path, self.run_id)
+        self.log_error_path = self.current_scripts_path
+        create_folder(self.current_scripts_path)
         self.xls = None
         self.reserved_words = {}
         self.data = {}
@@ -224,13 +228,12 @@ class SMX:
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
 
     @time_elapsed_decorator
-    @log_error_decorator
     def extract_stg_views_columns(self):
+        @log_error_decorator(self.log_error_path)
         def stg_columns(row):
             if row.natural_key == '':
                 ds = DataSource.get_instance(_key=row.schema)
                 if ds:
-                    print(row.table_name, row.column_name)
                     src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
                     stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
 
@@ -240,6 +243,9 @@ class SMX:
                     pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
                     src_col = Column.get_instance(_key=(src_table.id, row.column_name))
                     stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+
+                    error_msg = f'{row.column_name} has no object defined!'
+                    assert src_col is not None, error_msg
 
                     ColumnMapping(pipeline_id=pipeline.id
                                   , col_seq=0
@@ -315,14 +321,10 @@ class SMX:
 
     @time_elapsed_decorator
     def generate_scripts(self):
-        run_id = str(generate_run_id())
-        current_scripts_path = os.path.join(self.scripts_path, run_id)
-        create_folder(current_scripts_path)
-
         layer: Layer
         for layer in Layer.get_instance():
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
-            layer_path = os.path.join(current_scripts_path, layer_folder_name)
+            layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
             create_folder(layer_path)
 
             tables_file = WriteFile(layer_path, 'tables', "sql")
@@ -336,4 +338,4 @@ class SMX:
             tables_file.close()
             views_file.close()
 
-        open_folder(current_scripts_path)
+        open_folder(self.current_scripts_path)

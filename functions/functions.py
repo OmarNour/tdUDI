@@ -15,7 +15,6 @@ from collections import namedtuple
 
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
-error_log_path = scripts_path
 
 SPECIAL_CHARACTERS = [
     '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
@@ -127,17 +126,19 @@ class TemplateLogError(WriteFile):
         self.write(error_separator)
 
 
-def log_error_decorator(function):
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        # cf = args[0]
-        # source_output_path = args[1]
-        file_name = get_file_name(__file__)
-        try:
-            function(*args, **kwargs)
-        except:
-            TemplateLogError(error_log_path, '', file_name, traceback.format_exc()).log_error()
-    return wrapper
+def log_error_decorator(error_log_path):
+    def decorator(function):
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            # cf = args[0]
+            # source_output_path = args[1]
+            file_name = get_file_name(__file__)
+            try:
+                function(*args, **kwargs)
+            except:
+                TemplateLogError(error_log_path, '', file_name, traceback.format_exc()).log_error()
+        return wrapper
+    return decorator
 
 
 def get_file_name(file):
