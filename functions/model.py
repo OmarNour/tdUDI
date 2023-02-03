@@ -184,8 +184,7 @@ class DataSource(MyID):
         return self._source_name
 
     @property
-    def tables(self):
-        table: Table
+    def tables(self) -> []:
         return [table for table in Table.get_instance() if self.id == table.data_source.id]
 
 
@@ -201,8 +200,7 @@ class Schema(MyID):
         return self._schema_name
 
     @property
-    def tables(self):
-        table: Table
+    def tables(self) -> []:
         return [table for table in Table.get_instance() if self.id == table.schema.id]
 
 
@@ -250,7 +248,7 @@ class Table(MyID):
         return Schema.get_instance(_id=self.schema_id)
 
     @property
-    def ddl(self):
+    def ddl(self) -> str:
         if self.table_kind == 'T':
             col_dtype = ''
             set_multiset = 'multiset' if self.multiset == 1 else 'set'
@@ -299,14 +297,18 @@ class DataSet(MyID):
         self.table_id = table_id
 
     @classmethod
-    def get_bmaps(cls):
+    def get_bmaps(cls) -> []:
         set_type = DataSetType.get_instance(_key='BMAP')
         return [ds for ds in cls.get_instance() if ds.set_type_id == set_type.id]
 
     @classmethod
-    def get_bkeys(cls):
+    def get_bkeys(cls) -> []:
         set_type = DataSetType.get_instance(_key='bkey')
         return [ds for ds in cls.get_instance() if ds.set_type_id == set_type.id]
+
+    @property
+    def data_set_type(self) -> DataSetType:
+        return DataSetType.get_instance(_id=self.set_type_id)
 
 
 class Domain(MyID):
@@ -440,3 +442,7 @@ class ColumnMapping(MyID):
     @property
     def valid_src_col_trx(self) -> bool:
         return True
+
+    @property
+    def ddl(self):
+        return ''
