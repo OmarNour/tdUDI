@@ -223,7 +223,7 @@ class SMX:
     def extract_data_types(self):
         def data_types(row):
             data_type_lst = row.data_type.split(sep='(')
-            DataType(data_type=data_type_lst[0])
+            DataType(dt_name=data_type_lst[0])
 
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
 

@@ -16,7 +16,7 @@ class Meta(type):
         , 'Domain': ('data_set_id', 'domain_code')
         , 'DomainValue': ('domain_id', 'source_key')
         , 'Column': ('table_id', 'column_name')
-        , 'DataType': 'data_type'
+        , 'DataType': 'dt_name'
         , 'Layer': 'layer_name'
         , 'LayerTable': ('layer_id', 'table_id')
         , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
@@ -205,9 +205,9 @@ class Schema(MyID):
 
 
 class DataType(MyID):
-    def __init__(self, data_type: str, *args, **kwargs):
+    def __init__(self, dt_name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data_type = data_type
+        self.dt_name = dt_name
 
 
 class Table(MyID):
@@ -259,7 +259,7 @@ class Table(MyID):
             for idx, col in enumerate(self.columns, start=1):
                 comma = ',' if idx > 1 else ''
                 col_name = col.column_name
-                data_type = col.data_type.data_type
+                data_type = col.data_type.dt_name
                 precision = "(" + str(col.dt_precision) + ")" if col.dt_precision else ''
                 latin_unicode = "unicode" if col.unicode == 1 else "latin"
                 not_case_sensitive = "not" if col.case_sensitive == 0 else ''
@@ -417,6 +417,31 @@ class Pipeline(MyID):
     def tgt_lyr_table(self) -> LayerTable:
         return LayerTable.get_instance(_id=self.tgt_lyr_table_id)
 
+    @property
+    def column_mapping(self) -> []:
+        return [cm for cm in ColumnMapping.get_instance() if cm.pipeline_id == self.id]
+
+    @property
+    def query(self):
+        # DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
+        col_mapping_template = """{comma}{src_col_name} {cast_dtype} {alias}"""
+        col_mapping = ''
+        with_clause = ''
+        from_clause = self.src_lyr_table.table.table_name
+        join_clause = ''
+        where_clause = ''
+
+        col_m:ColumnMapping
+        for index, col_m in enumerate(self.column_mapping):
+            comma = ',' if index > 0 else ''
+            cast_dtype = col_m.tgt_col.data_type.dt_name
+            col_mapping = col_mapping + col_mapping_template.format(comma=comma
+                                                                    , src_col_name = col_m.src_col.column_name
+                                                                    , cast_dtype=None
+                                                                    )
+        query = """ {with_clause} select {columns} from {from_clause} {join_clause} {where_clause} """
+        return query
+
 
 class ColumnMapping(MyID):
     def __init__(self, pipeline_id, tgt_col_id, col_seq: int = 0, src_col_id=None, src_col_trx=None, *args, **kwargs):
@@ -442,7 +467,3 @@ class ColumnMapping(MyID):
     @property
     def valid_src_col_trx(self) -> bool:
         return True
-
-    @property
-    def ddl(self):
-        return ''
