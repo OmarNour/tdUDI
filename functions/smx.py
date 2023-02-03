@@ -231,6 +231,9 @@ class SMX:
     def extract_stg_views_columns(self):
         @log_error_decorator(self.log_error_path)
         def stg_columns(row):
+            ds_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+            tbl_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+            col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
             if row.natural_key == '':
                 ds = DataSource.get_instance(_key=row.schema)
                 if ds:
@@ -244,8 +247,7 @@ class SMX:
                     src_col = Column.get_instance(_key=(src_table.id, row.column_name))
                     stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
-                    error_msg = f'{row.column_name} has no object defined!'
-                    assert src_col is not None, error_msg
+                    assert src_col is not None, col_error_msg
 
                     ColumnMapping(pipeline_id=pipeline.id
                                   , col_seq=0
