@@ -245,7 +245,7 @@ class SMX:
                                   , col_seq=0
                                   , src_col_id=src_col.id
                                   , tgt_col_id=stg_col.id
-                                  , src_col_trx = row.column_transformation_rule
+                                  , src_col_trx=row.column_transformation_rule
                                   )
 
         src_t_schema = Schema.get_instance(_key='stg_online')
