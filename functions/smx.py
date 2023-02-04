@@ -74,61 +74,95 @@ class SMX:
     def sheet_names(self):
         return self.data.keys()
 
+    @time_elapsed_decorator
     def extract_all(self):
 
         @log_error_decorator(self.log_error_path)
-        def extract_system():
-            self.data['system'].drop_duplicates().apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
+        def extract_system(row):
+            DataSource(source_name=row.schema, source_level=1, scheduled=1)
 
         @log_error_decorator(self.log_error_path)
-        def data_types(row):
+        def extract_data_types(row):
             data_type_lst = row.data_type.split(sep='(')
             DataType(dt_name=data_type_lst[0])
 
-        @time_elapsed_decorator
-        def extract_data_types():
-            self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
-            self.data['core_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
+        @log_error_decorator(self.log_error_path)
+        def extract_stg_tables(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            ds = DataSource.get_instance(_key=row.schema)
+            assert ds != {}, ds_error_msg
+
+            src_table = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+            stg_table = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+            srci_table = Table(schema_id=self.srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+
+            LayerTable(layer_id=self.src_layer.id, table_id=src_table.id)
+            LayerTable(layer_id=self.stg_layer.id, table_id=stg_table.id)
+            LayerTable(layer_id=self.srci_layer.id, table_id=srci_table.id)
 
         @log_error_decorator(self.log_error_path)
-        def extract_stg_tables(layer_id, schema_id):
-            @log_error_decorator(self.log_error_path)
-            def tables(row):
-                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-                ds = DataSource.get_instance(_key=row.schema)
-                assert ds != {}, ds_error_msg
-
-                table = Table(schema_id=schema_id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                LayerTable(layer_id=layer_id, table_id=table.id)
-
-            self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(tables, axis=1)
+        def extract_core_tables(row):
+            table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T')
+            LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
-        def extract_core_tables(layer_id, schema_id):
-            @log_error_decorator(self.log_error_path)
-            def tables(row):
-                table = Table(schema_id=schema_id, table_name=row.table_name, table_kind='T')
-                LayerTable(layer_id=layer_id, table_id=table.id)
+        def extract_stg_table_columns(row):
+            src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+            stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
 
-            self.data['core_tables'][['table_name']].drop_duplicates().apply(tables, axis=1)
+            data_type_lst = row.data_type.split(sep='(')
+            _data_type = data_type_lst[0]
+            data_type = DataType.get_instance(_key=_data_type)
 
-        extract_system()
-        extract_data_types()
-        extract_stg_tables(self.src_layer.id, self.src_t_schema.id)
-        extract_stg_tables(self.stg_layer.id, self.stg_t_schema.id)
-        extract_stg_tables(self.srci_layer.id, self.srci_t_schema.id)
-        extract_core_tables(self.core_layer.id, self.core_t_schema.id)
+            data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
+            assert data_type != {}, data_type_error_msg
+
+            pk = 1 if row.pk.upper() == 'Y' else 0
+            mandatory = 1 if row.pk.upper() == 'Y' else 0
+            precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+
+            if row.natural_key == '':
+                if src_table:
+                    Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+                if stg_table:
+                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+            if srci_table:
+                Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_stg_views(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            ds = DataSource.get_instance(_key=row.schema)
+            assert ds != {}, ds_error_msg
+
+            src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+            LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
+
+            src_t = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+
+            src_lt = LayerTable.get_instance(_key=(self.src_layer.id, src_t.id))
+            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+            Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
+
+        self.data['system'].drop_duplicates().apply(extract_system, axis=1)
+        self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+        self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
+        self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+        self.data['stg_tables'][['table_name', 'column_name', 'data_type'
+            , 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
         # self.extract_bkeys()
         # self.extract_bmaps()
         # self.extract_bmap_values()
 
-        # self.extract_staging_tables()
-        self.extract_stg_tables_columns()
-
-        self.extract_staging_views()
         self.extract_stg_views_columns()
 
-        # self.extract_core_tables()
         # self.extract_core_columns()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
@@ -199,59 +233,6 @@ class SMX:
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(bkey, axis=1)
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(domain, axis=1)
 
-    def extract_staging_views(self):
-        """
-        get Layer & Table then LayerTable to create Pipeline
-        then create the ColumnMapping
-        :return:
-        """
-
-        @log_error_decorator(self.log_error_path)
-        def stg_views(row):
-            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-            ds = DataSource.get_instance(_key=row.schema)
-            assert ds != {}, ds_error_msg
-
-            src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-            LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
-
-            src_t = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
-            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-
-            src_lt = LayerTable.get_instance(_key=(self.src_layer.id, src_t.id))
-            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-            Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
-
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_views, axis=1)
-
-    @time_elapsed_decorator
-    def extract_staging_tables(self):
-
-        @log_error_decorator(self.log_error_path)
-        def stg_tables(row):
-            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-            ds = DataSource.get_instance(_key=row.schema)
-            assert ds != {}, ds_error_msg
-
-            src_t = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-            stg_t = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-
-            LayerTable(layer_id=self.src_layer.id, table_id=src_t.id)
-            LayerTable(layer_id=self.stg_layer.id, table_id=stg_t.id)
-
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_tables, axis=1)
-
-    @time_elapsed_decorator
-    def extract_core_tables(self):
-        def core_tables(row):
-            core_t = Table(schema_id=core_schema.id, table_name=row.table_name, table_kind='T')
-            LayerTable(layer_id=core_layer.id, table_id=core_t.id)
-
-        core_layer = Layer.get_instance(_key='CORE')
-        core_schema = Schema.get_instance(_key='gdev1t_base')
-        self.data['core_tables'][['table_name']].drop_duplicates().apply(core_tables, axis=1)
-
     @time_elapsed_decorator
     def extract_stg_views_columns(self):
         @log_error_decorator(self.log_error_path)
@@ -283,43 +264,6 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name', 'natural_key'
             , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
-
-    @time_elapsed_decorator
-    def extract_stg_tables_columns(self):
-        @log_error_decorator(self.log_error_path)
-        def stg_columns(row):
-            src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
-            stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-            srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
-
-            data_type_lst = row.data_type.split(sep='(')
-            _data_type = data_type_lst[0]
-            data_type = DataType.get_instance(_key=_data_type)
-
-            data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
-            assert data_type != {}, data_type_error_msg
-
-            pk = 1 if row.pk.upper() == 'Y' else 0
-            mandatory = 1 if row.pk.upper() == 'Y' else 0
-            precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-
-            if row.natural_key == '':
-                if src_table:
-                    Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
-
-                if stg_table:
-                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
-
-            if srci_table:
-                Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
-
-        self.data['stg_tables'][['table_name', 'column_name', 'data_type'
-            , 'mandatory', 'natural_key', 'pk'
-                                 ]].drop_duplicates().apply(stg_columns, axis=1)
-
-        # q = """select distinct table_name, column_name, data_type, pk , natural_key from df_stg_tables; """
-        # df_stg_cols = sqldf(q, locals())
-        # df_stg_cols.apply(stg_columns, axis=1)
 
     @time_elapsed_decorator
     def extract_core_columns(self):
