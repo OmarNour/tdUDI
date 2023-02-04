@@ -38,16 +38,19 @@ class SMX:
 
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')
+        self.bkey_layer = Layer.get_instance(_key='BKEY')
         self.srci_layer = Layer.get_instance(_key='SRCI')
         self.core_layer = Layer.get_instance(_key='CORE')
 
         self.src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
         self.stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
+        self.utlfw_t_schema = Schema.get_instance(_key=self.LAYERS['BKEY'].t_db)
         self.srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
         self.core_t_schema = Schema.get_instance(_key=self.LAYERS['CORE'].t_db)
 
         self.src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
         self.stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+        self.utlfw_v_schema = Schema.get_instance(_key=self.LAYERS['BKEY'].v_db)
         self.srci_v_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].v_db)
         self.core_v_schema = Schema.get_instance(_key=self.LAYERS['CORE'].v_db)
 
@@ -230,6 +233,25 @@ class SMX:
                        , data_type_id=data_type.id, dt_precision=precision
                        , is_start_date=is_start_date, is_end_date=is_end_date)
 
+        def extract_bkey_tables(row):
+            table = Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
+            LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
+
+            int_data_type = DataType.get_instance(_key='INTEGER')
+            vchar_data_type = DataType.get_instance(_key='VARCHAR')
+
+            Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
+                   , data_type_id=vchar_data_type.id, dt_precision=None
+                   , is_start_date=0, is_end_date=0)
+
+            Column(table_id=table.id, column_name='DOMAIN_ID', is_pk=1, mandatory=1
+                   , data_type_id=int_data_type.id, dt_precision=None
+                   , is_start_date=0, is_end_date=0)
+
+            Column(table_id=table.id, column_name='EDW_KEY', is_pk=0, mandatory=1
+                   , data_type_id=int_data_type.id, dt_precision=None
+                   , is_start_date=0, is_end_date=0)
+
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
 
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -237,6 +259,8 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
         self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
+
+        self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
 
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
@@ -344,6 +368,7 @@ class SMX:
             tables_ddl = "\n".join(tables_ddl)
             views_ddl = "\n".join(views_ddl)
 
+            ################ START WRITE TO FILES ################
             tables_file = WriteFile(layer_path, 'tables', "sql")
             tables_file.write(tables_ddl)
             tables_file.close()

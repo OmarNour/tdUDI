@@ -92,10 +92,6 @@ def list_to_string(list, separator=None, quotes=0):
     return to_string
 
 
-def generate_run_id():
-    return int(str(time.time()).replace('.', ''))
-
-
 def single_quotes(string):
     return "'%s'" % string.replace("'", '"')
 
