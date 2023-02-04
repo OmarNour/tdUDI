@@ -476,17 +476,16 @@ class Pipeline(MyID):
         col_m: ColumnMapping
         for index, col_m in enumerate(self.column_mapping):
             src_col = col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name
-            dtype_name = ''
+            cast_dtype = ''
             precise = ''
-            alias = ''
+            alias = col_m.tgt_col.column_name
             comma = '\n,' if index > 0 else ''
-            if col_m.tgt_col:
-                alias = col_m.tgt_col.column_name
+            if col_m.tgt_col.id != col_m.src_col.id:
                 dtype_name = col_m.tgt_col.data_type.dt_name
                 if col_m.tgt_col.dt_precision:
                     precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
+                cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
 
-            cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
             col_mapping = col_mapping + col_mapping_template.format(comma=comma
                                                                     , col_name=src_col
                                                                     , cast_dtype=cast_dtype
