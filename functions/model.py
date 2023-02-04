@@ -126,6 +126,8 @@ class MyID(metaclass=Meta):
             if instance_key in cls.__instances[cls.__name__].keys():
                 return cls.__instances[cls.__name__][instance_key]
 
+        return {}
+
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
         """

@@ -36,6 +36,16 @@ class SMX:
         DataSetType(set_type='BKEY')
         DataSetType(set_type='BMAP')
 
+        self.src_layer = Layer.get_instance(_key='SRC')
+        self.stg_layer = Layer.get_instance(_key='STG')
+
+        self.src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
+        self.stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
+        self.srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
+
+        self.src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
+        self.stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+
     @time_elapsed_decorator
     def parse_file(self):
         self.xls = pd.ExcelFile(self.path)
@@ -60,11 +70,17 @@ class SMX:
         return self.data.keys()
 
     def extract_all(self):
-        self.extract_data_sources()
+        @time_elapsed_decorator
+        @log_error_decorator(self.log_error_path)
+        def extract_data_sources():
+            self.data['system'].drop_duplicates().apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
 
-        self.extract_bkeys()
-        self.extract_bmaps()
-        self.extract_bmap_values()
+        extract_data_sources()
+
+        # self.extract_bkeys()
+        # self.extract_bmaps()
+        # self.extract_bmap_values()
+
         self.extract_data_types()
 
         self.extract_staging_tables()
@@ -144,72 +160,45 @@ class SMX:
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(bkey, axis=1)
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(domain, axis=1)
 
-    @time_elapsed_decorator
-    def extract_data_sources(self):
-        self.data['system'].apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
-
     def extract_staging_views(self):
         """
         get Layer & Table then LayerTable to create Pipeline
         then create the ColumnMapping
         :return:
         """
-
+        @log_error_decorator(self.log_error_path)
         def stg_views(row):
             ds = DataSource.get_instance(_key=row.schema)
-            if ds:
-                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                LayerTable(layer_id=src_layer.id, table_id=src_v.id)
+            ds_error = ds_error_template.format(data_source=row.schema)
+            assert ds != {}, ds_error
 
-                src_t = Table.get_instance(_key=(src_t_schema.id, row.table_name))
-                stg_t = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+            src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+            LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
 
-                src_lt = LayerTable.get_instance(_key=(src_layer.id, src_t.id))
-                stg_lt = LayerTable.get_instance(_key=(stg_layer.id, stg_t.id))
+            src_t = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
 
-                Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
-            #     src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
-            #                                          , view_name=row.table_name
-            #                                          , query_txt=f"select * from {src_t_schema.schema_name}.{row.table_name}"
-            #                                          )
-            #     stg_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=stg_v_schema.schema_name
-            #                                          , view_name=row.table_name
-            #                                          , query_txt=f"select * from {stg_t_schema.schema_name}.{row.table_name}"
-            #                                          )
-            #
-            #     src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=src_v_ddl)
-            #     stg_v = Table(schema_id=stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id, ddl=stg_v_ddl)
-            #
-            #     LayerTable(layer_id=src_layer.id, table_id=src_v.id)
-            #     LayerTable(layer_id=stg_layer.id, table_id=stg_v.id)
+            src_lt = LayerTable.get_instance(_key=(self.src_layer.id, src_t.id))
+            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
 
-        src_layer = Layer.get_instance(_key='SRC')
-        stg_layer = Layer.get_instance(_key='STG')
-
-        src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
-        src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
-
-        stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
-        # stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+            Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_views, axis=1)
 
     @time_elapsed_decorator
     def extract_staging_tables(self):
+
+        @log_error_decorator(self.log_error_path)
         def stg_tables(row):
             ds = DataSource.get_instance(_key=row.schema)
-            if ds:
-                src_t = Table(schema_id=src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                stg_t = Table(schema_id=stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+            ds_error = ds_error_template.format(data_source=row.schema)
+            assert ds != {}, ds_error
 
-                LayerTable(layer_id=src_layer.id, table_id=src_t.id)
-                LayerTable(layer_id=stg_layer.id, table_id=stg_t.id)
+            src_t = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+            stg_t = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
 
-        src_layer = Layer.get_instance(_key='SRC')
-        stg_layer = Layer.get_instance(_key='STG')
-
-        src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
-        stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
+            LayerTable(layer_id=self.src_layer.id, table_id=src_t.id)
+            LayerTable(layer_id=self.stg_layer.id, table_id=stg_t.id)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(stg_tables, axis=1)
 
@@ -225,6 +214,7 @@ class SMX:
 
     @time_elapsed_decorator
     def extract_data_types(self):
+        @log_error_decorator(self.log_error_path)
         def data_types(row):
             data_type_lst = row.data_type.split(sep='(')
             DataType(dt_name=data_type_lst[0])
@@ -271,10 +261,11 @@ class SMX:
 
     @time_elapsed_decorator
     def extract_stg_tables_columns(self):
+        @log_error_decorator(self.log_error_path)
         def stg_columns(row):
-            src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
-            stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
-            srci_table = Table.get_instance(_key=(srci_t_schema.id, row.table_name))
+            src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+            stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
 
             data_type_lst = row.data_type.split(sep='(')
             _data_type = data_type_lst[0]
@@ -294,9 +285,6 @@ class SMX:
                 if srci_table:
                     Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
-        src_t_schema = Schema.get_instance(_key='stg_online')
-        stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
-        srci_t_schema = Schema.get_instance(_key='gdev1t_srci')
         self.data['stg_tables'][['table_name', 'column_name', 'data_type'
             , 'mandatory', 'natural_key', 'pk'
                                  ]].drop_duplicates().apply(stg_columns, axis=1)
