@@ -89,8 +89,8 @@ class SMX:
         self.extract_staging_views()
         self.extract_stg_views_columns()
 
-        self.extract_core_tables()
-        self.extract_core_columns()
+        # self.extract_core_tables()
+        # self.extract_core_columns()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
@@ -168,9 +168,9 @@ class SMX:
         """
         @log_error_decorator(self.log_error_path)
         def stg_views(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
-            ds_error = ds_error_template.format(data_source=row.schema)
-            assert ds != {}, ds_error
+            assert ds != {}, ds_error_msg
 
             src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
@@ -190,9 +190,9 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def stg_tables(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
-            ds_error = ds_error_template.format(data_source=row.schema)
-            assert ds != {}, ds_error
+            assert ds != {}, ds_error_msg
 
             src_t = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
             stg_t = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
@@ -220,41 +220,36 @@ class SMX:
             DataType(dt_name=data_type_lst[0])
 
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
+        self.data['core_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
 
     @time_elapsed_decorator
     def extract_stg_views_columns(self):
         @log_error_decorator(self.log_error_path)
         def stg_columns(row):
-            ds_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
-            tbl_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
             if row.natural_key == '':
                 ds = DataSource.get_instance(_key=row.schema)
-                if ds:
-                    src_table = Table.get_instance(_key=(src_t_schema.id, row.table_name))
-                    stg_table = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
+                assert ds != {}, ds_error_msg
 
-                    src_lyr_table = LayerTable.get_instance(_key=(src_layer.id, src_table.id))
-                    stg_lyr_table = LayerTable.get_instance(_key=(stg_layer.id, stg_table.id))
+                src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+                stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
 
-                    pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
-                    src_col = Column.get_instance(_key=(src_table.id, row.column_name))
-                    stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+                src_lyr_table = LayerTable.get_instance(_key=(self.src_layer.id, src_table.id))
+                stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
 
-                    assert src_col is not None, col_error_msg
+                pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
+                src_col = Column.get_instance(_key=(src_table.id, row.column_name))
+                stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
-                    ColumnMapping(pipeline_id=pipeline.id
-                                  , col_seq=0
-                                  , src_col_id=src_col.id
-                                  , tgt_col_id=stg_col.id
-                                  , src_col_trx=row.column_transformation_rule
-                                  )
+                assert src_col != {}, col_error_msg
 
-        src_t_schema = Schema.get_instance(_key='stg_online')
-        stg_t_schema = Schema.get_instance(_key='gdev1t_stg')
-
-        src_layer = Layer.get_instance(_key='SRC')
-        stg_layer = Layer.get_instance(_key='STG')
+                ColumnMapping(pipeline_id=pipeline.id
+                              , col_seq=0
+                              , src_col_id=src_col.id
+                              , tgt_col_id=stg_col.id
+                              , src_col_trx=row.column_transformation_rule
+                              )
 
         self.data['stg_tables'][['schema', 'table_name', 'natural_key'
             , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
@@ -270,20 +265,23 @@ class SMX:
             data_type_lst = row.data_type.split(sep='(')
             _data_type = data_type_lst[0]
             data_type = DataType.get_instance(_key=_data_type)
-            if data_type:
-                pk = 1 if row.pk.upper() == 'Y' else 0
-                mandatory = 1 if row.pk.upper() == 'Y' else 0
-                precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
 
-                if row.natural_key == '':
-                    if src_table:
-                        Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+            data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
+            assert data_type != {}, data_type_error_msg
 
-                    if stg_table:
-                        Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+            pk = 1 if row.pk.upper() == 'Y' else 0
+            mandatory = 1 if row.pk.upper() == 'Y' else 0
+            precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
 
-                if srci_table:
-                    Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+            if row.natural_key == '':
+                if src_table:
+                    Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+                if stg_table:
+                    Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+
+            if srci_table:
+                Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
         self.data['stg_tables'][['table_name', 'column_name', 'data_type'
             , 'mandatory', 'natural_key', 'pk'

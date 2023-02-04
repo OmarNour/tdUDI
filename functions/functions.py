@@ -13,7 +13,7 @@ import concurrent.futures
 import time
 from collections import namedtuple
 
-ds_error_template = """{data_source}, is not defined, please check the 'System' sheet!"""
+
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 
