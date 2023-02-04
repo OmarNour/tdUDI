@@ -264,7 +264,7 @@ class Table(MyID):
                 latin_unicode = "unicode" if col.unicode == 1 else "latin"
                 not_case_sensitive = "not" if col.case_sensitive == 0 else ''
                 not_null = 'not null' if col.mandatory == 1 else ''
-                col_dtype = col_dtype + COL_DTYPE_TEMPLATE.format(col_name=col_name
+                col_dtype += COL_DTYPE_TEMPLATE.format(col_name=col_name
                                                                   , data_type=data_type, precision=precision, latin_unicode=latin_unicode
                                                                   , not_case_sensitive=not_case_sensitive
                                                                   , not_null=not_null

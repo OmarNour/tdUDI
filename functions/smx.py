@@ -330,16 +330,22 @@ class SMX:
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
             create_folder(layer_path)
 
-            tables_ddl = ''
-            views_ddl = ''
+            tables_ddl = []
+            views_ddl = []
 
             layer_table: LayerTable
             for layer_table in layer.layer_tables:
                 ddl = layer_table.table.ddl
                 if layer_table.table.table_kind == 'T':
-                    tables_ddl += ddl if ddl else None
+                    tables_ddl.append(ddl)
                 elif layer_table.table.table_kind == 'V':
-                    views_ddl += ddl if ddl else None
+                    views_ddl.append(ddl)
+
+            tables_ddl = list(filter(None, tables_ddl))
+            views_ddl = list(filter(None, views_ddl))
+
+            tables_ddl = "\n".join(tables_ddl)
+            views_ddl = "\n".join(views_ddl)
 
             tables_file = WriteFile(layer_path, 'tables', "sql")
             tables_file.write(tables_ddl)
