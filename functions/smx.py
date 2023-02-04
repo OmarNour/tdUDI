@@ -158,14 +158,15 @@ class SMX:
         def stg_views(row):
             ds = DataSource.get_instance(_key=row.schema)
             if ds:
+                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                LayerTable(layer_id=src_layer.id, table_id=src_v.id)
+
                 src_t = Table.get_instance(_key=(src_t_schema.id, row.table_name))
                 stg_t = Table.get_instance(_key=(stg_t_schema.id, row.table_name))
 
                 src_lt = LayerTable.get_instance(_key=(src_layer.id, src_t.id))
                 stg_lt = LayerTable.get_instance(_key=(stg_layer.id, stg_t.id))
 
-                src_v = Table(schema_id=src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                LayerTable(layer_id=src_layer.id, table_id=src_v.id)
                 Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
             #     src_v_ddl = DDL_VIEW_TEMPLATE.format(schema_name=src_v_schema.schema_name
             #                                          , view_name=row.table_name
