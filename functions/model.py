@@ -432,7 +432,7 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int|None, table_id: int|None = None, active: int = 1, *args, **kwargs):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int | None, table_id: int | None = None, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
@@ -460,9 +460,6 @@ class Pipeline(MyID):
 
     @property
     def query(self):
-        cast_dtype_template = """({dtype_name} {precise})"""
-        col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
-        from_template = """{schema_name}.{table_name}"""
 
         distinct = ''
         col_mapping = ''
@@ -478,9 +475,10 @@ class Pipeline(MyID):
             src_col = col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name
             cast_dtype = ''
             precise = ''
-            alias = col_m.tgt_col.column_name
+            alias = ''
             comma = '\n,' if index > 0 else ''
             if col_m.tgt_col.id != col_m.src_col.id:
+                alias = col_m.tgt_col.column_name
                 dtype_name = col_m.tgt_col.data_type.dt_name
                 if col_m.tgt_col.dt_precision:
                     precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
