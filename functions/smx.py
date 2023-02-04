@@ -150,6 +150,33 @@ class SMX:
             Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
 
         @log_error_decorator(self.log_error_path)
+        def extract_stg_view_columns(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+            if row.natural_key == '':
+                ds = DataSource.get_instance(_key=row.schema)
+                assert ds != {}, ds_error_msg
+
+                src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+                stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+
+                src_lyr_table = LayerTable.get_instance(_key=(self.src_layer.id, src_table.id))
+                stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
+
+                pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
+                src_col = Column.get_instance(_key=(src_table.id, row.column_name))
+                stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+
+                assert src_col != {}, col_error_msg
+
+                ColumnMapping(pipeline_id=pipeline.id
+                              , col_seq=0
+                              , src_col_id=src_col.id
+                              , tgt_col_id=stg_col.id
+                              , src_col_trx=row.column_transformation_rule
+                              )
+
+        @log_error_decorator(self.log_error_path)
         def extract_core_columns(row):
             core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
             data_type_lst = row.data_type.split(sep='(')
@@ -173,13 +200,13 @@ class SMX:
         self.data['stg_tables'][['table_name', 'column_name', 'data_type'
             , 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key'
+            , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
         # self.extract_bkeys()
         # self.extract_bmaps()
         # self.extract_bmap_values()
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory'
             , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
-
-        self.extract_stg_views_columns()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
@@ -248,38 +275,6 @@ class SMX:
         set_type = DataSetType.get_instance(_key='bkey')
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(bkey, axis=1)
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(domain, axis=1)
-
-    @time_elapsed_decorator
-    def extract_stg_views_columns(self):
-        @log_error_decorator(self.log_error_path)
-        def stg_columns(row):
-            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-            col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
-            if row.natural_key == '':
-                ds = DataSource.get_instance(_key=row.schema)
-                assert ds != {}, ds_error_msg
-
-                src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
-                stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-
-                src_lyr_table = LayerTable.get_instance(_key=(self.src_layer.id, src_table.id))
-                stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
-
-                pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
-                src_col = Column.get_instance(_key=(src_table.id, row.column_name))
-                stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
-
-                assert src_col != {}, col_error_msg
-
-                ColumnMapping(pipeline_id=pipeline.id
-                              , col_seq=0
-                              , src_col_id=src_col.id
-                              , tgt_col_id=stg_col.id
-                              , src_col_trx=row.column_transformation_rule
-                              )
-
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key'
-            , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
 
     @time_elapsed_decorator
     def generate_scripts(self):
