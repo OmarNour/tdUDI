@@ -38,13 +38,18 @@ class SMX:
 
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')
+        self.srci_layer = Layer.get_instance(_key='SRCI')
+        self.core_layer = Layer.get_instance(_key='CORE')
 
         self.src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
         self.stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
         self.srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
+        self.core_t_schema = Schema.get_instance(_key=self.LAYERS['CORE'].t_db)
 
         self.src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
         self.stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
+        self.srci_v_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].v_db)
+        self.core_v_schema = Schema.get_instance(_key=self.LAYERS['CORE'].v_db)
 
     @time_elapsed_decorator
     def parse_file(self):
@@ -70,20 +75,54 @@ class SMX:
         return self.data.keys()
 
     def extract_all(self):
-        @time_elapsed_decorator
+
         @log_error_decorator(self.log_error_path)
-        def extract_data_sources():
+        def extract_system():
             self.data['system'].drop_duplicates().apply(lambda x: DataSource(source_name=x.schema, source_level=1, scheduled=1), axis=1)
 
-        extract_data_sources()
+        @log_error_decorator(self.log_error_path)
+        def data_types(row):
+            data_type_lst = row.data_type.split(sep='(')
+            DataType(dt_name=data_type_lst[0])
 
+        @time_elapsed_decorator
+        def extract_data_types():
+            self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
+            self.data['core_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_stg_tables(layer_id, schema_id):
+            @log_error_decorator(self.log_error_path)
+            def tables(row):
+                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+                ds = DataSource.get_instance(_key=row.schema)
+                assert ds != {}, ds_error_msg
+
+                table = Table(schema_id=schema_id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                LayerTable(layer_id=layer_id, table_id=table.id)
+
+            self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(tables, axis=1)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_core_tables(layer_id, schema_id):
+            @log_error_decorator(self.log_error_path)
+            def tables(row):
+                table = Table(schema_id=schema_id, table_name=row.table_name, table_kind='T')
+                LayerTable(layer_id=layer_id, table_id=table.id)
+
+            self.data['core_tables'][['table_name']].drop_duplicates().apply(tables, axis=1)
+
+        extract_system()
+        extract_data_types()
+        extract_stg_tables(self.src_layer.id, self.src_t_schema.id)
+        extract_stg_tables(self.stg_layer.id, self.stg_t_schema.id)
+        extract_stg_tables(self.srci_layer.id, self.srci_t_schema.id)
+        extract_core_tables(self.core_layer.id, self.core_t_schema.id)
         # self.extract_bkeys()
         # self.extract_bmaps()
         # self.extract_bmap_values()
 
-        self.extract_data_types()
-
-        self.extract_staging_tables()
+        # self.extract_staging_tables()
         self.extract_stg_tables_columns()
 
         self.extract_staging_views()
@@ -166,6 +205,7 @@ class SMX:
         then create the ColumnMapping
         :return:
         """
+
         @log_error_decorator(self.log_error_path)
         def stg_views(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
@@ -211,16 +251,6 @@ class SMX:
         core_layer = Layer.get_instance(_key='CORE')
         core_schema = Schema.get_instance(_key='gdev1t_base')
         self.data['core_tables'][['table_name']].drop_duplicates().apply(core_tables, axis=1)
-
-    @time_elapsed_decorator
-    def extract_data_types(self):
-        @log_error_decorator(self.log_error_path)
-        def data_types(row):
-            data_type_lst = row.data_type.split(sep='(')
-            DataType(dt_name=data_type_lst[0])
-
-        self.data['stg_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
-        self.data['core_tables'][['data_type']].drop_duplicates().apply(data_types, axis=1)
 
     @time_elapsed_decorator
     def extract_stg_views_columns(self):
