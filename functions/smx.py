@@ -75,6 +75,7 @@ class SMX:
         return self.data.keys()
 
     @time_elapsed_decorator
+    @log_error_decorator(None)
     def extract_all(self):
 
         @log_error_decorator(self.log_error_path)
