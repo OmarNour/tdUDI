@@ -265,10 +265,10 @@ class Table(MyID):
                 not_case_sensitive = "not" if col.case_sensitive == 0 else ''
                 not_null = 'not null' if col.mandatory == 1 else ''
                 col_dtype += COL_DTYPE_TEMPLATE.format(col_name=col_name
-                                                                  , data_type=data_type, precision=precision, latin_unicode=latin_unicode
-                                                                  , not_case_sensitive=not_case_sensitive
-                                                                  , not_null=not_null
-                                                                  , comma=comma)
+                                                       , data_type=data_type, precision=precision, latin_unicode=latin_unicode
+                                                       , not_case_sensitive=not_case_sensitive
+                                                       , not_null=not_null
+                                                       , comma=comma)
                 pi_cols_lst.append(col.column_name) if col.is_pk else None
 
             pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
@@ -277,9 +277,13 @@ class Table(MyID):
                                                   , table_name=table_name
                                                   , col_dtype=col_dtype
                                                   , pi_index=pi_index
-                                                  , si_index='').strip()+';\n'
+                                                  , si_index='').strip() + ';\n'
 
         return self._ddl
+
+    @ddl.setter
+    def ddl(self, view_ddl):
+        self._ddl = view_ddl
 
 
 class DataSetType(MyID):
@@ -416,7 +420,7 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, table_id: int = None ,active: int = 1, *args, **kwargs):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, table_id: int = None, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
@@ -425,6 +429,7 @@ class Pipeline(MyID):
 
         if table_id:
             assert self.table.table_kind == 'V', 'Pipelines must be linked to views only!'
+            self.table.ddl = "self.query"
 
     @property
     def table(self) -> Table:
