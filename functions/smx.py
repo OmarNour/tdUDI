@@ -213,6 +213,7 @@ class SMX:
                               , tgt_col_id=stg_col.id
                               , src_col_trx=None
                               )
+
         @log_error_decorator(self.log_error_path)
         def extract_core_columns(row):
             core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
@@ -235,8 +236,9 @@ class SMX:
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
-        self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
+
+        self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_src_views, axis=1)
@@ -248,7 +250,6 @@ class SMX:
         # self.extract_bkeys()
         # self.extract_bmaps()
         # self.extract_bmap_values()
-
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
