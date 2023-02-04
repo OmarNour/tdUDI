@@ -416,16 +416,19 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, schema_id: int, active: int = 1, *args, **kwargs):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, table_id: int = None ,active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
-        self._schema_id = schema_id
+        self._table_id = table_id
         self.active = active
 
+        if table_id:
+            assert self.table.table_kind == 'V', 'Pipelines must be linked to views only!'
+
     @property
-    def schema(self) -> Schema:
-        return Schema.get_instance(_id=self._schema_id)
+    def table(self) -> Table:
+        return Table.get_instance(_id=self._table_id)
 
     @property
     def src_lyr_table(self) -> LayerTable:
