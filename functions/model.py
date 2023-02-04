@@ -432,7 +432,7 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, table_id: int = None, active: int = 1, *args, **kwargs):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int|None, table_id: int|None = None, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id

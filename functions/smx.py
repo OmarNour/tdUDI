@@ -151,6 +151,20 @@ class SMX:
             Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
 
         @log_error_decorator(self.log_error_path)
+        def extract_stg_views(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            ds = DataSource.get_instance(_key=row.schema)
+            assert ds != {}, ds_error_msg
+
+            stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+            LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
+
+            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+            Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=stg_v.id)
+
+        @log_error_decorator(self.log_error_path)
         def extract_src_view_columns(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -177,6 +191,28 @@ class SMX:
                               , src_col_trx=row.column_transformation_rule
                               )
 
+        @log_error_decorator(self.log_error_path)
+        def extract_stg_view_columns(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+            if row.natural_key == '':
+                ds = DataSource.get_instance(_key=row.schema)
+                assert ds != {}, ds_error_msg
+
+                stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+                stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
+
+                pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id))
+                stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+
+                assert stg_col != {}, col_error_msg
+
+                ColumnMapping(pipeline_id=pipeline.id
+                              , col_seq=0
+                              , src_col_id=stg_col.id
+                              , tgt_col_id=stg_col.id
+                              , src_col_trx=None
+                              )
         @log_error_decorator(self.log_error_path)
         def extract_core_columns(row):
             core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
@@ -209,7 +245,8 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name', 'natural_key'
             , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
 
-
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
         # self.extract_bkeys()
         # self.extract_bmaps()
