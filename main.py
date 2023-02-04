@@ -7,23 +7,7 @@ def start():
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
     smx.extract_all()
-    smx.generate_scripts()
-
-    # for key in Schema.get_instance().keys():
-    #     print('s key:', key, 'id:', Schema.get_instance(_key=key).id)
-    #     tables = Schema.get_instance(_key=key).tables
-    #
-    #     table:Table
-    #     for table in tables:
-    #         if table.ddl:
-    #             print(table.schema.schema_name, table.table_name, table.ddl)
-
-    # s = Schema.get_instance(_key='gdev1t_stg')
-    # print(s.tables)
-    # for key in Table.get_instance().keys():
-    #     print("key: ", key)
-    # for table in Schema.get_instance(_key='gdev1t_stg').tables:
-    #     print(table.table_name)
+    # smx.generate_scripts()
 
 
 # Press the green button in the gutter to run the script.

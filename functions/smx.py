@@ -149,6 +149,22 @@ class SMX:
 
             Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
 
+        @log_error_decorator(self.log_error_path)
+        def extract_core_columns(row):
+            core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
+            data_type_lst = row.data_type.split(sep='(')
+            _data_type = data_type_lst[0]
+            data_type = DataType.get_instance(_key=_data_type)
+            if data_type:
+                pk = 1 if row.pk.upper() == 'Y' else 0
+                mandatory = 1 if row.mandatory.upper() == 'Y' else 0
+                is_start_date = 1 if row.historization_key.upper() == 'S' else 0
+                is_end_date = 1 if row.historization_key.upper() == 'E' else 0
+                precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
+                       , data_type_id=data_type.id, dt_precision=precision
+                       , is_start_date=is_start_date, is_end_date=is_end_date)
+
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -160,10 +176,10 @@ class SMX:
         # self.extract_bkeys()
         # self.extract_bmaps()
         # self.extract_bmap_values()
+        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory'
+            , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
         self.extract_stg_views_columns()
-
-        # self.extract_core_columns()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
@@ -264,26 +280,6 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name', 'natural_key'
             , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(stg_columns, axis=1)
-
-    @time_elapsed_decorator
-    def extract_core_columns(self):
-        def core_columns(row):
-            core_table = Table.get_instance(_key=(core_schema.id, row.table_name))
-            data_type_lst = row.data_type.split(sep='(')
-            _data_type = data_type_lst[0]
-            data_type = DataType.get_instance(_key=_data_type)
-            if data_type:
-                pk = 1 if row.pk.upper() == 'Y' else 0
-                mandatory = 1 if row.mandatory.upper() == 'Y' else 0
-                is_start_date = 1 if row.historization_key.upper() == 'S' else 0
-                is_end_date = 1 if row.historization_key.upper() == 'E' else 0
-                precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-                Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
-                       , data_type_id=data_type.id, dt_precision=precision
-                       , is_start_date=is_start_date, is_end_date=is_end_date)
-
-        core_schema = Schema.get_instance(_key='gdev1t_base')
-        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(core_columns, axis=1)
 
     @time_elapsed_decorator
     def generate_scripts(self):
