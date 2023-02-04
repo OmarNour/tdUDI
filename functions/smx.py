@@ -204,7 +204,7 @@ class SMX:
             , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory'
-            , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)˚
+            , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
         # self.extract_bkeys()
         # self.extract_bmaps()
