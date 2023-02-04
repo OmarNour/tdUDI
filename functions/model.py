@@ -277,13 +277,23 @@ class Table(MyID):
                                                   , table_name=table_name
                                                   , col_dtype=col_dtype
                                                   , pi_index=pi_index
-                                                  , si_index='').strip() + ';\n'
+                                                  , si_index='')
 
-        return self._ddl
+        elif self.table_kind == 'V':
+            if self.pipeline:
+                self._ddl = DDL_VIEW_TEMPLATE.format(schema_name=self.schema.schema_name, view_name=self.table_name, query_txt=self.pipeline.query)
 
-    @ddl.setter
-    def ddl(self, view_ddl):
-        self._ddl = view_ddl
+        return self._ddl.strip() + ';\n'
+
+    # @ddl.setter
+    # def ddl(self, view_ddl):
+    #     self._ddl = view_ddl
+
+    @property
+    def pipeline(self):
+        for pipe in Pipeline.get_instance():
+            if pipe.table.id == self.id:
+                return pipe
 
 
 class DataSetType(MyID):
@@ -429,7 +439,6 @@ class Pipeline(MyID):
 
         if table_id:
             assert self.table.table_kind == 'V', 'Pipelines must be linked to views only!'
-            self.table.ddl = "self.query"
 
     @property
     def table(self) -> Table:
@@ -449,14 +458,14 @@ class Pipeline(MyID):
 
     @property
     def query(self):
-        # DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
         cast_dtype_template = """({dtype_name} {precise})"""
         col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
+        from_template = """{schema_name}.{table_name}"""
 
         distinct = ''
         col_mapping = ''
         with_clause = ''
-        from_clause = self.src_lyr_table.table.table_name
+        from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name, table_name=self.src_lyr_table.table.table_name)
         join_clause = ''
         where_clause = ''
         group_by_clause = ''
@@ -477,19 +486,11 @@ class Pipeline(MyID):
 
             cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
             col_mapping = col_mapping + col_mapping_template.format(comma=comma
-                                                                    , src_col_name=src_col
+                                                                    , col_name=src_col
                                                                     , cast_dtype=cast_dtype
                                                                     , alias=alias
                                                                     )
-        query = f""" {with_clause} 
-                    select {distinct} 
-                    {col_mapping} 
-                    from {from_clause} 
-                        {join_clause} 
-                    {where_clause}
-                    {group_by_clause}
-                    {having_clause} 
-                    """
+        query = f""" {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
         return query
 
 
