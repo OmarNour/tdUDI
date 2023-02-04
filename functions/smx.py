@@ -233,6 +233,7 @@ class SMX:
                        , data_type_id=data_type.id, dt_precision=precision
                        , is_start_date=is_start_date, is_end_date=is_end_date)
 
+        @log_error_decorator(self.log_error_path)
         def extract_bkey_tables(row):
             table = Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
             LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
@@ -345,22 +346,22 @@ class SMX:
 
     @time_elapsed_decorator
     def generate_scripts(self):
-        layer: Layer
-        for layer in Layer.get_instance():
+        def layer_scripts(layer: Layer):
+            def layer_table_scripts(layer_table: LayerTable):
+                ddl = layer_table.table.ddl
+                if layer_table.table.table_kind == 'T':
+                    tables_ddl.append(ddl)
+                elif layer_table.table.table_kind == 'V':
+                    views_ddl.append(ddl)
+
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
             create_folder(layer_path)
 
             tables_ddl = []
             views_ddl = []
-
-            layer_table: LayerTable
-            for layer_table in layer.layer_tables:
-                ddl = layer_table.table.ddl
-                if layer_table.table.table_kind == 'T':
-                    tables_ddl.append(ddl)
-                elif layer_table.table.table_kind == 'V':
-                    views_ddl.append(ddl)
+            threads(layer_table_scripts, layer.layer_tables)
+            # for layer_table in layer.layer_tables:
 
             tables_ddl = list(filter(None, tables_ddl))
             views_ddl = list(filter(None, views_ddl))
@@ -377,4 +378,5 @@ class SMX:
             views_file.write(views_ddl)
             views_file.close()
 
+        threads(layer_scripts, Layer.get_instance())
         open_folder(self.current_scripts_path)

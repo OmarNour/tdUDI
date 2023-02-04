@@ -11,6 +11,7 @@ from pandasql import sqldf
 import configparser
 import concurrent.futures
 import time
+import multiprocessing
 from collections import namedtuple
 
 
@@ -146,12 +147,12 @@ def get_file_name(file):
     return os.path.splitext(os.path.basename(file))[0]
 
 
-def processes(target_func, iterator, max_workers=None):
+def processes(target_func, iterator, max_workers=multiprocessing.cpu_count()):
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         return executor.map(target_func, iterator)
 
 
-def threads(target_func, iterator, max_workers=None):
+def threads(target_func, iterator, max_workers=multiprocessing.cpu_count()):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         return executor.map(target_func, iterator)
 
