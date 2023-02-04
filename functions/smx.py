@@ -202,11 +202,14 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'natural_key'
             , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
+
+        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory'
+            , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)˚
+
         # self.extract_bkeys()
         # self.extract_bmaps()
         # self.extract_bmap_values()
-        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory'
-            , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
+
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
