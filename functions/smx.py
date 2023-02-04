@@ -133,7 +133,7 @@ class SMX:
                 Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
         @log_error_decorator(self.log_error_path)
-        def extract_stg_views(row):
+        def extract_src_views(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
             assert ds != {}, ds_error_msg
@@ -150,7 +150,7 @@ class SMX:
             Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
 
         @log_error_decorator(self.log_error_path)
-        def extract_stg_view_columns(row):
+        def extract_src_view_columns(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
             if row.natural_key == '':
@@ -193,18 +193,22 @@ class SMX:
                        , is_start_date=is_start_date, is_end_date=is_end_date)
 
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
+
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['stg_tables'][['table_name', 'column_name', 'data_type'
             , 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key'
-            , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
-
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory'
             , 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
+
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_src_views, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key'
+            , 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
+
+
 
         # self.extract_bkeys()
         # self.extract_bmaps()
