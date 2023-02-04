@@ -258,17 +258,22 @@ class Table(MyID):
             table_name = self.table_name
             pi_cols_lst = []
             col: Column
-            for idx, col in enumerate(self.columns, start=1):
-                comma = ',' if idx > 1 else ''
+            for idx, col in enumerate(self.columns):
+                comma = ',' if idx > 0 else ' '
                 col_name = col.column_name
                 data_type = col.data_type.dt_name
                 precision = "(" + str(col.dt_precision) + ")" if col.dt_precision else ''
-                latin_unicode = "unicode" if col.unicode == 1 else "latin"
-                not_case_sensitive = "not" if col.case_sensitive == 0 else ''
+                if 'CHAR' in data_type:
+                    latin_unicode = "CHARACTER SET " + ("unicode" if col.unicode == 1 else "latin")
+                    case_sensitive = ("not " if col.case_sensitive == 0 else '') + "CASESPECIFIC"
+                else:
+                    latin_unicode = ''
+                    case_sensitive = ''
+
                 not_null = 'not null' if col.mandatory == 1 else ''
                 col_dtype += COL_DTYPE_TEMPLATE.format(col_name=col_name
                                                        , data_type=data_type, precision=precision, latin_unicode=latin_unicode
-                                                       , not_case_sensitive=not_case_sensitive
+                                                       , case_sensitive=case_sensitive
                                                        , not_null=not_null
                                                        , comma=comma)
                 pi_cols_lst.append(col.column_name) if col.is_pk else None
@@ -476,7 +481,7 @@ class Pipeline(MyID):
             cast_dtype = ''
             precise = ''
             alias = ''
-            comma = '\n,' if index > 0 else ''
+            comma = '\n,' if index > 0 else ' '
             if col_m.tgt_col.id != col_m.src_col.id:
                 alias = col_m.tgt_col.column_name
                 dtype_name = col_m.tgt_col.data_type.dt_name
@@ -484,11 +489,11 @@ class Pipeline(MyID):
                     precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
                 cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
 
-            col_mapping = col_mapping + col_mapping_template.format(comma=comma
-                                                                    , col_name=src_col
-                                                                    , cast_dtype=cast_dtype
-                                                                    , alias=alias
-                                                                    )
+            col_mapping += col_mapping_template.format(comma=comma
+                                                       , col_name=src_col
+                                                       , cast_dtype=cast_dtype
+                                                       , alias=alias
+                                                       )
         query = f""" {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
         return query
 

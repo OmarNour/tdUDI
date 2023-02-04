@@ -27,7 +27,7 @@ cast_dtype_template = """({dtype_name} {precise})"""
 col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
 from_template = """{schema_name}.{table_name}"""
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
-COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} CHARACTER SET {latin_unicode} {not_case_sensitive} CASESPECIFIC {not_null}\n """
+COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} {latin_unicode} {case_sensitive} {not_null}\n """
 DDL_TABLE_TEMPLATE = """ 
 CREATE {set_multiset} TABLE {schema_name}.{table_name}
     ,FALLBACK
