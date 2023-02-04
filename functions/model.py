@@ -233,7 +233,7 @@ class Table(MyID):
     @property
     def columns(self) -> []:
         col: Column
-        return [col for col in Column.get_instance() if col.table_id == self.id]
+        return [col for col in Column.get_instance() if col.table.id == self.id]
 
     @property
     def table_kind(self):
@@ -277,7 +277,7 @@ class Table(MyID):
                                                   , table_name=table_name
                                                   , col_dtype=col_dtype
                                                   , pi_index=pi_index
-                                                  , si_index='')
+                                                  , si_index='').strip()+';\n'
 
         return self._ddl
 
