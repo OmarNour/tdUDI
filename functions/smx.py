@@ -36,6 +36,9 @@ class SMX:
         DataSetType(set_type='BKEY')
         DataSetType(set_type='BMAP')
 
+        self.bkey_set_type = DataSetType.get_instance(_key='bkey')
+        self.bmap_set_type = DataSetType.get_instance(_key='BMAP')
+
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')
         self.bkey_layer = Layer.get_instance(_key='BKEY')
@@ -253,6 +256,31 @@ class SMX:
                    , data_type_id=int_data_type.id, dt_precision=None
                    , is_start_date=0, is_end_date=0)
 
+        @log_error_decorator(self.log_error_path)
+        def extract_bkey_datasets(row):
+            table = Table.get_instance(_key=(self.utlfw_t_schema.id, row.physical_table))
+            DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_name=row.key_set_name, table_id=table.id)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_bkey_domains(row):
+            data_set = DataSet.get_instance(_key=(self.bkey_set_type.id, row.key_set_id))
+            Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_bmap_tables(row):
+            Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
+
+        @log_error_decorator(self.log_error_path)
+        def extract_bmap_datasets(row):
+            table = Table.get_instance(_key=(self.utlfw_t_schema.id, row.physical_table))
+            DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_name=row.code_set_name, table_id=table.id)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_bmap_domains(row):
+            data_set = DataSet.get_instance(_key=(self.bmap_set_type.id, row.code_set_id))
+            Domain(data_set_id=data_set.id, domain_code=row.code_domain_id, domain_name=row.code_domain_name)
+
+
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
 
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -262,6 +290,12 @@ class SMX:
         self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
 
         self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
+        self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
+        self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
+
+        self.data['bmap'][['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
+        self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
+        self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
 
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
@@ -272,8 +306,6 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
-        # self.extract_bkeys()
-        # self.extract_bmaps()
         # self.extract_bmap_values()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
@@ -291,26 +323,6 @@ class SMX:
         print('ColumnMapping count:', len(ColumnMapping.get_instance()))
 
     @time_elapsed_decorator
-    def extract_bmaps(self):
-        def bmap_tables(row):
-            Table(schema_id=utlfw_schema.id, table_name=row.physical_table, table_kind='T')
-
-        def bmap(row):
-            table = Table.get_instance(_key=(utlfw_schema.id, row.physical_table))
-            DataSet(set_type_id=set_type.id, set_code=row.code_set_id, set_name=row.code_set_name, table_id=table.id)
-
-        def domain(row):
-            data_set = DataSet.get_instance(_key=(set_type.id, row.code_set_id))
-            Domain(data_set_id=data_set.id, domain_code=row.code_domain_id, domain_name=row.code_domain_name)
-
-        utlfw_schema = Schema.get_instance(_key='gdev1t_utlfw')
-        self.data['bmap'][['physical_table']].drop_duplicates().apply(bmap_tables, axis=1)
-
-        set_type = DataSetType.get_instance(_key='bmap')
-        self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(bmap, axis=1)
-        self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(domain, axis=1)
-
-    @time_elapsed_decorator
     def extract_bmap_values(self):
         def bmap_values(row):
             data_set_lst = [ds for ds in bmaps_lst if ds.set_name == row.code_set_name]
@@ -323,26 +335,6 @@ class SMX:
         bmaps_lst = DataSetType.get_instance(_key='BMAP').data_sets
 
         self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(bmap_values, axis=1)
-
-    @time_elapsed_decorator
-    def extract_bkeys(self):
-        def bkey_tables(row):
-            Table(schema_id=utlfw_schema.id, table_name=row.physical_table, table_kind='T')
-
-        def bkey(row):
-            table = Table.get_instance(_key=(utlfw_schema.id, row.physical_table))
-            DataSet(set_type_id=set_type.id, set_code=row.key_set_id, set_name=row.key_set_name, table_id=table.id)
-
-        def domain(row):
-            data_set = DataSet.get_instance(_key=(set_type.id, row.key_set_id))
-            Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
-
-        utlfw_schema = Schema.get_instance(_key='gdev1t_utlfw')
-        self.data['bkey'][['physical_table']].drop_duplicates().apply(bkey_tables, axis=1)
-
-        set_type = DataSetType.get_instance(_key='bkey')
-        self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(bkey, axis=1)
-        self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(domain, axis=1)
 
     @time_elapsed_decorator
     def generate_scripts(self):
