@@ -282,7 +282,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_values(row):
-            data_set_lst = [ds for ds in bmaps_lst if ds.set_name == row.code_set_name]
+            data_set_lst = [ds for ds in bmaps_data_sets if ds.set_name == row.code_set_name]
             if len(data_set_lst) > 0:
                 data_set = data_set_lst[0]
                 domain = Domain.get_instance(_key=(data_set.id, row.code_domain_id))
@@ -303,8 +303,8 @@ class SMX:
 
         self.data['bmap'][['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
         self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
+        bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
         self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
-        bmaps_lst = DataSetType.get_instance(_key='BMAP').data_sets
         self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
 
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
