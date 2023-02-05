@@ -280,6 +280,14 @@ class SMX:
             data_set = DataSet.get_instance(_key=(self.bmap_set_type.id, row.code_set_id))
             Domain(data_set_id=data_set.id, domain_code=row.code_domain_id, domain_name=row.code_domain_name)
 
+        @log_error_decorator(self.log_error_path)
+        def extract_bmap_values(row):
+            data_set_lst = [ds for ds in bmaps_lst if ds.set_name == row.code_set_name]
+            if len(data_set_lst) > 0:
+                data_set = data_set_lst[0]
+                domain = Domain.get_instance(_key=(data_set.id, row.code_domain_id))
+                if domain:
+                    DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
 
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
 
@@ -296,6 +304,8 @@ class SMX:
         self.data['bmap'][['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
         self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
         self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
+        bmaps_lst = DataSetType.get_instance(_key='BMAP').data_sets
+        self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
 
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
@@ -305,8 +315,6 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
-
-        # self.extract_bmap_values()
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
@@ -321,20 +329,6 @@ class SMX:
         print('Column count:', len(Column.get_instance()))
         print('Pipeline count:', len(Pipeline.get_instance()))
         print('ColumnMapping count:', len(ColumnMapping.get_instance()))
-
-    @time_elapsed_decorator
-    def extract_bmap_values(self):
-        def bmap_values(row):
-            data_set_lst = [ds for ds in bmaps_lst if ds.set_name == row.code_set_name]
-            if len(data_set_lst) > 0:
-                data_set = data_set_lst[0]
-                domain = Domain.get_instance(_key=(data_set.id, row.code_domain_id))
-                if domain:
-                    DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
-
-        bmaps_lst = DataSetType.get_instance(_key='BMAP').data_sets
-
-        self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(bmap_values, axis=1)
 
     @time_elapsed_decorator
     def generate_scripts(self):
