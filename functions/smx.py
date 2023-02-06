@@ -30,8 +30,8 @@ class SMX:
 
         for layer_key, layer_value in self.LAYERS.items():
             Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
-            Schema(schema_name=layer_value.t_db)
-            Schema(schema_name=layer_value.v_db)
+            Schema(schema_name=layer_value.t_db, _override=1)
+            Schema(schema_name=layer_value.v_db, _override=1)
 
         DataSetType(set_type='BKEY')
         DataSetType(set_type='BMAP')
@@ -91,7 +91,7 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_data_types(row):
             data_type_lst = row.data_type.split(sep='(')
-            DataType(dt_name=data_type_lst[0])
+            DataType(dt_name=data_type_lst[0], _override=1)
 
         @log_error_decorator(self.log_error_path)
         def extract_stg_tables(row):

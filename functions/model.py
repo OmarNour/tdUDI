@@ -150,12 +150,15 @@ class MyID(metaclass=Meta):
         instead of creating new ones. It also allows for the option to override an existing instance with a new one.
         """
         key = kwargs.get('_key', '_')  # The key to identify the instance
-        override = kwargs.get('_override', 1)  # Flag to indicate whether to override an existing instance or not
+        override = kwargs.get('_override', 0)  # Flag to indicate whether to override an existing instance or not
         instance = cls.get_instance(_key=key)  # Check if an instance with the same key already exists
-        if instance and override == 1:
-            cls.__del_instance(key)  # delete the existing instance if override is set to 1
+        if instance != {}:
+            if override == 1:
+                cls.__del_instance(key)  # delete the existing instance if override is set to 1
+            else:
+                raise ValueError(f'{key} Already Exists!')
 
-        if instance is None or override == 1:
+        if instance == {} or override == 1:
             # create a new instance of the class
             instance = super().__new__(cls)
             cls.__set_instance(key, instance)
@@ -355,8 +358,6 @@ class Domain(MyID):
     @classmethod
     def get_by_name(cls, data_set_id, domain_name):
         for x in cls.get_instance():
-            if x.domain_name == 'PRTY_STS_RSN_CD_1':
-                print("get_by_name |", x._data_set_id , data_set_id , x.domain_name , domain_name)
             if x._data_set_id == data_set_id and x.domain_name == domain_name:
                 return x
         return {}
@@ -542,3 +543,8 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         return self._src_col_trx
+
+
+if __name__ == '__main__':
+    DataSetType(set_type='xxxx')
+    DataSetType(set_type='xxxx')
