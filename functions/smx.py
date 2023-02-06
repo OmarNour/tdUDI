@@ -114,6 +114,10 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_stg_table_columns(row):
+            data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
+            bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined"
+            bmap_dataset_error_msg = f"code set '{row.code_set_name}', is not defined"
+
             src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
             stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
             srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
@@ -122,7 +126,6 @@ class SMX:
             _data_type = data_type_lst[0]
             data_type = DataType.get_instance(_key=_data_type)
 
-            data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
             assert data_type != {}, data_type_error_msg
 
             pk = 1 if row.pk.upper() == 'Y' else 0
@@ -130,14 +133,43 @@ class SMX:
             precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
 
             if row.natural_key == '':
+                domain_id = None
                 if src_table:
                     Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
                 if stg_table:
                     Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+            else:
+                domain = {}
+                domain_error_msg = f"Domain not found for {row.table_name}.{row.column_name} column, please check 'Stg tables' sheet!"
+                if row.key_set_name != '' and row.key_domain_name != '':
+
+                    data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
+                    assert data_set != {}, bkey_dataset_error_msg
+
+                    domain = Domain.get_by_name(data_set.id, row.key_domain_name)
+                    domain_error_msg = f"Bkey Domain not found for {row.table_name}.{row.column_name} column, " \
+                                       f"\n key set name:'{row.key_set_name}'" \
+                                       f"\n key domain name: '{row.key_domain_name}'" \
+                                       f"\n please check 'Stg tables' sheet!"
+
+                elif row.code_set_name != '' and row.code_domain_name != '':
+
+                    data_set = DataSet.get_by_name(self.bmap_set_type.id, row.code_set_name)
+                    assert data_set != {}, bmap_dataset_error_msg
+
+                    domain = Domain.get_by_name(data_set.id, row.code_domain_name)
+                    domain_error_msg = f"Bmap Domain not found for {row.table_name}.{row.column_name} column, " \
+                                       f"\n code set name:'{row.code_set_name}'" \
+                                       f"\n code domain name: '{row.code_domain_name}'" \
+                                       f"\n please check 'Stg tables' sheet!"
+
+                assert domain != {}, domain_error_msg
+                domain_id = domain.id
 
             if srci_table:
-                Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+                Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
+                       , data_type_id=data_type.id, dt_precision=precision, domain_id=domain_id)
 
         @log_error_decorator(self.log_error_path)
         def extract_src_views(row):
@@ -309,15 +341,33 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_srci_view_columns(row):
             pass
+            # ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            # col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+            #
+            # ds = DataSource.get_instance(_key=row.schema)
+            # assert ds != {}, ds_error_msg
+            #
+            # # if row.natural_key == '':
+            # stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            # stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
+            #
+            # pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id))
+            # stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+            #
+            # assert stg_col != {}, col_error_msg
+            #
+            # ColumnMapping(pipeline_id=pipeline.id
+            #               , col_seq=0
+            #               , src_col_id=stg_col.id
+            #               , tgt_col_id=stg_col.id
+            #               , src_col_trx=None
+            #               )
 
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
-
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
 
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
-        self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
-
+        ########################## Start bkey & bmaps #####################
         self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
@@ -327,6 +377,11 @@ class SMX:
         bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
         self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
         self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
+        ########################## End bkey & bmaps #####################
+
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
+        self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
+                                 'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
 
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)

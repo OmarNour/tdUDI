@@ -333,6 +333,13 @@ class DataSet(MyID):
     def domains(self) -> []:
         return [domain for domain in Domain.get_instance() if domain.data_set.id == self.id]
 
+    @classmethod
+    def get_by_name(cls, set_type_id, set_name):
+        for x in cls.get_instance():
+            if x._set_type_id == set_type_id and x.set_name == set_name:
+                return x
+        return {}
+
 
 class Domain(MyID):
     def __init__(self, data_set_id, domain_code, domain_name, *args, **kwargs):
@@ -344,6 +351,15 @@ class Domain(MyID):
     @property
     def data_set(self) -> DataSet:
         return DataSet.get_instance(_id=self._data_set_id)
+
+    @classmethod
+    def get_by_name(cls, data_set_id, domain_name):
+        for x in cls.get_instance():
+            if x.domain_name == 'PRTY_STS_RSN_CD_1':
+                print("get_by_name |", x._data_set_id , data_set_id , x.domain_name , domain_name)
+            if x._data_set_id == data_set_id and x.domain_name == domain_name:
+                return x
+        return {}
 
 
 class DomainValue(MyID):
