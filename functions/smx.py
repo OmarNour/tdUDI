@@ -289,6 +289,27 @@ class SMX:
                 if domain:
                     DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
 
+        @log_error_decorator(self.log_error_path)
+        def extract_srci_views(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            ds = DataSource.get_instance(_key=row.schema)
+            assert ds != {}, ds_error_msg
+
+            srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+            LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
+
+            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+            srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+            srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
+
+            Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, table_id=srci_v.id)
+
+        @log_error_decorator(self.log_error_path)
+        def extract_srci_view_columns(row):
+            pass
+
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
 
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -315,6 +336,9 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
+
+        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))
