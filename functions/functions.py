@@ -138,7 +138,8 @@ def log_error_decorator(error_log_path):
                 function(*args, **kwargs)
             except:
                 print(traceback.format_exc()) if error_log_path is None else None
-                TemplateLogError(error_log_path, '', file_name, traceback.format_exc()).log_error()
+                error_detailed = f"""args: {args}\nkwargs: {kwargs}\nError: {traceback.format_exc()}"""
+                TemplateLogError(error_log_path, '', file_name, error_detailed).log_error()
         return wrapper
     return decorator
 
