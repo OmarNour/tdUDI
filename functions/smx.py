@@ -71,7 +71,7 @@ class SMX:
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
         if sheet_name in self.SHEETS:
             df = self.xls.parse(sheet).replace(np.nan, value='', regex=True)
-            df = df.applymap(lambda x: x.strip() if type(x) is str else int(x) if type(x) is float else x)
+            df = df.applymap(lambda x: x.replace('\ufeff', '').strip() if type(x) is str else int(x) if type(x) is float else x)
             df.drop_duplicates()
             df.columns = [c.replace('  ', ' ').replace(' ', '_').lower() for c in df]
             self.data[sheet_name] = df
@@ -79,6 +79,25 @@ class SMX:
     @property
     def sheet_names(self):
         return self.data.keys()
+
+    def clean_transformations(self, trx: str, extra: [] = None) -> str:
+        sep = ''
+        if extra is not None:
+            words = self.reserved_words['TERADATA'] + extra
+        else:
+            words = self.reserved_words['TERADATA']
+
+        sorted_words = sorted(words, key=len, reverse=True)
+        for word in sorted_words:
+            trx = trx.lower().replace(word.lower(), sep)
+
+        for spc in SPECIAL_CHARACTERS:
+            trx = trx.replace(spc, sep)
+
+        for no in NUMBERS:
+            trx = trx.replace(str(no), sep)
+
+        return trx.strip()
 
     @time_elapsed_decorator
     @log_error_decorator(None)
@@ -340,33 +359,42 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_srci_view_columns(row):
-            pass
-            # ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-            # col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
-            #
-            # ds = DataSource.get_instance(_key=row.schema)
-            # assert ds != {}, ds_error_msg
-            #
-            # # if row.natural_key == '':
-            # stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-            # stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
-            #
-            # pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id))
-            # stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
-            #
-            # assert stg_col != {}, col_error_msg
-            #
-            # ColumnMapping(pipeline_id=pipeline.id
-            #               , col_seq=0
-            #               , src_col_id=stg_col.id
-            #               , tgt_col_id=stg_col.id
-            #               , src_col_trx=None
-            #               )
+
+            col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
+
+            stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
+
+            srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+            srci_lyr_table = LayerTable.get_instance(_key=(self.srci_layer.id, srci_table.id))
+
+            pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
+
+            stg_t_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+            srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
+
+            if row.natural_key != '':
+                weird_txt = self.clean_transformations(row.natural_key, extra=[col.column_name for col in stg_table.columns])
+                trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
+                                f'\n-> {row.natural_key} ' \
+                                f'\n-xx->{weird_txt}<-xx-'
+
+                assert weird_txt == '' or weird_txt == 'null', trx_error_msg
+
+            assert stg_t_col != {}, col_error_msg
+            assert srci_t_col != {}, col_error_msg
+
+            ColumnMapping(pipeline_id=pipeline.id
+                          , col_seq=0
+                          , src_col_id=stg_t_col.id
+                          , tgt_col_id=srci_t_col.id
+                          , src_col_trx=None
+                          )
 
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
-
+        self.reserved_words['TERADATA'] = list((self.reserved_words['TERADATA'] + [dt.dt_name for dt in DataType.get_instance()]))
         ########################## Start bkey & bmaps #####################
         self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
@@ -393,7 +421,7 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))

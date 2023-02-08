@@ -14,10 +14,9 @@ import time
 import multiprocessing
 from collections import namedtuple
 
-
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
-
+NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 SPECIAL_CHARACTERS = [
     '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
@@ -140,7 +139,9 @@ def log_error_decorator(error_log_path):
                 print(traceback.format_exc()) if error_log_path is None else None
                 error_detailed = f"""\n\nFunction Name: {function.__name__}\n\nargs: {args}\n\nkwargs: {kwargs}\n\nError: {traceback.format_exc()}"""
                 TemplateLogError(error_log_path, '', file_name, error_detailed).log_error()
+
         return wrapper
+
     return decorator
 
 
