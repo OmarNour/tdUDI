@@ -368,28 +368,31 @@ class SMX:
             srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
             srci_lyr_table = LayerTable.get_instance(_key=(self.srci_layer.id, srci_table.id))
 
-            pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
-
-            stg_t_col = Column.get_instance(_key=(stg_table.id, row.column_name))
             srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
 
             if row.natural_key != '':
-                weird_txt = self.clean_trx(row.natural_key, extra=[col.column_name for col in stg_table.columns])
-                trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
-                                f'\n-> {row.natural_key} ' \
-                                f'\n-xx->{weird_txt}<-xx-'
+                stg_t_cols = [col for col in stg_table.columns if col.column_name in row.natural_key]
+            else:
+                stg_t_cols = [Column.get_instance(_key=(stg_table.id, row.column_name))]
 
-                assert weird_txt == '' or weird_txt == 'null', trx_error_msg
+                # weird_txt = self.clean_trx(row.natural_key, extra=[col.column_name for col in stg_table.columns])
+                # trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
+                #                 f'\n-> {row.natural_key} ' \
+                #                 f'\n-xx->{weird_txt}<-xx-'
+                #
+                # assert weird_txt == '' or weird_txt == 'null', trx_error_msg
 
-            assert stg_t_col != {}, col_error_msg
+            assert stg_t_cols != [], col_error_msg
             assert srci_t_col != {}, col_error_msg
 
-            ColumnMapping(pipeline_id=pipeline.id
-                          , col_seq=0
-                          , src_col_id=stg_t_col.id
-                          , tgt_col_id=srci_t_col.id
-                          , src_col_trx=None
-                          )
+            pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
+            for col_seq, stg_t_col in enumerate(stg_t_cols):
+                ColumnMapping(pipeline_id=pipeline.id
+                              , col_seq=col_seq
+                              , src_col_id=stg_t_col.id
+                              , tgt_col_id=srci_t_col.id
+                              , src_col_trx=None
+                              )
 
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
