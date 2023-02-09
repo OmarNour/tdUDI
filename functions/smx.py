@@ -80,7 +80,7 @@ class SMX:
     def sheet_names(self):
         return self.data.keys()
 
-    def clean_transformations(self, trx: str, extra: [] = None) -> str:
+    def clean_trx(self, trx: str, extra: [] = None) -> str:
         sep = ''
         if extra is not None:
             words = self.reserved_words['TERADATA'] + extra
@@ -91,11 +91,11 @@ class SMX:
         for word in sorted_words:
             trx = trx.lower().replace(word.lower(), sep)
 
-        for spc in SPECIAL_CHARACTERS:
-            trx = trx.replace(spc, sep)
+        for spc in SPECIAL_CHARACTERS + NUMBERS:
+            trx = trx.replace(str(spc), sep)
 
-        for no in NUMBERS:
-            trx = trx.replace(str(no), sep)
+        # for no in NUMBERS:
+        #     trx = trx.replace(str(no), sep)
 
         return trx.strip()
 
@@ -374,7 +374,7 @@ class SMX:
             srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
 
             if row.natural_key != '':
-                weird_txt = self.clean_transformations(row.natural_key, extra=[col.column_name for col in stg_table.columns])
+                weird_txt = self.clean_trx(row.natural_key, extra=[col.column_name for col in stg_table.columns])
                 trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
                                 f'\n-> {row.natural_key} ' \
                                 f'\n-xx->{weird_txt}<-xx-'
