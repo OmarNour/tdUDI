@@ -398,7 +398,7 @@ class Column(MyID):
         self.is_batch_id = is_batch_id
         self.is_row_identity = is_row_identity
         self.scd_type = scd_type
-        self.domain_id = domain_id
+        self._domain_id = domain_id
         self._data_type_id = data_type_id
         self.dt_precision = dt_precision
         self.active = active
@@ -412,6 +412,10 @@ class Column(MyID):
     @property
     def table(self) -> Table:
         return Table.get_instance(_id=self._table_id)
+
+    @property
+    def domain(self) -> Domain:
+        return Domain.get_instance(_id=self._domain_id)
 
 
 class Layer(MyID):
