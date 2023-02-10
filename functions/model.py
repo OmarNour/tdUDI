@@ -341,7 +341,6 @@ class DataSet(MyID):
         for x in cls.get_instance():
             if x._set_type_id == set_type_id and x.set_name == set_name:
                 return x
-        return {}
 
 
 class Domain(MyID):

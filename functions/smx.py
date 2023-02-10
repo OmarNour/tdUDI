@@ -116,7 +116,7 @@ class SMX:
         def extract_stg_tables(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
-            assert ds != {}, ds_error_msg
+            assert ds, ds_error_msg
 
             src_table = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
             stg_table = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
@@ -145,7 +145,7 @@ class SMX:
             _data_type = data_type_lst[0]
             data_type = DataType.get_instance(_key=_data_type)
 
-            assert data_type != {}, data_type_error_msg
+            assert data_type, data_type_error_msg
 
             pk = 1 if row.pk.upper() == 'Y' else 0
             mandatory = 1 if row.pk.upper() == 'Y' else 0
@@ -159,12 +159,12 @@ class SMX:
                 if stg_table:
                     Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
             else:
-                domain = {}
+                domain = None
                 domain_error_msg = f"Domain not found for {row.table_name}.{row.column_name} column, please check 'Stg tables' sheet!"
                 if row.key_set_name != '' and row.key_domain_name != '':
 
                     data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
-                    assert data_set != {}, bkey_dataset_error_msg
+                    assert data_set, bkey_dataset_error_msg
 
                     domain = Domain.get_by_name(data_set.id, row.key_domain_name)
                     domain_error_msg = f"Bkey Domain not found for {row.table_name}.{row.column_name} column, " \
@@ -175,7 +175,7 @@ class SMX:
                 elif row.code_set_name != '' and row.code_domain_name != '':
 
                     data_set = DataSet.get_by_name(self.bmap_set_type.id, row.code_set_name)
-                    assert data_set != {}, bmap_dataset_error_msg
+                    assert data_set, bmap_dataset_error_msg
 
                     domain = Domain.get_by_name(data_set.id, row.code_domain_name)
                     domain_error_msg = f"Bmap Domain not found for {row.table_name}.{row.column_name} column, " \
@@ -183,7 +183,7 @@ class SMX:
                                        f"\n code domain name: '{row.code_domain_name}'" \
                                        f"\n please check 'Stg tables' sheet!"
 
-                assert domain != {}, domain_error_msg
+                assert domain, domain_error_msg
                 domain_id = domain.id
 
             if srci_table:
@@ -194,7 +194,7 @@ class SMX:
         def extract_src_views(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
-            assert ds != {}, ds_error_msg
+            assert ds, ds_error_msg
 
             src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
@@ -211,7 +211,7 @@ class SMX:
         def extract_stg_views(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
-            assert ds != {}, ds_error_msg
+            assert ds, ds_error_msg
 
             stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
@@ -227,7 +227,7 @@ class SMX:
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
             if row.natural_key == '':
                 ds = DataSource.get_instance(_key=row.schema)
-                assert ds != {}, ds_error_msg
+                assert ds, ds_error_msg
 
                 src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
                 stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
@@ -239,7 +239,8 @@ class SMX:
                 src_col = Column.get_instance(_key=(src_table.id, row.column_name))
                 stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
-                assert src_col != {}, col_error_msg
+                assert src_col, col_error_msg
+                assert stg_col, col_error_msg
 
                 ColumnMapping(pipeline_id=pipeline.id
                               , col_seq=0
@@ -254,7 +255,7 @@ class SMX:
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
             if row.natural_key == '':
                 ds = DataSource.get_instance(_key=row.schema)
-                assert ds != {}, ds_error_msg
+                assert ds, ds_error_msg
 
                 stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                 stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
@@ -262,7 +263,7 @@ class SMX:
                 pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id))
                 stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
-                assert stg_col != {}, col_error_msg
+                assert stg_col, col_error_msg
 
                 ColumnMapping(pipeline_id=pipeline.id
                               , col_seq=0
@@ -344,7 +345,7 @@ class SMX:
         def extract_srci_views(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
-            assert ds != {}, ds_error_msg
+            assert ds, ds_error_msg
 
             srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
@@ -382,8 +383,8 @@ class SMX:
                 #
                 # assert weird_txt == '' or weird_txt == 'null', trx_error_msg
 
-            assert stg_t_cols != [], col_error_msg
-            assert srci_t_col != {}, col_error_msg
+            assert stg_t_cols, col_error_msg
+            assert srci_t_col, col_error_msg
 
             pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
             for col_seq, stg_t_col in enumerate(stg_t_cols):
