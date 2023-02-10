@@ -483,8 +483,19 @@ class Pipeline(MyID):
     def column_mapping(self) -> []:
         return [cm for cm in ColumnMapping.get_instance() if cm.pipeline.id == self.id]
 
+    def _tgt_col_dic(self) -> {}:
+        col_m: ColumnMapping
+        _dic = {}
+        for col_m in self.column_mapping:
+            if col_m.tgt_col not in _dic.keys():
+                _dic[col_m.tgt_col] = []
+            _dic[col_m.tgt_col].append(col_m.src_col)
+        return _dic
+
     @property
     def query(self):
+        # if self.tgt_lyr_table.table.table_name == 'cso_address':
+        #     self.tgt_col_dic()
 
         distinct = ''
         col_mapping = ''
@@ -519,7 +530,8 @@ class Pipeline(MyID):
 
 
 class ColumnMapping(MyID):
-    def __init__(self, pipeline_id, tgt_col_id, col_seq: int = 0, src_col_id=None, src_col_trx=None, *args, **kwargs):
+    def __init__(self, pipeline_id, tgt_col_id, src_col_id, col_seq: int = 0, src_col_trx=None, *args, **kwargs):
+        assert tgt_col_id is not None and src_col_id is not None and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
         super().__init__(*args, **kwargs)
         self._pipeline_id = pipeline_id
         self.col_seq = col_seq
