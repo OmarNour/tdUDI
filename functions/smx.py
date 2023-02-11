@@ -444,6 +444,7 @@ class SMX:
     @time_elapsed_decorator
     def generate_scripts(self):
         def layer_scripts(layer: Layer):
+            @log_error_decorator(None)
             def layer_table_scripts(layer_table: LayerTable):
                 ddl = layer_table.table.ddl
                 if layer_table.table.table_kind == 'T':

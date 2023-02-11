@@ -281,7 +281,7 @@ class Table(MyID):
                                                        , comma=comma)
                 pi_cols_lst.append(col.column_name) if col.is_pk else None
 
-            pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
+            pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(_list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
             self._ddl = DDL_TABLE_TEMPLATE.format(set_multiset=set_multiset
                                                   , schema_name=schema_name
                                                   , table_name=table_name
@@ -483,20 +483,17 @@ class Pipeline(MyID):
     def column_mapping(self) -> []:
         return [cm for cm in ColumnMapping.get_instance() if cm.pipeline.id == self.id]
 
-    def _tgt_col_dic(self) -> {}:
+    def _tgt_col_dic(self) -> dict:
         col_m: ColumnMapping
         _dic = {}
         for col_m in self.column_mapping:
             if col_m.tgt_col not in _dic.keys():
                 _dic[col_m.tgt_col] = []
-            _dic[col_m.tgt_col].append(col_m.src_col)
+            _dic[col_m.tgt_col].append('(' + (col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name) + ')')
         return _dic
 
     @property
     def query(self):
-        # if self.tgt_lyr_table.table.table_name == 'cso_address':
-        #     self.tgt_col_dic()
-
         distinct = ''
         col_mapping = ''
         with_clause = ''
@@ -506,25 +503,47 @@ class Pipeline(MyID):
         group_by_clause = ''
         having_clause = ''
 
-        col_m: ColumnMapping
-        for index, col_m in enumerate(self.column_mapping):
-            src_col = col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name
-            cast_dtype = ''
-            precise = ''
-            alias = ''
+        #############
+        tgt_col: Column
+        src_cols: list
+        src_col: Column
+        for index, dic_items in enumerate(self._tgt_col_dic().items()):
+            tgt_col, _src_cols = dic_items
+            src_cols = list_to_string(_src_cols, '||')
             comma = '\n,' if index > 0 else ' '
-            if col_m.tgt_col.id != col_m.src_col.id:
-                alias = col_m.tgt_col.column_name
-                dtype_name = col_m.tgt_col.data_type.dt_name
-                if col_m.tgt_col.dt_precision:
-                    precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
-                cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
+            precise = ''
+            alias = tgt_col.column_name
+            dtype_name = tgt_col.data_type.dt_name
+            if tgt_col.dt_precision:
+                precise = '(' + str(tgt_col.dt_precision) + ')'
+            cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
 
             col_mapping += col_mapping_template.format(comma=comma
-                                                       , col_name=src_col
+                                                       , col_name=src_cols
                                                        , cast_dtype=cast_dtype
                                                        , alias=alias
                                                        )
+        #############
+        # col_m: ColumnMapping
+        # for index, col_m in enumerate(self.column_mapping):
+        #     src_col = col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name
+        #     cast_dtype = ''
+        #     precise = ''
+        #     alias = ''
+        #     comma = '\n,' if index > 0 else ' '
+        #     if col_m.tgt_col.id != col_m.src_col.id:
+        #         alias = col_m.tgt_col.column_name
+        #         dtype_name = col_m.tgt_col.data_type.dt_name
+        #         if col_m.tgt_col.dt_precision:
+        #             precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
+        #         cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
+        #
+        #     col_mapping += col_mapping_template.format(comma=comma
+        #                                                , col_name=src_col
+        #                                                , cast_dtype=cast_dtype
+        #                                                , alias=alias
+        #                                                )
+        #############
         query = f""" {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
         return query
 

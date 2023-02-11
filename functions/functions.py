@@ -82,13 +82,13 @@ def remove_folder(path):
         pass
 
 
-def list_to_string(list, separator=None, quotes=0):
+def list_to_string(_list, separator=None, quotes=0):
     if separator is None:
         prefix = ""
     else:
         prefix = separator
 
-    to_string = prefix.join((single_quotes(str(x)) if quotes == 1 else str(x)) if x is not None else "" for x in list)
+    to_string = prefix.join((single_quotes(str(x)) if quotes == 1 else str(x)) if x is not None else "" for x in _list)
     return to_string
 
 
@@ -163,3 +163,8 @@ def read_config_file(file):
     parser = configparser.ConfigParser()
     parser.read(file)
     return parser
+
+
+if __name__ == '__main__':
+    x = ['s']
+    print(list_to_string(x, ','))
