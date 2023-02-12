@@ -30,7 +30,6 @@ class SMX:
         self.reserved_words = {}
         self.data = {}
 
-
         for layer_key, layer_value in self.LAYERS.items():
             Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
             Schema(schema_name=layer_value.t_db, _override=1)
@@ -445,15 +444,20 @@ class SMX:
         print('ColumnMapping count:', len(ColumnMapping.get_instance()))
 
     @time_elapsed_decorator
-    def generate_scripts(self):
+    def generate_scripts(self, source_name=None):
         def layer_scripts(layer: Layer):
             @log_error_decorator(None)
             def layer_table_scripts(layer_table: LayerTable):
-                ddl = layer_table.table.ddl
-                if layer_table.table.table_kind == 'T':
-                    tables_ddl.append(ddl)
-                elif layer_table.table.table_kind == 'V':
-                    views_ddl.append(ddl)
+                try:
+                    lyr_src_name = layer_table.table.data_source.source_name
+                except:
+                    lyr_src_name = None
+                if lyr_src_name == source_name or lyr_src_name is None:
+                    ddl = layer_table.table.ddl
+                    if layer_table.table.table_kind == 'T':
+                        tables_ddl.append(ddl)
+                    elif layer_table.table.table_kind == 'V':
+                        views_ddl.append(ddl)
 
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
@@ -479,5 +483,6 @@ class SMX:
             views_file.write(views_ddl)
             views_file.close()
             ################ END WRITE TO FILES ################
+
         threads(layer_scripts, Layer.get_instance())
         open_folder(self.current_scripts_path)

@@ -128,8 +128,6 @@ class MyID(metaclass=Meta):
             if instance_key in cls.__instances[cls.__name__].keys():
                 return cls.__instances[cls.__name__][instance_key]
 
-        return {}
-
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
         """
@@ -154,13 +152,13 @@ class MyID(metaclass=Meta):
         key = kwargs.get('_key', '_')  # The key to identify the instance
         override = kwargs.get('_override', 0)  # Flag to indicate whether to override an existing instance or not
         instance = cls.get_instance(_key=key)  # Check if an instance with the same key already exists
-        if instance != {}:
+        if instance:
             if override == 1:
                 cls.__del_instance(key)  # delete the existing instance if override is set to 1
             else:
                 raise ValueError(f'{key} Already Exists!')
 
-        if instance == {} or override == 1:
+        if instance is None or override == 1:
             # create a new instance of the class
             instance = super().__new__(cls)
             cls.__set_instance(key, instance)
