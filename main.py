@@ -6,7 +6,7 @@ def start():
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
     smx.extract_all()
-    smx.generate_scripts()
+    # smx.generate_scripts()
 
 
 # Press the green button in the gutter to run the script.

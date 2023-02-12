@@ -385,27 +385,29 @@ class Column(MyID):
                  dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._table_id = table_id
+        self._domain_id = domain_id
+        self._data_type_id = data_type_id
+
         self.column_name = column_name
-        self.is_pk = is_pk
         self.mandatory = mandatory
+        self.scd_type = scd_type
+        self.dt_precision = dt_precision
+        self.active = active
+        self.unicode = unicode
+        self.case_sensitive = case_sensitive
+
+        self.is_pk = is_pk
         self.is_start_date = is_start_date
         self.is_end_date = is_end_date
         self.is_created_at = is_created_at
-        self.is_updated_at = is_updated_at
         self.is_created_by = is_created_by
+        self.is_updated_at = is_updated_at
         self.is_updated_by = is_updated_by
         self.is_delete_flag = is_delete_flag
         self.is_modification_type = is_modification_type
         self.is_load_id = is_load_id
         self.is_batch_id = is_batch_id
         self.is_row_identity = is_row_identity
-        self.scd_type = scd_type
-        self._domain_id = domain_id
-        self._data_type_id = data_type_id
-        self.dt_precision = dt_precision
-        self.active = active
-        self.unicode = unicode
-        self.case_sensitive = case_sensitive
 
     @property
     def data_type(self) -> DataType:
