@@ -106,9 +106,11 @@ class MyID(metaclass=Meta):
             if _key not in cls.__instances[cls.__name__].keys():
                 cls.__instances[cls.__name__][_key] = instance
             else:
-                raise ValueError(f'{_key} Already Exists!')
+                erro_message = f'{_key} Already Exists!'
+                raise ValueError(erro_message)
 
     @classmethod
+    # @lru_cache
     def get_instance(cls, _key=None, _id: int = None):
         """
         This method is used to retrieve an instance from the __instances dictionary using either the key or the ID of the instance.
@@ -494,6 +496,7 @@ class Pipeline(MyID):
 
     @property
     def query(self):
+        domain_template_query = """ (select {bkey_alisa}.EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key}\n and DOMAIN_ID={domain_id}) {tgt_col_name}"""
         distinct = ''
         col_mapping = ''
         with_clause = ''
