@@ -3,7 +3,6 @@ from functions.smx import *
 
 @time_elapsed_decorator
 def start():
-
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
     smx.extract_all()

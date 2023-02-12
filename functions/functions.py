@@ -15,6 +15,7 @@ import time
 import multiprocessing
 from collections import namedtuple
 
+
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]

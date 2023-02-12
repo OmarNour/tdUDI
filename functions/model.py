@@ -255,6 +255,7 @@ class Table(MyID):
         return Schema.get_instance(_id=self._schema_id)
 
     @property
+    # @functools.cached_property
     def ddl(self) -> str:
         if self.table_kind == 'T':
             col_dtype = ''
@@ -526,27 +527,6 @@ class Pipeline(MyID):
                                                        , cast_dtype=cast_dtype
                                                        , alias=alias
                                                        )
-        #############
-        # col_m: ColumnMapping
-        # for index, col_m in enumerate(self.column_mapping):
-        #     src_col = col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name
-        #     cast_dtype = ''
-        #     precise = ''
-        #     alias = ''
-        #     comma = '\n,' if index > 0 else ' '
-        #     if col_m.tgt_col.id != col_m.src_col.id:
-        #         alias = col_m.tgt_col.column_name
-        #         dtype_name = col_m.tgt_col.data_type.dt_name
-        #         if col_m.tgt_col.dt_precision:
-        #             precise = '(' + str(col_m.tgt_col.dt_precision) + ')'
-        #         cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
-        #
-        #     col_mapping += col_mapping_template.format(comma=comma
-        #                                                , col_name=src_col
-        #                                                , cast_dtype=cast_dtype
-        #                                                , alias=alias
-        #                                                )
-        #############
         query = f""" {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
         return query
 
