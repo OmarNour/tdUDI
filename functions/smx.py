@@ -18,15 +18,18 @@ class SMX:
 
     @time_elapsed_decorator
     def __init__(self, smx_path, scripts_path):
+        self.run_id = str(generate_run_id())
+        print(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
         self.path = smx_path
         self.scripts_path = scripts_path
-        self.run_id = str(generate_run_id())
+
         self.current_scripts_path = os.path.join(self.scripts_path, self.run_id)
         self.log_error_path = self.current_scripts_path
         create_folder(self.current_scripts_path)
         self.xls = None
         self.reserved_words = {}
         self.data = {}
+
 
         for layer_key, layer_value in self.LAYERS.items():
             Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
@@ -475,6 +478,6 @@ class SMX:
             views_file = WriteFile(layer_path, 'views', "sql")
             views_file.write(views_ddl)
             views_file.close()
-
+            ################ END WRITE TO FILES ################
         threads(layer_scripts, Layer.get_instance())
         open_folder(self.current_scripts_path)
