@@ -156,7 +156,8 @@ class MyID(metaclass=Meta):
             if override == 1:
                 cls.__del_instance(key)  # delete the existing instance if override is set to 1
             else:
-                raise ValueError(f'{key} Already Exists!')
+                erro_message = f'{key} Already Exists!'
+                raise ValueError(erro_message)
 
         if instance is None or override == 1:
             # create a new instance of the class
@@ -186,7 +187,7 @@ class DataSource(MyID):
 
     @property
     def source_name(self):
-        return self._source_name
+        return self._source_name.lower()
 
     @property
     def tables(self) -> []:
