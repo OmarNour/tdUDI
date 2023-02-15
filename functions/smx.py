@@ -2,19 +2,6 @@ from functions.model import *
 
 
 class SMX:
-    SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
-        , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
-        , 'supplements']
-
-    LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
-    LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
-        , 'STG': LayerDtl(1, 'GDEV1V_STG', 'GDEV1T_STG')
-        , 'TXF_BKEY': LayerDtl(2, 'GDEV1V_INP', '')
-        , 'BKEY': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-        , 'BMAP': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-        , 'SRCI': LayerDtl(4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
-        , 'TXF_CORE': LayerDtl(5, 'GDEV1V_INP', '')
-        , 'CORE': LayerDtl(6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
     @time_elapsed_decorator
     def __init__(self, smx_path, scripts_path):
@@ -30,7 +17,7 @@ class SMX:
         self.reserved_words = {}
         self.data = {}
 
-        for layer_key, layer_value in self.LAYERS.items():
+        for layer_key, layer_value in LAYERS.items():
             Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
             Schema(schema_name=layer_value.t_db, _override=1)
             Schema(schema_name=layer_value.v_db, _override=1)
@@ -47,17 +34,17 @@ class SMX:
         self.srci_layer = Layer.get_instance(_key='SRCI')
         self.core_layer = Layer.get_instance(_key='CORE')
 
-        self.src_t_schema = Schema.get_instance(_key=self.LAYERS['SRC'].t_db)
-        self.stg_t_schema = Schema.get_instance(_key=self.LAYERS['STG'].t_db)
-        self.utlfw_t_schema = Schema.get_instance(_key=self.LAYERS['BKEY'].t_db)
-        self.srci_t_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].t_db)
-        self.core_t_schema = Schema.get_instance(_key=self.LAYERS['CORE'].t_db)
+        self.src_t_schema = Schema.get_instance(_key=LAYERS['SRC'].t_db)
+        self.stg_t_schema = Schema.get_instance(_key=LAYERS['STG'].t_db)
+        self.utlfw_t_schema = Schema.get_instance(_key=LAYERS['BKEY'].t_db)
+        self.srci_t_schema = Schema.get_instance(_key=LAYERS['SRCI'].t_db)
+        self.core_t_schema = Schema.get_instance(_key=LAYERS['CORE'].t_db)
 
-        self.src_v_schema = Schema.get_instance(_key=self.LAYERS['SRC'].v_db)
-        self.stg_v_schema = Schema.get_instance(_key=self.LAYERS['STG'].v_db)
-        self.utlfw_v_schema = Schema.get_instance(_key=self.LAYERS['BKEY'].v_db)
-        self.srci_v_schema = Schema.get_instance(_key=self.LAYERS['SRCI'].v_db)
-        self.core_v_schema = Schema.get_instance(_key=self.LAYERS['CORE'].v_db)
+        self.src_v_schema = Schema.get_instance(_key=LAYERS['SRC'].v_db)
+        self.stg_v_schema = Schema.get_instance(_key=LAYERS['STG'].v_db)
+        self.utlfw_v_schema = Schema.get_instance(_key=LAYERS['BKEY'].v_db)
+        self.srci_v_schema = Schema.get_instance(_key=LAYERS['SRCI'].v_db)
+        self.core_v_schema = Schema.get_instance(_key=LAYERS['CORE'].v_db)
 
     @time_elapsed_decorator
     def parse_file(self):
@@ -71,7 +58,7 @@ class SMX:
 
     def parse_sheet(self, sheet):
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
-        if sheet_name in self.SHEETS:
+        if sheet_name in SHEETS:
             df = self.xls.parse(sheet).replace(np.nan, value='', regex=True)
             df = df.applymap(lambda x: x.replace('\ufeff', '').strip() if type(x) is str else int(x) if type(x) is float else x)
             df.drop_duplicates()
@@ -444,7 +431,7 @@ class SMX:
         print('ColumnMapping count:', len(ColumnMapping.get_instance()))
 
     @time_elapsed_decorator
-    def generate_scripts(self, source_name:str=None):
+    def generate_scripts(self, source_name: str = None):
         def layer_scripts(layer: Layer):
             @log_error_decorator(None)
             def layer_table_scripts(layer_table: LayerTable):
