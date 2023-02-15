@@ -1,4 +1,4 @@
-from functions.functions import *
+from server.functions import *
 
 
 class Meta(type):

@@ -1,4 +1,4 @@
-from functions.smx import *
+from client.smx import *
 
 
 @time_elapsed_decorator
@@ -6,7 +6,7 @@ def start():
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
     smx.extract_all()
-    smx.generate_scripts('CSO')
+    smx.generate_scripts(source_name=None)
 
 
 # Press the green button in the gutter to run the script.

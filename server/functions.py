@@ -56,7 +56,8 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
 {si_index}
  """
 DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
-
+BKEY_IN_QUERY_TEMPLATE = """SELECT  """
+BKEY_OUT_QUERY_TEMPLATE = """SELECT  """
 
 class WriteFile:
     def __init__(self, file_path, file_name, ext, f_mode="w+", new_line=False):

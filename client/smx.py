@@ -1,4 +1,4 @@
-from functions.model import *
+from server.model import *
 
 
 class SMX:
