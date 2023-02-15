@@ -432,14 +432,21 @@ class SMX:
 
     @time_elapsed_decorator
     def generate_scripts(self, source_name: str = None):
+        _source_name = None
+        if source_name is not None:
+            _source_name = source_name.lower()
+
         def layer_scripts(layer: Layer):
             @log_error_decorator(None)
             def layer_table_scripts(layer_table: LayerTable):
                 try:
-                    lyr_src_name = layer_table.table.data_source.source_name
+                    lyr_src_name = None
+                    if _source_name is not None:
+                        lyr_src_name = layer_table.table.data_source.source_name
                 except:
                     lyr_src_name = None
-                if lyr_src_name == source_name.lower() or lyr_src_name is None:
+
+                if lyr_src_name == _source_name or lyr_src_name is None:
                     ddl = layer_table.table.ddl
                     if layer_table.table.table_kind == 'T':
                         tables_ddl.append(ddl)
