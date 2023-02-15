@@ -23,6 +23,7 @@ SPECIAL_CHARACTERS = [
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
     , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
 ]
+
 cast_dtype_template = """({dtype_name} {precise})"""
 col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
 from_template = """{schema_name}.{table_name}"""
