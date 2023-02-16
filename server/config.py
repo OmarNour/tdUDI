@@ -41,5 +41,5 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
 {si_index}
  """
 DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
-BKEY_IN_QUERY_TEMPLATE = """SELECT  """
-BKEY_OUT_QUERY_TEMPLATE = """SELECT  """
+# BKEY_IN_QUERY_TEMPLATE = """SELECT {source_key} from {schema_name}.{table_name} where source_key is not null"""
+# BKEY_OUT_QUERY_TEMPLATE = """SELECT  """
