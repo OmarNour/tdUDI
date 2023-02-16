@@ -32,6 +32,7 @@ class SMX:
         self.stg_layer = Layer.get_instance(_key='STG')
         self.bkey_layer = Layer.get_instance(_key='BKEY')
         self.srci_layer = Layer.get_instance(_key='SRCI')
+        self.txf_layer = Layer.get_instance(_key='TXF_CORE')
         self.core_layer = Layer.get_instance(_key='CORE')
 
         self.src_t_schema = Schema.get_instance(_key=LAYERS['SRC'].t_db)
@@ -44,6 +45,7 @@ class SMX:
         self.stg_v_schema = Schema.get_instance(_key=LAYERS['STG'].v_db)
         self.utlfw_v_schema = Schema.get_instance(_key=LAYERS['BKEY'].v_db)
         self.srci_v_schema = Schema.get_instance(_key=LAYERS['SRCI'].v_db)
+        self.txf_v_schema = Schema.get_instance(_key=LAYERS['TXF_CORE'].v_db)
         self.core_v_schema = Schema.get_instance(_key=LAYERS['CORE'].v_db)
 
     @time_elapsed_decorator
@@ -239,6 +241,29 @@ class SMX:
                               )
 
         @log_error_decorator(self.log_error_path)
+        def extract_bkey_txf_views(row):
+            if row.natural_key != '':
+                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+                ds = DataSource.get_instance(_key=row.schema)
+                assert ds, ds_error_msg
+                utlfw_t: Table
+                stg_col: Column
+
+                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+                srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
+
+                utlfw_lt = LayerTable.get_instance(_key=(self.bkey_layer.id, srci_col.domain.data_set.table.id))
+
+                txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_col.domain.domain_code}"
+                txf_v = Table(schema_id=self.txf_v_schema.id, table_name=txf_table_name, table_kind='V', source_id=ds.id)
+                LayerTable(layer_id=self.txf_layer.id, table_id=txf_v.id)
+
+                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=utlfw_lt.id, table_id=txf_v.id)
+
+        @log_error_decorator(self.log_error_path)
         def extract_stg_view_columns(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -388,7 +413,7 @@ class SMX:
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.reserved_words['TERADATA'] = list((self.reserved_words['TERADATA'] + [dt.dt_name for dt in DataType.get_instance()]))
-        ########################## Start bkey & bmaps #####################
+        ##########################  Start bkey & bmaps   #####################
         self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
@@ -398,7 +423,7 @@ class SMX:
         bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
         self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
         self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
-        ########################## End bkey & bmaps #####################
+        ##########################  End bkey & bmaps     #####################
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
         self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
@@ -412,6 +437,11 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
+
+        ##########################  Start bkey TXF view  #####################
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+        # extract_bkey_txf_columns
+        ##########################  End bkey TXF view    #####################
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key']].drop_duplicates().apply(extract_srci_view_columns, axis=1)

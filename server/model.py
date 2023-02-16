@@ -256,6 +256,7 @@ class Table(MyID):
     @property
     # @functools.cached_property
     def ddl(self) -> str:
+        self._ddl = ''
         if self.table_kind == 'T':
             col_dtype = ''
             set_multiset = 'multiset' if self.multiset == 1 else 'set'
@@ -300,6 +301,13 @@ class Table(MyID):
     # @ddl.setter
     # def ddl(self, view_ddl):
     #     self._ddl = view_ddl
+
+    @property
+    def data_set(self):
+        _data_set:DataSet
+        for _data_set in DataSet.get_instance():
+            if _data_set.table.id == self.id:
+                return _data_set
 
     @property
     def pipeline(self):
