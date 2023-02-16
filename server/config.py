@@ -40,6 +40,7 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
 {pi_index}
 {si_index}
  """
-DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
+DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS \n{query_txt}"""
+QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
 # BKEY_IN_QUERY_TEMPLATE = """SELECT {source_key} from {schema_name}.{table_name} where source_key is not null"""
 # BKEY_OUT_QUERY_TEMPLATE = """SELECT  """

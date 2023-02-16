@@ -528,7 +528,16 @@ class Pipeline(MyID):
                                                        , cast_dtype=cast_dtype
                                                        , alias=alias
                                                        )
-        query = f""" {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
+        query = QUERY_TEMPLATE.format(with_clause=with_clause
+                                      , distinct=distinct
+                                      , col_mapping=col_mapping
+                                      , from_clause=from_clause
+                                      , join_clause=join_clause
+                                      , where_clause=where_clause
+                                      , group_by_clause=group_by_clause
+                                      , having_clause=having_clause
+                                      )
+
         return query
 
 
