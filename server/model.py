@@ -156,7 +156,7 @@ class MyID(metaclass=Meta):
             if override == 1:
                 cls.__del_instance(key)  # delete the existing instance if override is set to 1
             else:
-                erro_message = f'{key} Already Exists!'
+                erro_message = f'For {cls.__name__}, {key} Already Exists!'
                 raise ValueError(erro_message)
 
         if instance is None or override == 1:

@@ -313,7 +313,8 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_tables(row):
-            Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
+            if row.physical_table != '':
+                Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_datasets(row):
