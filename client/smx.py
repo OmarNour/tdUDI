@@ -30,9 +30,10 @@ class SMX:
 
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')
+        self.txf_bkey_layer = Layer.get_instance(_key='TXF_BKEY')
         self.bkey_layer = Layer.get_instance(_key='BKEY')
         self.srci_layer = Layer.get_instance(_key='SRCI')
-        self.txf_layer = Layer.get_instance(_key='TXF_CORE')
+        self.txf_core_layer = Layer.get_instance(_key='TXF_CORE')
         self.core_layer = Layer.get_instance(_key='CORE')
 
         self.src_t_schema = Schema.get_instance(_key=LAYERS['SRC'].t_db)
@@ -44,8 +45,9 @@ class SMX:
         self.src_v_schema = Schema.get_instance(_key=LAYERS['SRC'].v_db)
         self.stg_v_schema = Schema.get_instance(_key=LAYERS['STG'].v_db)
         self.utlfw_v_schema = Schema.get_instance(_key=LAYERS['BKEY'].v_db)
+        self.txf_bkey_v_schema = Schema.get_instance(_key=LAYERS['TXF_BKEY'].v_db)
         self.srci_v_schema = Schema.get_instance(_key=LAYERS['SRCI'].v_db)
-        self.txf_v_schema = Schema.get_instance(_key=LAYERS['TXF_CORE'].v_db)
+        self.txf_core_v_schema = Schema.get_instance(_key=LAYERS['TXF_CORE'].v_db)
         self.core_v_schema = Schema.get_instance(_key=LAYERS['CORE'].v_db)
 
     @time_elapsed_decorator
@@ -241,29 +243,6 @@ class SMX:
                               )
 
         @log_error_decorator(self.log_error_path)
-        def extract_bkey_txf_views(row):
-            if row.natural_key != '':
-                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-                ds = DataSource.get_instance(_key=row.schema)
-                assert ds, ds_error_msg
-                utlfw_t: Table
-                stg_col: Column
-
-                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
-                srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
-
-                utlfw_lt = LayerTable.get_instance(_key=(self.bkey_layer.id, srci_col.domain.data_set.table.id))
-
-                txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_col.domain.domain_code}"
-                txf_v = Table(schema_id=self.txf_v_schema.id, table_name=txf_table_name, table_kind='V', source_id=ds.id)
-                LayerTable(layer_id=self.txf_layer.id, table_id=txf_v.id)
-
-                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=utlfw_lt.id, table_id=txf_v.id)
-
-        @log_error_decorator(self.log_error_path)
         def extract_stg_view_columns(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -356,6 +335,27 @@ class SMX:
                     DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
 
         @log_error_decorator(self.log_error_path)
+        def extract_bkey_txf_views(row):
+            if row.natural_key != '' and row.key_set_name != '':
+                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+                ds = DataSource.get_instance(_key=row.schema)
+                assert ds, ds_error_msg
+                utlfw_t: Table
+                stg_col: Column
+
+                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+                srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
+
+                txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_col.domain.domain_code}"
+                txf_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_table_name, table_kind='V', source_id=ds.id)
+                txf_bkey_lt = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=txf_v.id)
+
+                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=txf_bkey_lt.id)
+
+        @log_error_decorator(self.log_error_path)
         def extract_srci_views(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.schema)
@@ -387,6 +387,20 @@ class SMX:
 
             if row.natural_key != '':
                 stg_t_cols = [col for col in stg_table.columns if col.column_name in row.natural_key]
+                if row.key_set_name != '':
+                    txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
+                    txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_table_name))
+                    txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
+                    bkey_txf_v_col = Column(table_id=txf_v.id, column_name='source_key')
+                    bkey_txf_pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, txf_bkey_lt.id))
+                    for col_seq, stg_t_col in enumerate(stg_t_cols):
+                        ColumnMapping(pipeline_id=bkey_txf_pipeline.id
+                                      , col_seq=col_seq
+                                      , src_col_id=stg_t_col.id
+                                      , tgt_col_id=bkey_txf_v_col.id
+                                      , src_col_trx=None
+                                      )
+
             else:
                 stg_t_cols = [Column.get_instance(_key=(stg_table.id, row.column_name))]
 
@@ -400,9 +414,9 @@ class SMX:
             assert stg_t_cols, col_error_msg
             assert srci_t_col, col_error_msg
 
-            pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
+            srci_v_pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
             for col_seq, stg_t_col in enumerate(stg_t_cols):
-                ColumnMapping(pipeline_id=pipeline.id
+                ColumnMapping(pipeline_id=srci_v_pipeline.id
                               , col_seq=col_seq
                               , src_col_id=stg_t_col.id
                               , tgt_col_id=srci_t_col.id
@@ -439,12 +453,12 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
         ##########################  Start bkey TXF view  #####################
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
         # extract_bkey_txf_columns
         ##########################  End bkey TXF view    #####################
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
-        self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
         print('DataSetType count:', len(DataSetType.get_instance()))
         print('Layer count:', len(Layer.get_instance()))

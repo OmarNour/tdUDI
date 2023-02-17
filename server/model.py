@@ -256,7 +256,7 @@ class Table(MyID):
     @property
     # @functools.cached_property
     def ddl(self) -> str:
-        self._ddl = ''
+        self._ddl = None
         if self.table_kind == 'T':
             col_dtype = ''
             set_multiset = 'multiset' if self.multiset == 1 else 'set'
@@ -296,7 +296,7 @@ class Table(MyID):
             if self.pipeline:
                 self._ddl = DDL_VIEW_TEMPLATE.format(schema_name=self.schema.schema_name, view_name=self.table_name, query_txt=self.pipeline.query)
 
-        return self._ddl.strip() + ';\n'
+        return (self._ddl.strip() + ';\n') if self._ddl is not None else None
 
     # @ddl.setter
     # def ddl(self, view_ddl):
@@ -304,7 +304,7 @@ class Table(MyID):
 
     @property
     def data_set(self):
-        _data_set:DataSet
+        _data_set: DataSet
         for _data_set in DataSet.get_instance():
             if _data_set.table.id == self.id:
                 return _data_set
@@ -469,15 +469,18 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int | None, table_id: int | None = None, active: int = 1, *args, **kwargs):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, table_id: int | None = None, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
         self._table_id = table_id
         self.active = active
 
-        if table_id:
-            assert self.table.table_kind == 'V', 'Pipelines must be linked to views only!'
+        # assert self.tgt_lyr_table.table.table_kind == 'T', "Pipeline target table's kind must Table only!"
+        if self.tgt_lyr_table.table.table_kind == 'V':
+            self._table_id = self.tgt_lyr_table.table.id
+        elif self.table:
+            assert self.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
 
     @property
     def table(self) -> Table:
@@ -525,11 +528,13 @@ class Pipeline(MyID):
             src_cols = list_to_string(_src_cols, '||')
             comma = '\n,' if index > 0 else ' '
             precise = ''
+            cast_dtype = ''
             alias = tgt_col.column_name
-            dtype_name = tgt_col.data_type.dt_name
-            if tgt_col.dt_precision:
-                precise = '(' + str(tgt_col.dt_precision) + ')'
-            cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
+            if tgt_col.table.table_kind == 'T':
+                dtype_name = tgt_col.data_type.dt_name
+                if tgt_col.dt_precision:
+                    precise = '(' + str(tgt_col.dt_precision) + ')'
+                cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
 
             col_mapping += col_mapping_template.format(comma=comma
                                                        , col_name=src_cols
@@ -551,13 +556,18 @@ class Pipeline(MyID):
 
 class ColumnMapping(MyID):
     def __init__(self, pipeline_id, tgt_col_id, src_col_id, col_seq: int = 0, src_col_trx=None, *args, **kwargs):
-        assert tgt_col_id is not None and src_col_id is not None and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
-        super().__init__(*args, **kwargs)
+        assert tgt_col_id is not None \
+               and (src_col_id is not None or src_col_trx is not None) \
+               and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
+
         self._pipeline_id = pipeline_id
         self.col_seq = col_seq
         self._src_col_id = src_col_id
         self._tgt_col_id = tgt_col_id
         self._src_col_trx = src_col_trx
+
+        assert self.vaild_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
+        super().__init__(*args, **kwargs)
 
     @property
     def pipeline(self) -> Pipeline:
@@ -578,6 +588,10 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         return self._src_col_trx
+
+    @property
+    def vaild_tgt_col(self) -> bool:
+        return True if self.pipeline.tgt_lyr_table.table.id == self.tgt_col.table.id else False
 
 
 if __name__ == '__main__':
