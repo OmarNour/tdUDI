@@ -9,6 +9,40 @@ from server.functions import *
 #       DONE raise error if trx is invalid for columns mapping
 #   Pipeline:
 #       Handle alias for tables
+#   GroupBy:
+#         to handle agg functions
+#   Filter & OrFilter:
+#         Comparison operators:
+#           "=" (equal to)
+#           "<>" or "!=" (not equal to)
+#           ">" (greater than)
+#           ">=" (greater than or equal to)
+#           "<" (less than)
+#           "<=" (less than or equal to)
+#           "BETWEEN" (between a range of values)
+#           "IN" (matches any value in a set)
+#           "LIKE" (matches a pattern)
+#           "IS NULL" (checks for null values)
+#           "IS NOT NULL" (checks for non-null values)
+#         Logical operators:
+#           "AND" (logical and)
+#           "OR" (logical or)
+#           "NOT" (logical not)
+#         Set operators:
+#           "UNION" (combines the results of two or more SELECT statements)
+#           "INTERSECT" (returns only the rows that are common to two SELECT statements)
+#           "EXCEPT" or "MINUS" (returns only the rows that are unique to the first SELECT statement)
+#         Arithmetic operators:
+#           "+" (addition)
+#           "-" (subtraction)
+#           "*" (multiplication)
+#           "/" (division)
+#         Aggregate functions:
+#           "SUM" (returns the sum of all values in a column)
+#           "AVG" (returns the average of all values in a column)
+#           "COUNT" (returns the number of rows in a column)
+#           "MAX" (returns the maximum value in a column)
+#           "MIN" (returns the minimum value in a column)
 
 
 class Meta(type):
@@ -185,7 +219,7 @@ class DataBaseEngine(MyID):
         return self._reserved_words
 
     @reserved_words.setter
-    def reserved_words(self, rd_list:[]):
+    def reserved_words(self, rd_list: []):
         self._reserved_words = list(set(rd_list + ['null']))
 
     @property
@@ -199,7 +233,7 @@ class DataBaseEngine(MyID):
         return [data_type for data_type in DataType.get_instance() if self.id == data_type.db_engine.id]
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
-        data_type:DataType
+        data_type: DataType
         _trx = trx
         if _trx:
             replace_ch = ''
@@ -213,7 +247,7 @@ class DataBaseEngine(MyID):
 
             words = words + [data_type.dt_name for data_type in self.data_types]
             sorted_words = sorted(words, key=len, reverse=True)
-            word:str
+            word: str
             for word in sorted_words:
                 _trx = _trx.lower().replace(word.lower(), replace_ch).strip()
 
@@ -256,6 +290,7 @@ class DataType(MyID):
     @property
     def db_engine(self) -> DataBaseEngine:
         return DataBaseEngine.get_instance(_id=self._db_id)
+
 
 class DataSource(MyID):
     def __init__(self, source_name: str, source_level: int, scheduled: int, active: int = 1, **kwargs):
@@ -621,24 +656,11 @@ class Pipeline(MyID):
         return re.sub(r'\n+', '\n', query)
 
 
-class GroupBy(MyID):
-    def __init__(self, pipeline_id: int, col_id: int, *args, **kwargs):
-        self._pipeline_id = pipeline_id
-        self._col_id = col_id
-        assert self.column.table.id == self.pipeline.tgt_lyr_table.table.id, "Invalid group by column, must be one of the pipeline's target table!"
-        super().__init__(*args, **kwargs)
-
-    @property
-    def pipeline(self) -> Pipeline:
-        return Pipeline.get_instance(_id=self._pipeline_id)
-
-    @property
-    def column(self) -> Column:
-        return Column.get_instance(_id=self._col_id)
-
-
 class ColumnMapping(MyID):
-    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0, value_if_null=None, src_col_trx=None, *args, **kwargs):
+    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0
+                 , src_col_trx=None
+                 , fn_value_if_null=None
+                 , *args, **kwargs):
         assert tgt_col_id is not None \
                and (src_col_id is not None or src_col_trx is not None) \
                and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
@@ -647,7 +669,7 @@ class ColumnMapping(MyID):
         self.col_seq = col_seq
         self._src_col_id = src_col_id
         self._tgt_col_id = tgt_col_id
-        self.value_if_null = value_if_null
+        self.fn_value_if_null = fn_value_if_null
         self._src_col_trx = src_col_trx
 
         assert self.valid_src_col_trx, "Invalid source column transformation!"
@@ -668,7 +690,7 @@ class ColumnMapping(MyID):
 
     @property
     def valid_src_col_trx(self) -> bool:
-        col:Column
+        col: Column
         if self._src_col_trx:
             _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns]
             return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._src_col_trx
@@ -682,6 +704,77 @@ class ColumnMapping(MyID):
     @property
     def vaild_tgt_col(self) -> bool:
         return True if self.pipeline.tgt_lyr_table.table.id == self.tgt_col.table.id else False
+
+
+class Filter(MyID):
+    def __init__(self
+                 , pipeline_id: int
+                 , col_id: int
+                 , is_not: bool
+                 , fn_value_if_null: bool
+                 , fn_trim: bool
+                 , fn_trim_trailing: str
+                 , fn_trim_leading: str
+                 , fn_substr: []
+                 , operator_id: int  # =, <>, in, not in, like, not like, exists, not exists
+                 , value: str
+                 , complete_filter_expr: str = None
+                 , *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._pipeline_id = pipeline_id
+        self._col_id = col_id
+
+    @property
+    def pipeline(self) -> Pipeline:
+        return Pipeline.get_instance(_id=self._pipeline_id)
+
+    @property
+    def column(self) -> Column:
+        return Column.get_instance(_id=self._col_id)
+
+
+class OrFilter(MyID):
+    def __init__(self
+                 , filter_id: int
+                 , col_id: int
+                 , is_not: bool
+                 , fn_value_if_null: bool
+                 , fn_trim: bool
+                 , fn_trim_trailing: str
+                 , fn_trim_leading: str
+                 , fn_substr: []
+                 , operator_id: int  # =, <>, in, not in, like, not like
+                 , value: str
+                 , complete_filter_expr: str = None
+                 , *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._filter_id = filter_id
+        self._col_id = col_id
+
+    @property
+    def filter(self) -> Filter:
+        return Filter.get_instance(_id=self._filter_id)
+
+    @property
+    def column(self) -> Column:
+        return Column.get_instance(_id=self._col_id)
+
+class GroupBy(MyID):
+    def __init__(self, pipeline_id: int, col_id: int, *args, **kwargs):
+        self._pipeline_id = pipeline_id
+        self._col_id = col_id
+        assert self.column.table.id == self.pipeline.tgt_lyr_table.table.id, "Invalid group by column, must be one of the pipeline's target table!"
+        super().__init__(*args, **kwargs)
+
+    @property
+    def pipeline(self) -> Pipeline:
+        return Pipeline.get_instance(_id=self._pipeline_id)
+
+    @property
+    def column(self) -> Column:
+        return Column.get_instance(_id=self._col_id)
 
 
 if __name__ == '__main__':
