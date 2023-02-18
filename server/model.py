@@ -167,18 +167,49 @@ class Server(MyID):
         return self._server_name
 
 
-class DataBase(MyID):
-    def __init__(self, db_name: str, *args, **kwargs):
+class DataBaseEngine(MyID):
+    def __init__(self, name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._db_name = db_name
+        self._name = name
+        self._reserved_words = None
 
     @property
-    def db_name(self):
-        return self._db_name.lower()
+    def name(self):
+        return self._name.lower()
+
+    @property
+    def reserved_words(self) -> []:
+        return self._reserved_words
+
+    @reserved_words.setter
+    def reserved_words(self, rd_list:[]):
+        self._reserved_words = list(set(rd_list + ['null']))
 
     def schemas(self) -> []:
         schema: Schema
         return [schema for schema in Schema.get_instance() if self.id == schema.database.id]
+
+    def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
+        _trx = trx
+        if _trx:
+            sep = ''
+            if extra_words is not None:
+                words = self.reserved_words + extra_words
+            else:
+                words = self.reserved_words
+
+            sorted_words = sorted(words, key=len, reverse=True)
+            word:str
+            for word in sorted_words:
+                _trx = _trx.lower().replace(word.lower(), sep).strip()
+
+            for spc in SPECIAL_CHARACTERS + NUMBERS:
+                _trx = _trx.replace(str(spc), sep).strip()
+
+            if _trx != '':
+                return False
+
+        return True
 
 
 class Schema(MyID):
@@ -194,8 +225,8 @@ class Schema(MyID):
         return self._schema_name.lower()
 
     @property
-    def database(self) -> DataBase:
-        return DataBase.get_instance(_id=self._db_id)
+    def database(self) -> DataBaseEngine:
+        return DataBaseEngine.get_instance(_id=self._db_id)
 
     @property
     def tables(self) -> []:
@@ -619,8 +650,11 @@ class ColumnMapping(MyID):
 
     @property
     def valid_src_col_trx(self) -> bool:
+        col:Column
         if self._src_col_trx:
-            return True
+            _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns]
+            return self.pipeline.src_lyr_table.table.schema.database.valid_trx(trx=self._src_col_trx
+                                                                               , extra_words=_extra_words)
         return True
 
     @property

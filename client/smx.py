@@ -14,13 +14,13 @@ class SMX:
         self.log_error_path = self.current_scripts_path
         create_folder(self.current_scripts_path)
         self.xls = None
-        self.reserved_words = {}
+        # self.reserved_words = {}
         self.data = {}
-        self.database = DataBase(db_name=DB_NAME)
+        self.db_engine = DataBaseEngine(name=DB_NAME)
         for layer_key, layer_value in LAYERS.items():
             Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
-            Schema(db_id=self.database.id, schema_name=layer_value.t_db, _override=1)
-            Schema(db_id=self.database.id, schema_name=layer_value.v_db, _override=1)
+            Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _override=1)
+            Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
 
         DataSetType(set_type='BKEY')
         DataSetType(set_type='BMAP')
@@ -36,19 +36,19 @@ class SMX:
         self.txf_core_layer = Layer.get_instance(_key='TXF_CORE')
         self.core_layer = Layer.get_instance(_key='CORE')
 
-        self.src_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRC'].t_db))
-        self.stg_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['STG'].t_db))
-        self.utlfw_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['BKEY'].t_db))
-        self.srci_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRCI'].t_db))
-        self.core_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['CORE'].t_db))
+        self.src_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRC'].t_db))
+        self.stg_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['STG'].t_db))
+        self.utlfw_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].t_db))
+        self.srci_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRCI'].t_db))
+        self.core_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['CORE'].t_db))
 
-        self.src_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRC'].v_db))
-        self.stg_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['STG'].v_db))
-        self.utlfw_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['BKEY'].v_db))
-        self.txf_bkey_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['TXF_BKEY'].v_db))
-        self.srci_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRCI'].v_db))
-        self.txf_core_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['TXF_CORE'].v_db))
-        self.core_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['CORE'].v_db))
+        self.src_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRC'].v_db))
+        self.stg_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['STG'].v_db))
+        self.utlfw_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].v_db))
+        self.txf_bkey_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_BKEY'].v_db))
+        self.srci_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRCI'].v_db))
+        self.txf_core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_CORE'].v_db))
+        self.core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['CORE'].v_db))
 
     @time_elapsed_decorator
     def parse_file(self):
@@ -56,9 +56,8 @@ class SMX:
         for sheet in self.xls.sheet_names:
             self.parse_sheet(sheet)
 
-        reserved_words_df = self.data['supplements']
-        for key in reserved_words_df['reserved_words_source'].drop_duplicates():
-            self.reserved_words[key] = reserved_words_df[reserved_words_df['reserved_words_source'] == key]['reserved_words'].unique().tolist()
+        reserved_words_df = self.data['supplements'].applymap(lambda x: x.lower())
+        self.db_engine.reserved_words = reserved_words_df[reserved_words_df['reserved_words_source'] == self.db_engine.name]['reserved_words'].unique().tolist()
 
     def parse_sheet(self, sheet):
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
@@ -72,25 +71,6 @@ class SMX:
     @property
     def sheet_names(self):
         return self.data.keys()
-
-    def clean_trx(self, trx: str, extra: [] = None) -> str:
-        sep = ''
-        if extra is not None:
-            words = self.reserved_words['TERADATA'] + extra
-        else:
-            words = self.reserved_words['TERADATA']
-
-        sorted_words = sorted(words, key=len, reverse=True)
-        for word in sorted_words:
-            trx = trx.lower().replace(word.lower(), sep)
-
-        for spc in SPECIAL_CHARACTERS + NUMBERS:
-            trx = trx.replace(str(spc), sep)
-
-        # for no in NUMBERS:
-        #     trx = trx.replace(str(no), sep)
-
-        return trx.strip()
 
     @time_elapsed_decorator
     @log_error_decorator(None)
@@ -428,7 +408,7 @@ class SMX:
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
-        self.reserved_words['TERADATA'] = list((self.reserved_words['TERADATA'] + [dt.dt_name for dt in DataType.get_instance()]))
+
         ##########################  Start bkey & bmaps   #####################
         self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
