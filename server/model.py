@@ -496,7 +496,7 @@ class Pipeline(MyID):
         for col_m in self.column_mapping:
             if col_m.tgt_col not in _dic.keys():
                 _dic[col_m.tgt_col] = []
-            _dic[col_m.tgt_col].append('(' + (col_m.src_col_trx if col_m.valid_src_col_trx else col_m.src_col.column_name) + ')')
+            _dic[col_m.tgt_col].append('(' + col_m.src_col_trx + ')')
         return _dic
 
     @property
@@ -563,7 +563,7 @@ class GroupBy(MyID):
 
 
 class ColumnMapping(MyID):
-    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0, if_null_value=None, src_col_trx=None, *args, **kwargs):
+    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0, value_if_null=None, src_col_trx=None, *args, **kwargs):
         assert tgt_col_id is not None \
                and (src_col_id is not None or src_col_trx is not None) \
                and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
@@ -572,9 +572,10 @@ class ColumnMapping(MyID):
         self.col_seq = col_seq
         self._src_col_id = src_col_id
         self._tgt_col_id = tgt_col_id
-        self.if_null_value = if_null_value
+        self.value_if_null = value_if_null
         self._src_col_trx = src_col_trx
 
+        assert self.valid_src_col_trx, "Invalid source column transformation!"
         assert self.vaild_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
         super().__init__(*args, **kwargs)
 
@@ -592,11 +593,13 @@ class ColumnMapping(MyID):
 
     @property
     def valid_src_col_trx(self) -> bool:
-        return True if self._src_col_trx else False
+        if self._src_col_trx:
+            return True
+        return True
 
     @property
     def src_col_trx(self):
-        return self._src_col_trx
+        return self._src_col_trx if self._src_col_trx else self.src_col.column_name
 
     @property
     def vaild_tgt_col(self) -> bool:
