@@ -367,7 +367,10 @@ class SMX:
             srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
 
             if row.natural_key != '':
+                nk_error_msg = f'Invalid natural key!,--> {row.natural_key}'
                 stg_t_cols = [col for col in stg_table.columns if col.column_name in row.natural_key]
+                assert stg_t_cols, nk_error_msg
+
                 if row.key_set_name != '':
                     txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
                     txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_table_name))
