@@ -14,7 +14,7 @@ import configparser
 import concurrent.futures
 import time
 import multiprocessing
-
+import re
 
 
 class WriteFile:

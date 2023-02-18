@@ -401,6 +401,7 @@ class SMX:
                                       , tgt_col_id=bkey_txf_v_col.id
                                       , src_col_trx=None
                                       )
+                        GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=bkey_txf_v_col.id)
 
             else:
                 stg_t_cols = [Column.get_instance(_key=(stg_table.id, row.column_name))]
@@ -474,6 +475,7 @@ class SMX:
         print('Column count:', len(Column.get_instance()))
         print('Pipeline count:', len(Pipeline.get_instance()))
         print('ColumnMapping count:', len(ColumnMapping.get_instance()))
+        print('GroupBy count:', len(GroupBy.get_instance()))
 
     @time_elapsed_decorator
     def generate_scripts(self, source_name: str = None):

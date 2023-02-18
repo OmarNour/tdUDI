@@ -3,6 +3,24 @@ from collections import namedtuple
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 
+cls_keys = {
+        'server': 'server_name'
+        , 'datasource': 'source_name'
+        , 'schema': 'schema_name'
+        , 'table': ('schema_id', 'table_name')
+        , 'DataSetType': 'set_type'
+        , 'DataSet': ('set_type_id', 'set_code')
+        , 'Domain': ('data_set_id', 'domain_code')
+        , 'DomainValue': ('domain_id', 'source_key')
+        , 'Column': ('table_id', 'column_name')
+        , 'DataType': 'dt_name'
+        , 'Layer': 'layer_name'
+        , 'LayerTable': ('layer_id', 'table_id')
+        , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
+        , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
+        , 'GroupBy' : ('pipeline_id', 'col_id')
+    }
+
 SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
         , 'supplements']
@@ -27,6 +45,7 @@ SPECIAL_CHARACTERS = [
 cast_dtype_template = """({dtype_name} {precise})"""
 col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
 from_template = """{schema_name}.{table_name}"""
+group_by_template = """group by {columns}"""
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
 COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} {latin_unicode} {case_sensitive} {not_null}\n """
 DDL_TABLE_TEMPLATE = """ 
@@ -41,6 +60,4 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
 {si_index}
  """
 DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
-QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n\t{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
-# BKEY_IN_QUERY_TEMPLATE = """SELECT {source_key} from {schema_name}.{table_name} where source_key is not null"""
-# BKEY_OUT_QUERY_TEMPLATE = """SELECT  """
+QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""

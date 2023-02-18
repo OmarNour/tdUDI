@@ -6,23 +6,6 @@ class Meta(type):
     This is a custom metaclass that is used to generate unique IDs for instances of the MyID class.
     """
 
-    cls_keys = {
-        'server': 'server_name'
-        , 'datasource': 'source_name'
-        , 'schema': 'schema_name'
-        , 'table': ('schema_id', 'table_name')
-        , 'DataSetType': 'set_type'
-        , 'DataSet': ('set_type_id', 'set_code')
-        , 'Domain': ('data_set_id', 'domain_code')
-        , 'DomainValue': ('domain_id', 'source_key')
-        , 'Column': ('table_id', 'column_name')
-        , 'DataType': 'dt_name'
-        , 'Layer': 'layer_name'
-        , 'LayerTable': ('layer_id', 'table_id')
-        , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
-        , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
-    }
-
     def __call__(cls, *args, **kwargs):
         """
         This method is called when an instance of the MyID class is created.
@@ -50,7 +33,7 @@ class Meta(type):
         This method generates a key from the named parameters passed to the MyID class.
         """
         try:
-            lower_cls_keys = {k.lower(): v for k, v in cls.cls_keys.items()}
+            lower_cls_keys = {k.lower(): v for k, v in cls_keys.items()}
             cls_key = lower_cls_keys[obj_name.lower()]
 
             if isinstance(cls_key, tuple):
@@ -498,6 +481,15 @@ class Pipeline(MyID):
     def column_mapping(self) -> []:
         return [cm for cm in ColumnMapping.get_instance() if cm.pipeline.id == self.id]
 
+    @property
+    def group_by(self) -> []:
+        return [gb for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
+
+    @property
+    def group_by_col_names(self) -> []:
+        gb:GroupBy
+        return [gb.column.column_name for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
+
     def _tgt_col_dic(self) -> dict:
         col_m: ColumnMapping
         _dic = {}
@@ -516,7 +508,7 @@ class Pipeline(MyID):
         from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name, table_name=self.src_lyr_table.table.table_name)
         join_clause = ''
         where_clause = ''
-        group_by_clause = ''
+        group_by_clause = group_by_template.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
         having_clause = ''
 
         #############
@@ -551,11 +543,27 @@ class Pipeline(MyID):
                                       , having_clause=having_clause
                                       )
 
-        return query
+        return re.sub(r'\n+', '\n', query)
+
+
+class GroupBy(MyID):
+    def __init__(self, pipeline_id: int, col_id: int, *args, **kwargs):
+        self._pipeline_id = pipeline_id
+        self._col_id = col_id
+        assert self.column.table.id == self.pipeline.tgt_lyr_table.table.id, "Invalid group by column, must be one of the pipeline's target table!"
+        super().__init__(*args, **kwargs)
+
+    @property
+    def pipeline(self) -> Pipeline:
+        return Pipeline.get_instance(_id=self._pipeline_id)
+
+    @property
+    def column(self) -> Column:
+        return Column.get_instance(_id=self._col_id)
 
 
 class ColumnMapping(MyID):
-    def __init__(self, pipeline_id, tgt_col_id, src_col_id, col_seq: int = 0, src_col_trx=None, *args, **kwargs):
+    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0, if_null_value=None, src_col_trx=None, *args, **kwargs):
         assert tgt_col_id is not None \
                and (src_col_id is not None or src_col_trx is not None) \
                and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
@@ -564,6 +572,7 @@ class ColumnMapping(MyID):
         self.col_seq = col_seq
         self._src_col_id = src_col_id
         self._tgt_col_id = tgt_col_id
+        self.if_null_value = if_null_value
         self._src_col_trx = src_col_trx
 
         assert self.vaild_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
