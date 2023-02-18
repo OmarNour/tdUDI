@@ -3,9 +3,12 @@ from server.functions import *
 
 # TODO:
 #   DataBase:
-#       reserved_words list
-#       trx validation
-#   ColumnMapping: raise error if trx is invalid for columns mapping
+#       DONE reserved_words list
+#       DONE trx validation
+#   ColumnMapping:
+#       DONE raise error if trx is invalid for columns mapping
+#   Pipeline:
+#       Handle alias for tables
 
 
 class Meta(type):
