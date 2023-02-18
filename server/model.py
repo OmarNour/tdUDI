@@ -185,26 +185,37 @@ class DataBaseEngine(MyID):
     def reserved_words(self, rd_list:[]):
         self._reserved_words = list(set(rd_list + ['null']))
 
+    @property
     def schemas(self) -> []:
         schema: Schema
-        return [schema for schema in Schema.get_instance() if self.id == schema.database.id]
+        return [schema for schema in Schema.get_instance() if self.id == schema.db_engine.id]
+
+    @property
+    def data_types(self) -> []:
+        data_type: DataType
+        return [data_type for data_type in DataType.get_instance() if self.id == data_type.db_engine.id]
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
+        data_type:DataType
         _trx = trx
         if _trx:
-            sep = ''
+            replace_ch = ''
+            single_quotes_pattern = r"'[^']*'"
+            _trx = re.sub(single_quotes_pattern, replace_ch, _trx)
+
             if extra_words is not None:
                 words = self.reserved_words + extra_words
             else:
                 words = self.reserved_words
 
+            words = words + [data_type.dt_name for data_type in self.data_types]
             sorted_words = sorted(words, key=len, reverse=True)
             word:str
             for word in sorted_words:
-                _trx = _trx.lower().replace(word.lower(), sep).strip()
+                _trx = _trx.lower().replace(word.lower(), replace_ch).strip()
 
             for spc in SPECIAL_CHARACTERS + NUMBERS:
-                _trx = _trx.replace(str(spc), sep).strip()
+                _trx = _trx.replace(str(spc), replace_ch).strip()
 
             if _trx != '':
                 return False
@@ -225,7 +236,7 @@ class Schema(MyID):
         return self._schema_name.lower()
 
     @property
-    def database(self) -> DataBaseEngine:
+    def db_engine(self) -> DataBaseEngine:
         return DataBaseEngine.get_instance(_id=self._db_id)
 
     @property
@@ -234,10 +245,14 @@ class Schema(MyID):
 
 
 class DataType(MyID):
-    def __init__(self, dt_name: str, *args, **kwargs):
+    def __init__(self, db_id, dt_name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dt_name = dt_name
+        self._db_id = db_id
 
+    @property
+    def db_engine(self) -> DataBaseEngine:
+        return DataBaseEngine.get_instance(_id=self._db_id)
 
 class DataSource(MyID):
     def __init__(self, source_name: str, source_level: int, scheduled: int, active: int = 1, **kwargs):
@@ -653,8 +668,8 @@ class ColumnMapping(MyID):
         col:Column
         if self._src_col_trx:
             _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns]
-            return self.pipeline.src_lyr_table.table.schema.database.valid_trx(trx=self._src_col_trx
-                                                                               , extra_words=_extra_words)
+            return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._src_col_trx
+                                                                                , extra_words=_extra_words)
         return True
 
     @property

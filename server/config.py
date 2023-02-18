@@ -14,7 +14,7 @@ cls_keys = {
         , 'Domain': ('data_set_id', 'domain_code')
         , 'DomainValue': ('domain_id', 'source_key')
         , 'Column': ('table_id', 'column_name')
-        , 'DataType': 'dt_name'
+        , 'DataType': ('db_id', 'dt_name')
         , 'Layer': 'layer_name'
         , 'LayerTable': ('layer_id', 'table_id')
         , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')

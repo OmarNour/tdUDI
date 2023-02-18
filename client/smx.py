@@ -83,7 +83,7 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_data_types(row):
             data_type_lst = row.data_type.split(sep='(')
-            DataType(dt_name=data_type_lst[0], _override=1)
+            DataType(db_id=self.db_engine.id, dt_name=data_type_lst[0], _override=1)
 
         @log_error_decorator(self.log_error_path)
         def extract_stg_tables(row):
@@ -116,7 +116,7 @@ class SMX:
 
             data_type_lst = row.data_type.split(sep='(')
             _data_type = data_type_lst[0]
-            data_type = DataType.get_instance(_key=_data_type)
+            data_type = DataType.get_instance(_key=(self.db_engine.id,_data_type))
 
             assert data_type, data_type_error_msg
 
@@ -250,7 +250,7 @@ class SMX:
             core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
             data_type_lst = row.data_type.split(sep='(')
             _data_type = data_type_lst[0]
-            data_type = DataType.get_instance(_key=_data_type)
+            data_type = DataType.get_instance(_key=(self.db_engine.id,_data_type))
             if data_type:
                 pk = 1 if row.pk.upper() == 'Y' else 0
                 mandatory = 1 if row.mandatory.upper() == 'Y' else 0
@@ -266,8 +266,8 @@ class SMX:
             table = Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
             LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
 
-            int_data_type = DataType.get_instance(_key='INTEGER')
-            vchar_data_type = DataType.get_instance(_key='VARCHAR')
+            int_data_type = DataType.get_instance(_key=(self.db_engine.id,'INTEGER'))
+            vchar_data_type = DataType.get_instance(_key=(self.db_engine.id,'VARCHAR'))
 
             Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
                    , data_type_id=vchar_data_type.id, dt_precision=None
