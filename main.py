@@ -1,5 +1,6 @@
 from client.smx import *
 
+
 # TODO:
 #   raise error if trx is in valid for columns mapping or in where clauses
 @time_elapsed_decorator
