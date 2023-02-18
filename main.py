@@ -1,8 +1,6 @@
 from client.smx import *
 
 
-# TODO:
-#   raise error if trx is in valid for columns mapping or in where clauses
 @time_elapsed_decorator
 def start():
     smx = SMX(smx_path, scripts_path)

@@ -1,6 +1,13 @@
 from server.functions import *
 
 
+# TODO:
+#   DataBase:
+#       reserved_words list
+#       trx validation
+#   ColumnMapping: raise error if trx is invalid for columns mapping
+
+
 class Meta(type):
     """
     This is a custom metaclass that is used to generate unique IDs for instances of the MyID class.
@@ -160,23 +167,6 @@ class Server(MyID):
         return self._server_name
 
 
-class DataSource(MyID):
-    def __init__(self, source_name: str, source_level: int, scheduled: int, active: int = 1, **kwargs):
-        super().__init__(**kwargs)
-        self._source_name = source_name
-        self.source_level = source_level
-        self.scheduled = scheduled
-        self.active = active
-
-    @property
-    def source_name(self):
-        return self._source_name.lower()
-
-    @property
-    def tables(self) -> []:
-        return [table for table in Table.get_instance() if self.id == table.data_source.id]
-
-
 class DataBase(MyID):
     def __init__(self, db_name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -216,6 +206,23 @@ class DataType(MyID):
     def __init__(self, dt_name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dt_name = dt_name
+
+
+class DataSource(MyID):
+    def __init__(self, source_name: str, source_level: int, scheduled: int, active: int = 1, **kwargs):
+        super().__init__(**kwargs)
+        self._source_name = source_name
+        self.source_level = source_level
+        self.scheduled = scheduled
+        self.active = active
+
+    @property
+    def source_name(self):
+        return self._source_name.lower()
+
+    @property
+    def tables(self) -> []:
+        return [table for table in Table.get_instance() if self.id == table.data_source.id]
 
 
 class Table(MyID):
