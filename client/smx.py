@@ -16,11 +16,11 @@ class SMX:
         self.xls = None
         self.reserved_words = {}
         self.data = {}
-
+        self.database = DataBase(db_name=DB_NAME)
         for layer_key, layer_value in LAYERS.items():
             Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
-            Schema(schema_name=layer_value.t_db, _override=1)
-            Schema(schema_name=layer_value.v_db, _override=1)
+            Schema(db_id=self.database.id, schema_name=layer_value.t_db, _override=1)
+            Schema(db_id=self.database.id, schema_name=layer_value.v_db, _override=1)
 
         DataSetType(set_type='BKEY')
         DataSetType(set_type='BMAP')
@@ -36,19 +36,19 @@ class SMX:
         self.txf_core_layer = Layer.get_instance(_key='TXF_CORE')
         self.core_layer = Layer.get_instance(_key='CORE')
 
-        self.src_t_schema = Schema.get_instance(_key=LAYERS['SRC'].t_db)
-        self.stg_t_schema = Schema.get_instance(_key=LAYERS['STG'].t_db)
-        self.utlfw_t_schema = Schema.get_instance(_key=LAYERS['BKEY'].t_db)
-        self.srci_t_schema = Schema.get_instance(_key=LAYERS['SRCI'].t_db)
-        self.core_t_schema = Schema.get_instance(_key=LAYERS['CORE'].t_db)
+        self.src_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRC'].t_db))
+        self.stg_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['STG'].t_db))
+        self.utlfw_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['BKEY'].t_db))
+        self.srci_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRCI'].t_db))
+        self.core_t_schema = Schema.get_instance(_key=(self.database.id, LAYERS['CORE'].t_db))
 
-        self.src_v_schema = Schema.get_instance(_key=LAYERS['SRC'].v_db)
-        self.stg_v_schema = Schema.get_instance(_key=LAYERS['STG'].v_db)
-        self.utlfw_v_schema = Schema.get_instance(_key=LAYERS['BKEY'].v_db)
-        self.txf_bkey_v_schema = Schema.get_instance(_key=LAYERS['TXF_BKEY'].v_db)
-        self.srci_v_schema = Schema.get_instance(_key=LAYERS['SRCI'].v_db)
-        self.txf_core_v_schema = Schema.get_instance(_key=LAYERS['TXF_CORE'].v_db)
-        self.core_v_schema = Schema.get_instance(_key=LAYERS['CORE'].v_db)
+        self.src_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRC'].v_db))
+        self.stg_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['STG'].v_db))
+        self.utlfw_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['BKEY'].v_db))
+        self.txf_bkey_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['TXF_BKEY'].v_db))
+        self.srci_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['SRCI'].v_db))
+        self.txf_core_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['TXF_CORE'].v_db))
+        self.core_v_schema = Schema.get_instance(_key=(self.database.id, LAYERS['CORE'].v_db))
 
     @time_elapsed_decorator
     def parse_file(self):

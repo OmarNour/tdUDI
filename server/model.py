@@ -177,16 +177,35 @@ class DataSource(MyID):
         return [table for table in Table.get_instance() if self.id == table.data_source.id]
 
 
+class DataBase(MyID):
+    def __init__(self, db_name: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._db_name = db_name
+
+    @property
+    def db_name(self):
+        return self._db_name.lower()
+
+    def schemas(self) -> []:
+        schema: Schema
+        return [schema for schema in Schema.get_instance() if self.id == schema.database.id]
+
+
 class Schema(MyID):
-    def __init__(self, schema_name: str, is_tmp: int = 0, notes: str = None, **kwargs):
+    def __init__(self, db_id, schema_name: str, is_tmp: int = 0, notes: str = None, **kwargs):
         super().__init__(**kwargs)
         self._schema_name = schema_name
+        self._db_id = db_id
         self.is_tmp = is_tmp
         self.notes = notes
 
     @property
     def schema_name(self):
-        return self._schema_name
+        return self._schema_name.lower()
+
+    @property
+    def database(self) -> DataBase:
+        return DataBase.get_instance(_id=self._db_id)
 
     @property
     def tables(self) -> []:
@@ -487,7 +506,7 @@ class Pipeline(MyID):
 
     @property
     def group_by_col_names(self) -> []:
-        gb:GroupBy
+        gb: GroupBy
         return [gb.column.column_name for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
 
     def _tgt_col_dic(self) -> dict:

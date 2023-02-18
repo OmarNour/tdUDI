@@ -2,11 +2,12 @@ from collections import namedtuple
 
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
-
+DB_NAME = 'teradata'
 cls_keys = {
         'server': 'server_name'
+        , 'DataBase': 'db_name'
         , 'datasource': 'source_name'
-        , 'schema': 'schema_name'
+        , 'schema': ('db_id','schema_name')
         , 'table': ('schema_id', 'table_name')
         , 'DataSetType': 'set_type'
         , 'DataSet': ('set_type_id', 'set_code')
