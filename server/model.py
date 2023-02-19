@@ -8,10 +8,11 @@ from server.functions import *
 #   ColumnMapping:
 #       DONE raise error if trx is invalid for columns mapping
 #   Pipeline:
-#       Handle alias for tables
+#       DONE Handle alias for main tables
+#       Handle alias for join tables
 #       handle transactional_data flag, to differentiate between trans and non-trans data
 #   GroupBy:
-#       to handle agg functions
+#       To handle agg functions
 #   Filter & OrFilter:
 #       Comparison operators:
 #           "="             (equal to)
