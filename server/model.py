@@ -9,6 +9,7 @@ from server.functions import *
 #       DONE raise error if trx is invalid for columns mapping
 #   Pipeline:
 #       Handle alias for tables
+#       handle transactional_data flag, to differentiate between trans and non-trans data
 #   GroupBy:
 #       to handle agg functions
 #   Filter & OrFilter:
@@ -568,6 +569,7 @@ class Pipeline(MyID):
                  , tgt_lyr_table_id: int
                  , table_id: int | None = None
                  , transactional_data: bool = False
+                 , tgt_table_alias: str = None
                  , active: int = 1
                  , *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -575,6 +577,7 @@ class Pipeline(MyID):
         self._tgt_lyr_table_id = tgt_lyr_table_id
         self._table_id = table_id
         self.transactional_data = transactional_data
+        self._tgt_table_alias = tgt_table_alias
         self.active = active
 
         if self.tgt_lyr_table.table.table_kind == 'V':
@@ -595,6 +598,10 @@ class Pipeline(MyID):
         return LayerTable.get_instance(_id=self._tgt_lyr_table_id)
 
     @property
+    def tgt_table_alias(self):
+        return self._tgt_table_alias if self._tgt_table_alias else ALPHABETS[0]
+
+    @property
     def column_mapping(self) -> []:
         return [cm for cm in ColumnMapping.get_instance() if cm.pipeline.id == self.id]
 
@@ -605,7 +612,7 @@ class Pipeline(MyID):
     @property
     def group_by_col_names(self) -> []:
         gb: GroupBy
-        return [gb.column.column_name for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
+        return [f"{self.tgt_table_alias}.{gb.column.column_name}" for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
 
     def _tgt_col_dic(self) -> dict:
         col_m: ColumnMapping
@@ -613,7 +620,7 @@ class Pipeline(MyID):
         for col_m in self.column_mapping:
             if col_m.tgt_col not in _dic.keys():
                 _dic[col_m.tgt_col] = []
-            _dic[col_m.tgt_col].append('(' + col_m.src_col_trx + ')')
+            _dic[col_m.tgt_col].append('(' + col_m.src_col_trx(self.tgt_table_alias) + ')')
         return _dic
 
     @property
@@ -622,7 +629,9 @@ class Pipeline(MyID):
         distinct = ''
         col_mapping = ''
         with_clause = ''
-        from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name, table_name=self.src_lyr_table.table.table_name)
+        from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name
+                                           , table_name=self.src_lyr_table.table.table_name
+                                           , alias=self.tgt_table_alias)
         join_clause = ''
         where_clause = ''
         group_by_clause = group_by_template.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
@@ -704,9 +713,9 @@ class ColumnMapping(MyID):
                                                                                 , extra_words=_extra_words)
         return True
 
-    @property
-    def src_col_trx(self):
-        return self._src_col_trx if self._src_col_trx else self.src_col.column_name
+    def src_col_trx(self, tgt_table_alias: str = ''):
+        alias = tgt_table_alias + '.' if tgt_table_alias else ''
+        return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
     @property
     def vaild_tgt_col(self) -> bool:

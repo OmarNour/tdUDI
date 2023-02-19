@@ -37,6 +37,10 @@ LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
     , 'CORE': LayerDtl(6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+ALPHABETS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'
+                , 'h', 'i', 'j', 'k', 'l', 'm', 'n'
+                , 'o', 'p', 'q', 'r', 's', 't', 'u'
+                , 'v', 'w', 'x', 'y', 'z']
 SPECIAL_CHARACTERS = [
     '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
@@ -45,7 +49,7 @@ SPECIAL_CHARACTERS = [
 
 cast_dtype_template = """({dtype_name} {precise})"""
 col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
-from_template = """{schema_name}.{table_name}"""
+from_template = """{schema_name}.{table_name} {alias}"""
 group_by_template = """group by {columns}"""
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
 COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} {latin_unicode} {case_sensitive} {not_null}\n """
