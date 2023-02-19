@@ -10,6 +10,7 @@ from server.functions import *
 #   Pipeline:
 #       DONE Handle alias for main tables
 #       Handle alias for join tables
+#       use ALPHABETS.pop(), to get aliases!
 #       handle transactional_data flag, to differentiate between trans and non-trans data
 #   GroupBy:
 #       To handle agg functions
