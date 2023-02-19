@@ -116,7 +116,7 @@ class SMX:
 
             data_type_lst = row.data_type.split(sep='(')
             _data_type = data_type_lst[0]
-            data_type = DataType.get_instance(_key=(self.db_engine.id,_data_type))
+            data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
 
             assert data_type, data_type_error_msg
 
@@ -250,7 +250,7 @@ class SMX:
             core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
             data_type_lst = row.data_type.split(sep='(')
             _data_type = data_type_lst[0]
-            data_type = DataType.get_instance(_key=(self.db_engine.id,_data_type))
+            data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
             if data_type:
                 pk = 1 if row.pk.upper() == 'Y' else 0
                 mandatory = 1 if row.mandatory.upper() == 'Y' else 0
@@ -266,8 +266,8 @@ class SMX:
             table = Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
             LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
 
-            int_data_type = DataType.get_instance(_key=(self.db_engine.id,'INTEGER'))
-            vchar_data_type = DataType.get_instance(_key=(self.db_engine.id,'VARCHAR'))
+            int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
+            vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
 
             Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
                    , data_type_id=vchar_data_type.id, dt_precision=None
@@ -334,7 +334,9 @@ class SMX:
                 txf_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_table_name, table_kind='V', source_id=ds.id)
                 txf_bkey_lt = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=txf_v.id)
 
-                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=txf_bkey_lt.id)
+                bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=txf_bkey_lt.id)
+                if row.bkey_filter:
+                    Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
         @log_error_decorator(self.log_error_path)
         def extract_srci_views(row):
@@ -438,7 +440,7 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
         ##########################  Start bkey TXF view  #####################
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
         # extract_bkey_txf_columns
         ##########################  End bkey TXF view    #####################
 
@@ -458,6 +460,7 @@ class SMX:
         print('Column count:', len(Column.get_instance()))
         print('Pipeline count:', len(Pipeline.get_instance()))
         print('ColumnMapping count:', len(ColumnMapping.get_instance()))
+        print('Filter count:', len(Filter.get_instance()))
         print('GroupBy count:', len(GroupBy.get_instance()))
 
     @time_elapsed_decorator

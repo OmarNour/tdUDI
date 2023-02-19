@@ -19,6 +19,7 @@ cls_keys = {
         , 'LayerTable': ('layer_id', 'table_id')
         , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
         , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
+        , 'Filter' : ('pipeline_id', 'filter_seq')
         , 'GroupBy' : ('pipeline_id', 'col_id')
     }
 
@@ -50,6 +51,7 @@ SPECIAL_CHARACTERS = [
 cast_dtype_template = """({dtype_name} {precise})"""
 col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
 from_template = """{schema_name}.{table_name} {alias}"""
+where_template = """where {conditions}"""
 group_by_template = """group by {columns}"""
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
 COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} {latin_unicode} {case_sensitive} {not_null}\n """

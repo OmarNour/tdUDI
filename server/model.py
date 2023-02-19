@@ -626,6 +626,11 @@ class Pipeline(MyID):
         return _dic
 
     @property
+    def _filters(self)->[]:
+        f: Filter
+        return [f.filter_expr for f in Filter.get_instance() if f.pipeline.id == self.id]
+
+    @property
     def query(self):
         domain_template_query = """ (select {bkey_alisa}.EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key}\n and DOMAIN_ID={domain_id}) {tgt_col_name}"""
         distinct = ''
@@ -635,7 +640,7 @@ class Pipeline(MyID):
                                            , table_name=self.src_lyr_table.table.table_name
                                            , alias=self.tgt_table_alias)
         join_clause = ''
-        where_clause = ''
+        where_clause = where_template.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
         group_by_clause = group_by_template.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
         having_clause = ''
 
@@ -710,7 +715,8 @@ class ColumnMapping(MyID):
     def valid_src_col_trx(self) -> bool:
         col: Column
         if self._src_col_trx:
-            _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns]
+            _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns] + \
+                           [self.pipeline.src_lyr_table.table.table_name]
             return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._src_col_trx
                                                                                 , extra_words=_extra_words)
         return True
@@ -727,21 +733,24 @@ class ColumnMapping(MyID):
 class Filter(MyID):
     def __init__(self
                  , pipeline_id: int
-                 , col_id: int
-                 , is_not: bool
-                 , fn_value_if_null: bool
-                 , fn_trim: bool
-                 , fn_trim_trailing: str
-                 , fn_trim_leading: str
-                 , fn_substr: []
-                 , operator_id: int  # =, <>, in, not in, like, not like, exists, not exists
-                 , value: str
+                 , filter_seq: int
+                 , col_id: int = None
+                 , is_not: bool = False
+                 , fn_value_if_null: str = None
+                 , fn_trim: bool = False
+                 , fn_trim_trailing: str = None
+                 , fn_trim_leading: str = None
+                 , fn_substr: [] = None
+                 , operator_id: int = None  # =, <>, in, not in, like, not like, exists, not exists
+                 , value: str = None
                  , complete_filter_expr: str = None
                  , *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
         self._pipeline_id = pipeline_id
+        self.filter_seq = filter_seq
+        self._complete_filter_expr = complete_filter_expr
         self._col_id = col_id
+        assert self.valid_filter_expr, 'Invalid filter expression!'
+        super().__init__(*args, **kwargs)
 
     @property
     def pipeline(self) -> Pipeline:
@@ -750,6 +759,20 @@ class Filter(MyID):
     @property
     def column(self) -> Column:
         return Column.get_instance(_id=self._col_id)
+
+    @property
+    def valid_filter_expr(self) -> bool:
+        col: Column
+        if self._complete_filter_expr:
+            _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns] + \
+                           [self.pipeline.src_lyr_table.table.table_name]
+            return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_filter_expr
+                                                                                , extra_words=_extra_words)
+        return True
+
+    @property
+    def filter_expr(self):
+        return self._complete_filter_expr
 
 
 class OrFilter(MyID):
