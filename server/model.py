@@ -9,6 +9,7 @@ from server.functions import *
 #       DONE raise error if trx is invalid for columns mapping
 #   Pipeline:
 #       DONE Handle alias for main tables
+#       handle alias in difference expressions (col, where, etc.)
 #       Handle alias for join tables
 #       use ALPHABETS.pop(), to get aliases!
 #       handle transactional_data flag, to differentiate between trans and non-trans data
