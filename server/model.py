@@ -562,14 +562,18 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int, table_id: int | None = None, active: int = 1, *args, **kwargs):
+    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int
+                 , table_id: int | None = None
+                 , transactional_data: bool = False
+                 , active: int = 1
+                 , *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
         self._table_id = table_id
+        self.transactional_data = transactional_data
         self.active = active
 
-        # assert self.tgt_lyr_table.table.table_kind == 'T', "Pipeline target table's kind must Table only!"
         if self.tgt_lyr_table.table.table_kind == 'V':
             self._table_id = self.tgt_lyr_table.table.id
         elif self.table:
@@ -760,6 +764,7 @@ class OrFilter(MyID):
     @property
     def column(self) -> Column:
         return Column.get_instance(_id=self._col_id)
+
 
 class GroupBy(MyID):
     def __init__(self, pipeline_id: int, col_id: int, *args, **kwargs):
