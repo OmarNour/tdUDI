@@ -562,7 +562,9 @@ class LayerTable(MyID):
 
 
 class Pipeline(MyID):
-    def __init__(self, src_lyr_table_id: int, tgt_lyr_table_id: int
+    def __init__(self
+                 , src_lyr_table_id: int
+                 , tgt_lyr_table_id: int
                  , table_id: int | None = None
                  , transactional_data: bool = False
                  , active: int = 1
