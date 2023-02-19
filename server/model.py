@@ -10,9 +10,9 @@ from server.functions import *
 #   Pipeline:
 #       Handle alias for tables
 #   GroupBy:
-#         to handle agg functions
+#       to handle agg functions
 #   Filter & OrFilter:
-#         Comparison operators:
+#       Comparison operators:
 #           "=" (equal to)
 #           "<>" or "!=" (not equal to)
 #           ">" (greater than)
@@ -24,20 +24,20 @@ from server.functions import *
 #           "LIKE" (matches a pattern)
 #           "IS NULL" (checks for null values)
 #           "IS NOT NULL" (checks for non-null values)
-#         Logical operators:
+#        Logical operators:
 #           "AND" (logical and)
 #           "OR" (logical or)
 #           "NOT" (logical not)
-#         Set operators:
+#        Set operators:
 #           "UNION" (combines the results of two or more SELECT statements)
 #           "INTERSECT" (returns only the rows that are common to two SELECT statements)
 #           "EXCEPT" or "MINUS" (returns only the rows that are unique to the first SELECT statement)
-#         Arithmetic operators:
+#        Arithmetic operators:
 #           "+" (addition)
 #           "-" (subtraction)
 #           "*" (multiplication)
 #           "/" (division)
-#         Aggregate functions:
+#        Aggregate functions:
 #           "SUM" (returns the sum of all values in a column)
 #           "AVG" (returns the average of all values in a column)
 #           "COUNT" (returns the number of rows in a column)
