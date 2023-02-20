@@ -352,6 +352,20 @@ class Table(MyID):
         return Schema.get_instance(_id=self._schema_id)
 
     @property
+    def is_lookup(self):
+        if self.data_set:
+            if self.id == self.data_set.data_set_type.set_type == DS_BMAP:
+                return True
+        return False
+
+    @property
+    def dml(self) -> str:
+        # for data for lookups
+        dml = ''
+        if self.is_lookup:
+            dml = "insert into {db_name}.{table_name} values ({data})"
+        return dml
+    @property
     # @functools.cached_property
     def ddl(self) -> str:
         self._ddl = None

@@ -22,11 +22,11 @@ class SMX:
             Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _override=1)
             Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
 
-        DataSetType(set_type='BKEY')
-        DataSetType(set_type='BMAP')
+        DataSetType(set_type=DS_BKEY)
+        DataSetType(set_type=DS_BMAP)
 
-        self.bkey_set_type = DataSetType.get_instance(_key='bkey')
-        self.bmap_set_type = DataSetType.get_instance(_key='BMAP')
+        self.bkey_set_type = DataSetType.get_instance(_key=DS_BKEY)
+        self.bmap_set_type = DataSetType.get_instance(_key=DS_BMAP)
 
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')

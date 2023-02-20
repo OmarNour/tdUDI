@@ -27,6 +27,8 @@ SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
         , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
         , 'supplements']
 
+DS_BKEY = 'BKEY'
+DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
 LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
     , 'STG': LayerDtl(1, 'GDEV1V_STG', 'GDEV1T_STG')
