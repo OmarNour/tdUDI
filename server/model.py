@@ -580,8 +580,10 @@ class Pipeline(MyID):
         self._tgt_lyr_table_id = tgt_lyr_table_id
         self._table_id = table_id
         self.transactional_data = transactional_data
-        self._tgt_table_alias = tgt_table_alias
+        self._alphabets = ALPHABETS.copy()
+        self._tgt_table_alias = tgt_table_alias if tgt_table_alias else self._alphabets.pop()
         self.active = active
+        
 
         if self.tgt_lyr_table.table.table_kind == 'V':
             self._table_id = self.tgt_lyr_table.table.id
@@ -602,7 +604,7 @@ class Pipeline(MyID):
 
     @property
     def tgt_table_alias(self):
-        return self._tgt_table_alias if self._tgt_table_alias else ALPHABETS[0]
+        return self._tgt_table_alias if self._tgt_table_alias else ''
 
     @property
     def column_mapping(self) -> []:
@@ -623,11 +625,11 @@ class Pipeline(MyID):
         for col_m in self.column_mapping:
             if col_m.tgt_col not in _dic.keys():
                 _dic[col_m.tgt_col] = []
-            _dic[col_m.tgt_col].append('(' + col_m.src_col_trx(self.tgt_table_alias) + ')')
+            _dic[col_m.tgt_col].append('(' + col_m.src_col_trx + ')')
         return _dic
 
     @property
-    def _filters(self)->[]:
+    def _filters(self) -> []:
         f: Filter
         return [f.filter_expr for f in Filter.get_instance() if f.pipeline.id == self.id]
 
@@ -722,8 +724,12 @@ class ColumnMapping(MyID):
                                                                                 , extra_words=_extra_words)
         return True
 
-    def src_col_trx(self, tgt_table_alias: str = ''):
-        alias = tgt_table_alias + '.' if tgt_table_alias else ''
+    @property
+    def src_col_trx(self):
+        alias = ''
+        if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
+            alias = self.pipeline.tgt_table_alias + '.'
+
         return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
     @property
