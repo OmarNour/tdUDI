@@ -572,7 +572,7 @@ class Pipeline(MyID):
                  , tgt_lyr_table_id: int
                  , table_id: int | None = None
                  , transactional_data: bool = False
-                 , tgt_table_alias: str = None
+                 , src_table_alias: str = None
                  , active: int = 1
                  , *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -581,9 +581,8 @@ class Pipeline(MyID):
         self._table_id = table_id
         self.transactional_data = transactional_data
         self._alphabets = ALPHABETS.copy()
-        self._tgt_table_alias = tgt_table_alias if tgt_table_alias else self._alphabets.pop()
+        self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
         self.active = active
-        
 
         if self.tgt_lyr_table.table.table_kind == 'V':
             self._table_id = self.tgt_lyr_table.table.id
@@ -603,8 +602,8 @@ class Pipeline(MyID):
         return LayerTable.get_instance(_id=self._tgt_lyr_table_id)
 
     @property
-    def tgt_table_alias(self):
-        return self._tgt_table_alias if self._tgt_table_alias else ''
+    def src_table_alias(self):
+        return self._src_table_alias if self._src_table_alias else ''
 
     @property
     def column_mapping(self) -> []:
@@ -617,7 +616,7 @@ class Pipeline(MyID):
     @property
     def group_by_col_names(self) -> []:
         gb: GroupBy
-        return [f"{self.tgt_table_alias}.{gb.column.column_name}" for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
+        return [f"{self.src_table_alias}.{gb.column.column_name}" for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
 
     def _tgt_col_dic(self) -> dict:
         col_m: ColumnMapping
@@ -641,7 +640,7 @@ class Pipeline(MyID):
         with_clause = ''
         from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name
                                            , table_name=self.src_lyr_table.table.table_name
-                                           , alias=self.tgt_table_alias)
+                                           , alias=self.src_table_alias)
         join_clause = ''
         where_clause = where_template.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
         group_by_clause = group_by_template.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
@@ -728,7 +727,7 @@ class ColumnMapping(MyID):
     def src_col_trx(self):
         alias = ''
         if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
-            alias = self.pipeline.tgt_table_alias + '.'
+            alias = self.pipeline.src_table_alias + '.'
 
         return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
