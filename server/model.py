@@ -6,7 +6,8 @@ from server.functions import *
 #       DONE reserved_words list
 #       DONE trx validation
 #   Layer:
-#       add new attribute, to distinguish between different layers: 0 landing, 1 staging, 2 surrogate, 3 integration
+#       add new attribute, to distinguish between different layers: 0 landing, 1 staging, 2 surrogate, 3, srci, 4 core model
+#       create new class, named LayerType
 #   ColumnMapping:
 #       DONE raise error if trx is invalid for columns mapping
 #   Pipeline:

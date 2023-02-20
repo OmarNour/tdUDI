@@ -29,15 +29,16 @@ SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
 
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
-LayerDtl = namedtuple("LayerDetail", "level v_db t_db")
-LAYERS = {'SRC': LayerDtl(0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
-    , 'STG': LayerDtl(1, 'GDEV1V_STG', 'GDEV1T_STG')
-    , 'TXF_BKEY': LayerDtl(2, 'GDEV1V_INP', '')
-    , 'BKEY': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'BMAP': LayerDtl(3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'SRCI': LayerDtl(4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
-    , 'TXF_CORE': LayerDtl(5, 'GDEV1V_INP', '')
-    , 'CORE': LayerDtl(6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
+LayerDtl = namedtuple("LayerDetail","type level v_db t_db")
+LAYER_TYPES = ['landing', 'staging', 'surrogate', 'srci', 'core']
+LAYERS = {'SRC': LayerDtl(0, 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
+    , 'STG': LayerDtl(1, 1, 'GDEV1V_STG', 'GDEV1T_STG')
+    , 'TXF_BKEY': LayerDtl(1, 2, 'GDEV1V_INP', '')
+    , 'BKEY': LayerDtl(2, 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+    , 'BMAP': LayerDtl(2, 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+    , 'SRCI': LayerDtl(3, 4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
+    , 'TXF_CORE': LayerDtl(3, 5, 'GDEV1V_INP', '')
+    , 'CORE': LayerDtl(4, 6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 ALPHABETS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'
