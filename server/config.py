@@ -30,7 +30,7 @@ SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail","type level v_db t_db")
-LAYER_TYPES = ['landing', 'staging', 'surrogate', 'srci', 'core']
+LAYER_TYPES = ['src', 'staging', 'surrogate', 'srci', 'core']
 LAYERS = {'SRC': LayerDtl(0, 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
     , 'STG': LayerDtl(1, 1, 'GDEV1V_STG', 'GDEV1T_STG')
     , 'TXF_BKEY': LayerDtl(1, 2, 'GDEV1V_INP', '')
