@@ -365,6 +365,7 @@ class Table(MyID):
         if self.is_lookup:
             dml = "insert into {db_name}.{table_name} values ({data})"
         return dml
+
     @property
     # @functools.cached_property
     def ddl(self) -> str:
