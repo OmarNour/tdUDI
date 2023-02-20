@@ -297,6 +297,11 @@ class SMX:
                 Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
 
         @log_error_decorator(self.log_error_path)
+        def extract_bmap_core_tables(row):
+            if row.code_set_name != '':
+                Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T')
+
+        @log_error_decorator(self.log_error_path)
         def extract_bmap_datasets(row):
             table = Table.get_instance(_key=(self.utlfw_t_schema.id, row.physical_table))
             DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_name=row.code_set_name, table_id=table.id)
@@ -420,6 +425,8 @@ class SMX:
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
 
         self.data['bmap'][['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
+        self.data['bmap'][['code_set_name']].drop_duplicates().apply(extract_bmap_core_tables, axis=1)
+
         self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
         bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
         self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
