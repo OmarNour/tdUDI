@@ -598,6 +598,12 @@ class Pipeline(MyID):
         return LayerTable.get_instance(_id=self._src_lyr_table_id)
 
     @property
+    def all_src_cols(self) -> []:
+        # to get all columns from all source tables in this pipeline!
+        col: Column
+        return [col.column_name for col in self.src_lyr_table.table.columns]
+
+    @property
     def tgt_lyr_table(self) -> LayerTable:
         return LayerTable.get_instance(_id=self._tgt_lyr_table_id)
 
@@ -683,7 +689,7 @@ class Pipeline(MyID):
 
 class ColumnMapping(MyID):
     def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0
-                 , src_col_trx=None
+                 , src_col_trx: str = None
                  , fn_value_if_null=None
                  , *args, **kwargs):
         assert tgt_col_id is not None \
@@ -717,7 +723,7 @@ class ColumnMapping(MyID):
     def valid_src_col_trx(self) -> bool:
         col: Column
         if self._src_col_trx:
-            _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns] + \
+            _extra_words = self.pipeline.all_src_cols + \
                            [self.pipeline.src_lyr_table.table.table_name]
             return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._src_col_trx
                                                                                 , extra_words=_extra_words)
@@ -726,10 +732,18 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         alias = ''
+        _src_col_trx = ''
         if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
             alias = self.pipeline.src_table_alias + '.'
 
-        return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
+        if self._src_col_trx:
+            for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
+                _src_col_trx = self._src_col_trx.replace(col_name, f"{alias}{col_name}")
+            return _src_col_trx
+        else:
+            return f"{alias}{self.src_col.column_name}"
+
+        # return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
     @property
     def vaild_tgt_col(self) -> bool:
