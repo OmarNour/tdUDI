@@ -9,7 +9,7 @@ cls_keys = {
         , 'datasource': 'source_name'
         , 'schema': ('db_id','schema_name')
         , 'table': ('schema_id', 'table_name')
-        , 'DataSetType': 'set_type'
+        , 'DataSetType': 'name'
         , 'DataSet': ('set_type_id', 'set_code')
         , 'Domain': ('data_set_id', 'domain_code')
         , 'DomainValue': ('domain_id', 'source_key')
@@ -31,7 +31,7 @@ SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail","type level v_db t_db")
-LAYER_TYPES = ['src', 'staging', 'surrogate', 'srci', 'core']
+LAYER_TYPES = ['SRC', 'STG', 'SK', 'SRCI', 'CORE']
 LAYERS = {'SRC': LayerDtl(LAYER_TYPES[0], 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
     , 'STG': LayerDtl(LAYER_TYPES[1], 1, 'GDEV1V_STG', 'GDEV1T_STG')
     , 'TXF_BKEY': LayerDtl(LAYER_TYPES[1], 2, 'GDEV1V_INP', '')

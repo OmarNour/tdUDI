@@ -26,8 +26,8 @@ class SMX:
             if layer_value.v_db:
                 Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
 
-        DataSetType(set_type=DS_BKEY)
-        DataSetType(set_type=DS_BMAP)
+        DataSetType(name=DS_BKEY)
+        DataSetType(name=DS_BMAP)
 
         self.bkey_set_type = DataSetType.get_instance(_key=DS_BKEY)
         self.bmap_set_type = DataSetType.get_instance(_key=DS_BMAP)

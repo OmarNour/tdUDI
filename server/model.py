@@ -1,60 +1,6 @@
 from server.functions import *
 
 
-# TODO:
-#   Data Lineage report
-#   Data Quality report
-#   DataBase:
-#       DONE reserved_words list
-#       DONE trx validation
-#   Layer:
-#       add new attribute, to distinguish between different layers: 0 landing, 1 staging, 2 surrogate, 3, srci, 4 core model
-#       create new class, named LayerType
-#   ColumnMapping:
-#       DONE raise error if trx is invalid for columns mapping
-#   Pipeline:
-#       DONE Handle alias for main tables
-#       handle alias in difference expressions (col, where, etc.)
-#       Handle alias for join tables
-#       use ALPHABETS.pop(), to get aliases!
-#       handle transactional_data flag, to differentiate between trans and non-trans data
-#   GroupBy:
-#       To handle agg functions
-#   Filter & OrFilter:
-#       Comparison operators:
-#           "="             (equal to)
-#           "<>" or "!="    (not equal to)
-#           ">"             (greater than)
-#           ">="            (greater than or equal to)
-#           "<"             (less than)
-#           "<="            (less than or equal to)
-#           "BETWEEN"       (between a range of values)
-#           "IN"            (matches any value in a set)
-#           "LIKE"          (matches a pattern)
-#           "IS NULL"       (checks for null values)
-#           "IS NOT NULL"   (checks for non-null values)
-#        Logical operators:
-#           "AND"           (logical and)
-#           "OR"            (logical or)
-#           "NOT"           (logical not)
-#        Set operators:
-#           "UNION"         (combines the results of two or more SELECT statements)
-#           "INTERSECT"     (returns only the rows that are common to two SELECT statements)
-#           "EXCEPT"        (returns only the rows that are unique to the first SELECT statement)
-#           "MINUS"         (returns only the rows that are unique to the first SELECT statement)
-#        Arithmetic operators:
-#           "+"             (addition)
-#           "-"             (subtraction)
-#           "*"             (multiplication)
-#           "/"             (division)
-#        Aggregate functions:
-#           "SUM"           (returns the sum of all values in a column)
-#           "AVG"           (returns the average of all values in a column)
-#           "COUNT"         (returns the number of rows in a column)
-#           "MAX"           (returns the maximum value in a column)
-#           "MIN"           (returns the minimum value in a column)
-
-
 class Meta(type):
     """
     This is a custom metaclass that is used to generate unique IDs for instances of the MyID class.
@@ -359,17 +305,9 @@ class Table(MyID):
     @property
     def is_lookup(self):
         if self.data_set:
-            if self.id == self.data_set.data_set_type.set_type == DS_BMAP:
+            if self.id == self.data_set.data_set_type.name == DS_BMAP:
                 return True
         return False
-
-    @property
-    def dml(self) -> str:
-        # for data for lookups
-        dml = ''
-        if self.is_lookup:
-            dml = "insert into {db_name}.{table_name} values ({data})"
-        return dml
 
     @property
     # @functools.cached_property
@@ -435,9 +373,9 @@ class Table(MyID):
 
 
 class DataSetType(MyID):
-    def __init__(self, set_type: str, **kwargs):
+    def __init__(self, name: str, **kwargs):
         super().__init__(**kwargs)
-        self.set_type = set_type
+        self.name = name
 
     @property
     def data_sets(self) -> []:
@@ -554,7 +492,7 @@ class LayerType(MyID):
 
 
 class Layer(MyID):
-    def __init__(self, layer_name:str, type_id:int, abbrev:str=None, layer_level:int=None, active:int=1, notes:str=None, *args, **kwargs):
+    def __init__(self, layer_name: str, type_id: int, abbrev: str = None, layer_level: int = None, active: int = 1, notes: str = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert layer_level is not None
         self._type_id = type_id
@@ -596,6 +534,14 @@ class LayerTable(MyID):
     def tgt_pipelines(self) -> []:
         return [pipe for pipe in Pipeline.get_instance() if pipe.tgt_lyr_table.id == self.id]
 
+    @property
+    def dml(self) -> str:
+        # for data for lookups
+        dml = ''
+        if self.table.is_lookup:
+            # based on the layer type, select the data from DomainValues
+            dml = "insert into {db_name}.{table_name} {columns} values ({data});\n"
+        return dml
 
 class Pipeline(MyID):
     def __init__(self
@@ -871,5 +817,5 @@ class GroupBy(MyID):
 
 
 if __name__ == '__main__':
-    DataSetType(set_type='xxxx')
-    DataSetType(set_type='xxxx')
+    DataSetType(name='xxxx')
+    DataSetType(name='xxxx')
