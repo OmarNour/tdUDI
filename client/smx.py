@@ -17,10 +17,14 @@ class SMX:
         # self.reserved_words = {}
         self.data = {}
         self.db_engine = DataBaseEngine(name=DB_NAME)
+        [LayerType(type_name=lt) for lt in LAYER_TYPES]
         for layer_key, layer_value in LAYERS.items():
-            Layer(layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
-            Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _override=1)
-            Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
+            layer_type = LayerType.get_instance(_key=layer_value.type)
+            Layer(type_id=layer_type.id, layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
+            if layer_value.t_db:
+                Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _override=1)
+            if layer_value.v_db:
+                Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
 
         DataSetType(set_type=DS_BKEY)
         DataSetType(set_type=DS_BMAP)

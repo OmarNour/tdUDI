@@ -2,6 +2,8 @@ from server.functions import *
 
 
 # TODO:
+#   Data Lineage report
+#   Data Quality report
 #   DataBase:
 #       DONE reserved_words list
 #       DONE trx validation
@@ -545,15 +547,26 @@ class Column(MyID):
         return Domain.get_instance(_id=self._domain_id)
 
 
+class LayerType(MyID):
+    def __init__(self, type_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.type_name = type_name
+
+
 class Layer(MyID):
-    def __init__(self, layer_name, abbrev=None, layer_level=None, active=1, notes=None, *args, **kwargs):
+    def __init__(self, layer_name:str, type_id:int, abbrev:str=None, layer_level:int=None, active:int=1, notes:str=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert layer_level is not None
+        self._type_id = type_id
         self.layer_name = layer_name
         self.abbrev = abbrev
         self.layer_level = layer_level
         self.active = active
         self.notes = notes
+
+    @property
+    def layer_type(self):
+        return LayerType.get_instance(_id=self._type_id)
 
     @property
     def layer_tables(self) -> []:

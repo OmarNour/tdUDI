@@ -15,6 +15,7 @@ cls_keys = {
         , 'DomainValue': ('domain_id', 'source_key')
         , 'Column': ('table_id', 'column_name')
         , 'DataType': ('db_id', 'dt_name')
+        , 'LayerType': 'type_name'
         , 'Layer': 'layer_name'
         , 'LayerTable': ('layer_id', 'table_id')
         , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
@@ -31,14 +32,14 @@ DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail","type level v_db t_db")
 LAYER_TYPES = ['src', 'staging', 'surrogate', 'srci', 'core']
-LAYERS = {'SRC': LayerDtl(0, 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
-    , 'STG': LayerDtl(1, 1, 'GDEV1V_STG', 'GDEV1T_STG')
-    , 'TXF_BKEY': LayerDtl(1, 2, 'GDEV1V_INP', '')
-    , 'BKEY': LayerDtl(2, 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'BMAP': LayerDtl(2, 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'SRCI': LayerDtl(3, 4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
-    , 'TXF_CORE': LayerDtl(3, 5, 'GDEV1V_INP', '')
-    , 'CORE': LayerDtl(4, 6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
+LAYERS = {'SRC': LayerDtl(LAYER_TYPES[0], 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
+    , 'STG': LayerDtl(LAYER_TYPES[1], 1, 'GDEV1V_STG', 'GDEV1T_STG')
+    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[1], 2, 'GDEV1V_INP', '')
+    , 'BKEY': LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+    , 'BMAP': LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+    , 'SRCI': LayerDtl(LAYER_TYPES[3], 4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
+    , 'TXF_CORE': LayerDtl(LAYER_TYPES[3], 5, 'GDEV1V_INP', '')
+    , 'CORE': LayerDtl(LAYER_TYPES[4], 6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
 
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 ALPHABETS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'
