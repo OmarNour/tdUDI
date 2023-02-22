@@ -35,6 +35,7 @@ class SMX:
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')
         self.txf_bkey_layer = Layer.get_instance(_key='TXF_BKEY')
+        self.bmap_layer = Layer.get_instance(_key='BMAP')
         self.bkey_layer = Layer.get_instance(_key='BKEY')
         self.srci_layer = Layer.get_instance(_key='SRCI')
         self.txf_core_layer = Layer.get_instance(_key='TXF_CORE')
@@ -42,13 +43,15 @@ class SMX:
 
         self.src_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRC'].t_db))
         self.stg_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['STG'].t_db))
-        self.utlfw_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].t_db))
+        self.bmap_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BMAP'].t_db))
+        self.bkey_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].t_db))
         self.srci_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRCI'].t_db))
         self.core_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['CORE'].t_db))
 
         self.src_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRC'].v_db))
         self.stg_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['STG'].v_db))
-        self.utlfw_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].v_db))
+        self.bmap_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BMAP'].v_db))
+        self.bkey_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].v_db))
         self.txf_bkey_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_BKEY'].v_db))
         self.srci_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRCI'].v_db))
         self.txf_core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_CORE'].v_db))
@@ -267,11 +270,8 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bkey_tables(row):
-            table = Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
+            table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T')
             LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
-
-            int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
-            vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
 
             Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
                    , data_type_id=vchar_data_type.id, dt_precision=None
@@ -287,7 +287,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bkey_datasets(row):
-            table = Table.get_instance(_key=(self.utlfw_t_schema.id, row.physical_table))
+            table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
             DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_name=row.key_set_name, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
@@ -298,16 +298,36 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_bmap_tables(row):
             if row.physical_table != '':
-                Table(schema_id=self.utlfw_t_schema.id, table_name=row.physical_table, table_kind='T')
+                table = Table(schema_id=self.bmap_t_schema.id, table_name=row.physical_table, table_kind='T')
+                LayerTable(layer_id=self.bmap_layer.id, table_id=table.id)
 
+                Column(table_id=table.id, column_name='SOURCE_CODE', is_pk=1, mandatory=1
+                       , data_type_id=vchar_data_type.id, dt_precision=None
+                       , is_start_date=0, is_end_date=0)
+
+                Column(table_id=table.id, column_name='DOMAIN_ID', is_pk=1, mandatory=1
+                       , data_type_id=int_data_type.id, dt_precision=None
+                       , is_start_date=0, is_end_date=0)
+
+                Column(table_id=table.id, column_name='CODE_SET_ID', is_pk=1, mandatory=1
+                       , data_type_id=int_data_type.id, dt_precision=None
+                       , is_start_date=0, is_end_date=0)
+
+                Column(table_id=table.id, column_name='EDW_CODE', is_pk=0, mandatory=1
+                       , data_type_id=int_data_type.id, dt_precision=None
+                       , is_start_date=0, is_end_date=0)
+
+                Column(table_id=table.id, column_name='DESCRIPTION', is_pk=0, mandatory=1
+                       , data_type_id=vchar_data_type.id, dt_precision=None
+                       , is_start_date=0, is_end_date=0)
         @log_error_decorator(self.log_error_path)
-        def extract_bmap_core_tables(row):
+        def extract_lookup_core_tables(row):
             if row.code_set_name != '':
                 Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T')
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_datasets(row):
-            table = Table.get_instance(_key=(self.utlfw_t_schema.id, row.physical_table))
+            table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
             DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_name=row.code_set_name, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
@@ -423,13 +443,15 @@ class SMX:
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
 
+        int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
+        vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
         ##########################  Start bkey & bmaps   #####################
         self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
         self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
 
         self.data['bmap'][['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
-        self.data['bmap'][['code_set_name']].drop_duplicates().apply(extract_bmap_core_tables, axis=1)
+        self.data['bmap'][['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
 
         self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
         bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
