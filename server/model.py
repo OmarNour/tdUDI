@@ -305,7 +305,7 @@ class Table(MyID):
     @property
     def is_lookup(self):
         if self.data_set:
-            if self.id == self.data_set.data_set_type.name == DS_BMAP:
+            if self.data_set.data_set_type.name == DS_BMAP:
                 return True
         return False
 
@@ -427,6 +427,11 @@ class Domain(MyID):
                 return x
         return {}
 
+    @property
+    def values(self) -> []:
+        dv: DomainValue
+        return [dv for dv in DomainValue.get_instance() if dv.domain.id == self.id]
+
 
 class DomainValue(MyID):
     def __init__(self, domain_id, source_key, edw_key, description, *args, **kwargs):
@@ -503,7 +508,7 @@ class Layer(MyID):
         self.notes = notes
 
     @property
-    def layer_type(self):
+    def layer_type(self) -> LayerType:
         return LayerType.get_instance(_id=self._type_id)
 
     @property
@@ -537,11 +542,24 @@ class LayerTable(MyID):
     @property
     def dml(self) -> str:
         # for data for lookups
+        schema_name = self.table.schema.schema_name
+        table_name = self.table.table_name
+        columns = list_to_string([col.column_name for col in self.table.columns], ',')
         dml = ''
         if self.table.is_lookup:
             # based on the layer type, select the data from DomainValues
-            dml = "insert into {db_name}.{table_name} {columns} values ({data});\n"
+            domain: Domain
+            dv: DomainValue
+            for domain in self.table.data_set.domains:
+                domain_code = domain.domain_code
+                set_code = domain.data_set.set_code
+                for dv in domain.values:
+                    src_code = dv.source_key
+                    edw_code = dv.edw_key
+                    desc = dv.description
+                    dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
         return dml
+
 
 class Pipeline(MyID):
     def __init__(self

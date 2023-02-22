@@ -515,10 +515,14 @@ class SMX:
 
                 if lyr_src_name == _source_name or lyr_src_name is None:
                     ddl = layer_table.table.ddl
-                    if layer_table.table.table_kind == 'T':
-                        tables_ddl.append(ddl)
-                    elif layer_table.table.table_kind == 'V':
-                        views_ddl.append(ddl)
+                    dml = layer_table.dml
+                    if ddl:
+                        if layer_table.table.table_kind == 'T':
+                            tables_ddl.append(ddl)
+                        elif layer_table.table.table_kind == 'V':
+                            views_ddl.append(ddl)
+                    if dml:
+                        tables_dml.append(dml)
 
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
@@ -526,23 +530,31 @@ class SMX:
 
             tables_ddl = []
             views_ddl = []
+            tables_dml = []
             threads(layer_table_scripts, layer.layer_tables)
             # for layer_table in layer.layer_tables:
 
-            tables_ddl = list(filter(None, tables_ddl))
-            views_ddl = list(filter(None, views_ddl))
-
-            tables_ddl = "\n".join(tables_ddl)
-            views_ddl = "\n".join(views_ddl)
-
             ################ START WRITE TO FILES ################
-            tables_file = WriteFile(layer_path, 'tables', "sql")
-            tables_file.write(tables_ddl)
-            tables_file.close()
+            if tables_ddl:
+                tables_ddl = list(filter(None, tables_ddl))
+                tables_ddl = "\n".join(tables_ddl)
+                tables_file = WriteFile(layer_path, 'tables', "sql")
+                tables_file.write(tables_ddl)
+                tables_file.close()
 
-            views_file = WriteFile(layer_path, 'views', "sql")
-            views_file.write(views_ddl)
-            views_file.close()
+            if views_ddl:
+                views_ddl = list(filter(None, views_ddl))
+                views_ddl = "\n".join(views_ddl)
+                views_file = WriteFile(layer_path, 'views', "sql")
+                views_file.write(views_ddl)
+                views_file.close()
+
+            if tables_dml:
+                tables_dml = list(filter(None, tables_dml))
+                tables_dml = "\n".join(tables_dml)
+                dml_file = WriteFile(layer_path, 'data', "sql")
+                dml_file.write(tables_dml)
+                dml_file.close()
             ################ END WRITE TO FILES ################
 
         threads(layer_scripts, Layer.get_instance())
