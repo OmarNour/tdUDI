@@ -320,6 +320,7 @@ class SMX:
                 Column(table_id=table.id, column_name='DESCRIPTION', is_pk=0, mandatory=1
                        , data_type_id=vchar_data_type.id, dt_precision=None
                        , is_start_date=0, is_end_date=0)
+
         @log_error_decorator(self.log_error_path)
         def extract_lookup_core_tables(row):
             if row.code_set_name != '':
