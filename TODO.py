@@ -1,4 +1,5 @@
 # TODO:
+#   Connect to the DB, to deploy and report issues
 #   Data Lineage report
 #   Data Quality report
 #   DataBase:

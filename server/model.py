@@ -94,22 +94,27 @@ class MyID(metaclass=Meta):
 
     @classmethod
     # @lru_cache
+    def get_all_instances(cls):
+        return cls.__instances[cls.__name__].values()
+
+    @classmethod
+    # @lru_cache
     def get_instance(cls, _key=None, _id: int = None):
         """
         This method is used to retrieve an instance from the __instances dictionary using either the key or the ID of the instance.
         """
         instance_key = cls._normalize_key(_key)
         instance_id = _id
+
         if cls.__name__ in cls.__instances.keys():
 
             if instance_id in cls.__ids[cls.__name__].keys():
                 instance_key = cls.__ids[cls.__name__][instance_id]
 
-            if instance_key is None:
-                return cls.__instances[cls.__name__].values()
-
             if instance_key in cls.__instances[cls.__name__].keys():
                 return cls.__instances[cls.__name__][instance_key]
+
+
 
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
@@ -181,12 +186,12 @@ class DataBaseEngine(MyID):
     @property
     def schemas(self) -> []:
         schema: Schema
-        return [schema for schema in Schema.get_instance() if self.id == schema.db_engine.id]
+        return [schema for schema in Schema.get_all_instances() if self.id == schema.db_engine.id]
 
     @property
     def data_types(self) -> []:
         data_type: DataType
-        return [data_type for data_type in DataType.get_instance() if self.id == data_type.db_engine.id]
+        return [data_type for data_type in DataType.get_all_instances() if self.id == data_type.db_engine.id]
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
         data_type: DataType
@@ -234,7 +239,7 @@ class Schema(MyID):
 
     @property
     def tables(self) -> []:
-        return [table for table in Table.get_instance() if self.id == table.schema.id]
+        return [table for table in Table.get_all_instances() if self.id == table.schema.id]
 
 
 class DataType(MyID):
@@ -262,7 +267,7 @@ class DataSource(MyID):
 
     @property
     def tables(self) -> []:
-        return [table for table in Table.get_instance() if self.id == table.data_source.id]
+        return [table for table in Table.get_all_instances() if self.id == table.data_source.id]
 
 
 class Table(MyID):
@@ -288,7 +293,7 @@ class Table(MyID):
     @property
     def columns(self) -> []:
         col: Column
-        return [col for col in Column.get_instance() if col.table.id == self.id]
+        return [col for col in Column.get_all_instances() if col.table.id == self.id]
 
     @property
     def table_kind(self):
@@ -361,13 +366,13 @@ class Table(MyID):
     @property
     def data_set(self):
         _data_set: DataSet
-        for _data_set in DataSet.get_instance():
+        for _data_set in DataSet.get_all_instances():
             if _data_set.table.id == self.id:
                 return _data_set
 
     @property
     def pipeline(self):
-        for pipe in Pipeline.get_instance():
+        for pipe in Pipeline.get_all_instances():
             if pipe.table.id == self.id:
                 return pipe
 
@@ -379,7 +384,7 @@ class DataSetType(MyID):
 
     @property
     def data_sets(self) -> []:
-        return [ds for ds in DataSet.get_instance() if ds.data_set_type.id == self.id]
+        return [ds for ds in DataSet.get_all_instances() if ds.data_set_type.id == self.id]
 
 
 class DataSet(MyID):
@@ -400,11 +405,11 @@ class DataSet(MyID):
 
     @property
     def domains(self) -> []:
-        return [domain for domain in Domain.get_instance() if domain.data_set.id == self.id]
+        return [domain for domain in Domain.get_all_instances() if domain.data_set.id == self.id]
 
     @classmethod
     def get_by_name(cls, set_type_id, set_name):
-        for x in cls.get_instance():
+        for x in cls.get_all_instances():
             if x._set_type_id == set_type_id and x.set_name == set_name:
                 return x
 
@@ -422,7 +427,7 @@ class Domain(MyID):
 
     @classmethod
     def get_by_name(cls, data_set_id, domain_name):
-        for x in cls.get_instance():
+        for x in cls.get_all_instances():
             if x._data_set_id == data_set_id and x.domain_name == domain_name:
                 return x
         return {}
@@ -430,7 +435,7 @@ class Domain(MyID):
     @property
     def values(self) -> []:
         dv: DomainValue
-        return [dv for dv in DomainValue.get_instance() if dv.domain.id == self.id]
+        return [dv for dv in DomainValue.get_all_instances() if dv.domain.id == self.id]
 
 
 class DomainValue(MyID):
@@ -513,7 +518,7 @@ class Layer(MyID):
 
     @property
     def layer_tables(self) -> []:
-        return [lt for lt in LayerTable.get_instance() if lt.layer.id == self.id]
+        return [lt for lt in LayerTable.get_all_instances() if lt.layer.id == self.id]
 
 
 class LayerTable(MyID):
@@ -533,11 +538,11 @@ class LayerTable(MyID):
 
     @property
     def src_pipelines(self) -> []:
-        return [pipe for pipe in Pipeline.get_instance() if pipe.src_lyr_table.id == self.id]
+        return [pipe for pipe in Pipeline.get_all_instances() if pipe.src_lyr_table.id == self.id]
 
     @property
     def tgt_pipelines(self) -> []:
-        return [pipe for pipe in Pipeline.get_instance() if pipe.tgt_lyr_table.id == self.id]
+        return [pipe for pipe in Pipeline.get_all_instances() if pipe.tgt_lyr_table.id == self.id]
 
     @property
     def dml(self) -> str:
@@ -608,16 +613,16 @@ class Pipeline(MyID):
 
     @property
     def column_mapping(self) -> []:
-        return [cm for cm in ColumnMapping.get_instance() if cm.pipeline.id == self.id]
+        return [cm for cm in ColumnMapping.get_all_instances() if cm.pipeline.id == self.id]
 
     @property
     def group_by(self) -> []:
-        return [gb for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
+        return [gb for gb in GroupBy.get_all_instances() if gb.pipeline.id == self.id]
 
     @property
     def group_by_col_names(self) -> []:
         gb: GroupBy
-        return [f"{self.src_table_alias}.{gb.column.column_name}" for gb in GroupBy.get_instance() if gb.pipeline.id == self.id]
+        return [f"{self.src_table_alias}.{gb.column.column_name}" for gb in GroupBy.get_all_instances() if gb.pipeline.id == self.id]
 
     def _tgt_col_dic(self) -> dict:
         col_m: ColumnMapping
@@ -631,7 +636,7 @@ class Pipeline(MyID):
     @property
     def _filters(self) -> []:
         f: Filter
-        return [f.filter_expr for f in Filter.get_instance() if f.pipeline.id == self.id]
+        return [f.filter_expr for f in Filter.get_all_instances() if f.pipeline.id == self.id]
 
     @property
     def query(self):
@@ -683,7 +688,7 @@ class Pipeline(MyID):
 
 
 class ColumnMapping(MyID):
-    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int, col_seq: int = 0
+    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int | None, col_seq: int = 0
                  , src_col_trx: str = None
                  , fn_value_if_null=None
                  , *args, **kwargs):
@@ -728,8 +733,9 @@ class ColumnMapping(MyID):
     def src_col_trx(self):
         alias = ''
         _src_col_trx = ''
-        if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
-            alias = self.pipeline.src_table_alias + '.'
+        if self.src_col:
+            if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
+                alias = self.pipeline.src_table_alias + '.'
 
         if self._src_col_trx:
             for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
@@ -836,4 +842,8 @@ class GroupBy(MyID):
 
 if __name__ == '__main__':
     DataSetType(name='xxxx')
-    DataSetType(name='xxxx')
+    x = DataSetType.get_instance(_id=None)
+    # x = DataSetType.get_instance(_key='xxxx')
+    print(x)
+    # for i in x:
+    #     print(i.name)

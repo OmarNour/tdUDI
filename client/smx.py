@@ -396,12 +396,13 @@ class SMX:
             srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
             srci_lyr_table = LayerTable.get_instance(_key=(self.srci_layer.id, srci_table.id))
 
+            stg_t_col = None
             srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
 
             if row.natural_key != '':
-                nk_error_msg = f'Invalid natural key!,--> {row.natural_key}'
-                stg_t_cols = [col for col in stg_table.columns if col.column_name in row.natural_key]
-                assert stg_t_cols, nk_error_msg
+                # nk_error_msg = f'Invalid natural key!,--> {row.natural_key}'
+                # stg_t_cols = [col for col in stg_table.columns if col.column_name in row.natural_key]
+                # assert stg_t_cols, nk_error_msg
 
                 if row.key_set_name != '':
                     txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
@@ -409,36 +410,37 @@ class SMX:
                     txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
                     bkey_txf_v_col = Column(table_id=txf_v.id, column_name='source_key')
                     bkey_txf_pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, txf_bkey_lt.id))
-                    for col_seq, stg_t_col in enumerate(stg_t_cols):
-                        ColumnMapping(pipeline_id=bkey_txf_pipeline.id
-                                      , col_seq=col_seq
-                                      , src_col_id=stg_t_col.id
-                                      , tgt_col_id=bkey_txf_v_col.id
-                                      , src_col_trx=None
-                                      )
-                        GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=bkey_txf_v_col.id)
+                    # for col_seq, stg_t_col in enumerate(stg_t_cols):
+                    ColumnMapping(pipeline_id=bkey_txf_pipeline.id
+                                  , col_seq=0
+                                  , src_col_id=None
+                                  , tgt_col_id=bkey_txf_v_col.id
+                                  , src_col_trx=row.natural_key
+                                  )
+                    GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=bkey_txf_v_col.id)
 
             else:
-                stg_t_cols = [Column.get_instance(_key=(stg_table.id, row.column_name))]
+                stg_t_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+                assert stg_t_col, col_error_msg
+            #
+            #
+            #     # weird_txt = self.clean_trx(row.natural_key, extra=[col.column_name for col in stg_table.columns])
+            #     # trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
+            #     #                 f'\n-> {row.natural_key} ' \
+            #     #                 f'\n-xx->{weird_txt}<-xx-'
+            #     #
+            #     # assert weird_txt == '' or weird_txt == 'null', trx_error_msg
 
-                # weird_txt = self.clean_trx(row.natural_key, extra=[col.column_name for col in stg_table.columns])
-                # trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
-                #                 f'\n-> {row.natural_key} ' \
-                #                 f'\n-xx->{weird_txt}<-xx-'
-                #
-                # assert weird_txt == '' or weird_txt == 'null', trx_error_msg
-
-            assert stg_t_cols, col_error_msg
             assert srci_t_col, col_error_msg
 
             srci_v_pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
-            for col_seq, stg_t_col in enumerate(stg_t_cols):
-                ColumnMapping(pipeline_id=srci_v_pipeline.id
-                              , col_seq=col_seq
-                              , src_col_id=stg_t_col.id
-                              , tgt_col_id=srci_t_col.id
-                              , src_col_trx=None
-                              )
+            # for col_seq, stg_t_col in enumerate(stg_t_cols):
+            ColumnMapping(pipeline_id=srci_v_pipeline.id
+                          , col_seq=0
+                          , src_col_id=stg_t_col.id if stg_t_col else None
+                          , tgt_col_id=srci_t_col.id
+                          , src_col_trx=row.natural_key if row.natural_key else None
+                          )
 
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -481,21 +483,21 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
-        print('DataSetType count:', len(DataSetType.get_instance()))
-        print('Layer count:', len(Layer.get_instance()))
-        print('Schema count:', len(Schema.get_instance()))
-        print('DataType count:', len(DataType.get_instance()))
-        print('DataSource count:', len(DataSource.get_instance()))
-        print('Table count:', len(Table.get_instance()))
-        print('LayerTable count:', len(LayerTable.get_instance()))
-        print('DataSet count:', len(DataSet.get_instance()))
-        print('Domain count:', len(Domain.get_instance()))
-        print('DomainValue count:', len(DomainValue.get_instance()))
-        print('Column count:', len(Column.get_instance()))
-        print('Pipeline count:', len(Pipeline.get_instance()))
-        print('ColumnMapping count:', len(ColumnMapping.get_instance()))
-        print('Filter count:', len(Filter.get_instance()))
-        print('GroupBy count:', len(GroupBy.get_instance()))
+        print('DataSetType count:', len(DataSetType.get_all_instances()))
+        print('Layer count:', len(Layer.get_all_instances()))
+        print('Schema count:', len(Schema.get_all_instances()))
+        print('DataType count:', len(DataType.get_all_instances()))
+        print('DataSource count:', len(DataSource.get_all_instances()))
+        print('Table count:', len(Table.get_all_instances()))
+        print('LayerTable count:', len(LayerTable.get_all_instances()))
+        print('DataSet count:', len(DataSet.get_all_instances()))
+        print('Domain count:', len(Domain.get_all_instances()))
+        print('DomainValue count:', len(DomainValue.get_all_instances()))
+        print('Column count:', len(Column.get_all_instances()))
+        print('Pipeline count:', len(Pipeline.get_all_instances()))
+        print('ColumnMapping count:', len(ColumnMapping.get_all_instances()))
+        print('Filter count:', len(Filter.get_all_instances()))
+        print('GroupBy count:', len(GroupBy.get_all_instances()))
 
     @time_elapsed_decorator
     def generate_scripts(self, source_name: str = None):
@@ -557,5 +559,5 @@ class SMX:
                 dml_file.close()
             ################ END WRITE TO FILES ################
 
-        threads(layer_scripts, Layer.get_instance())
+        threads(layer_scripts, Layer.get_all_instances())
         open_folder(self.current_scripts_path)
