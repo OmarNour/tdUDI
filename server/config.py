@@ -72,3 +72,4 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
  """
 DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
 QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
+SRCI_V_BKEY_TEMPLATE_QUERY = """select EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key}\n and DOMAIN_ID={domain_id}"""

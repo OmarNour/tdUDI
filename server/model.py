@@ -114,8 +114,6 @@ class MyID(metaclass=Meta):
             if instance_key in cls.__instances[cls.__name__].keys():
                 return cls.__instances[cls.__name__][instance_key]
 
-
-
     @classmethod
     def __del_instance(cls, _key=None, _id: int = None):
         """
@@ -640,7 +638,7 @@ class Pipeline(MyID):
 
     @property
     def query(self):
-        domain_template_query = """ (select {bkey_alisa}.EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key}\n and DOMAIN_ID={domain_id}) {tgt_col_name}"""
+
         distinct = ''
         col_mapping = ''
         with_clause = ''
@@ -732,18 +730,26 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         alias = ''
-        _src_col_trx = ''
+        _src_col_trx = self._src_col_trx if self._src_col_trx else f"{self.src_col.column_name}"
+
         if self.src_col:
             if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
                 alias = self.pipeline.src_table_alias + '.'
 
-        if self._src_col_trx:
-            for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
-                _src_col_trx = self._src_col_trx.replace(col_name, f"{alias}{col_name}")
-            return _src_col_trx
-        else:
-            return f"{alias}{self.src_col.column_name}"
+        if self.tgt_col.domain:
+            if self.tgt_col.domain.data_set.data_set_type.name == DS_BKEY:
+                _src_col_trx = SRCI_V_BKEY_TEMPLATE_QUERY.format(bkey_db=self.tgt_col.domain.data_set.table.schema.schema_name
+                                                                 , bkey_table_name=self.tgt_col.domain.data_set.table.table_name
+                                                                 , src_key=_src_col_trx
+                                                                 , domain_id=self.tgt_col.domain.domain_code
+                                                                 )
+            elif self.tgt_col.domain.data_set.data_set_type.name == DS_BMAP:
+                _src_col_trx = "BMAP Query!"
 
+        for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
+            _src_col_trx = _src_col_trx.replace(col_name, f"{alias}{col_name}")
+
+        return _src_col_trx
         # return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
     @property
