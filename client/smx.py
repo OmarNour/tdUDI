@@ -112,7 +112,7 @@ class SMX:
             LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
-        def extract_stg_table_columns(row):
+        def extract_stg_srci_table_columns(row):
             data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
             bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined"
             bmap_dataset_error_msg = f"code set '{row.code_set_name}', is not defined"
@@ -464,7 +464,7 @@ class SMX:
 
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
         self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
-                                 'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_table_columns, axis=1)
+                                 'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
         self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
