@@ -500,7 +500,8 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
         ##########################      Start Core TXF view     #####################
-
+        # extract_core_txf_views
+        # extract_core_txf_view_columns
         ##########################      End Core TXF view       #####################
 
         print('DataSetType count:', len(DataSetType.get_all_instances()))
