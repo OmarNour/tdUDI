@@ -744,7 +744,11 @@ class ColumnMapping(MyID):
                                                                  , domain_id=self.tgt_col.domain.domain_code
                                                                  )
             elif self.tgt_col.domain.data_set.data_set_type.name == DS_BMAP:
-                _src_col_trx = "BMAP Query!"
+                _src_col_trx = SRCI_V_BMAP_TEMPLATE_QUERY.format(bmap_db=self.tgt_col.domain.data_set.table.schema.schema_name
+                                                                 ,bmap_table_name=self.tgt_col.domain.data_set.table.table_name
+                                                                 ,code_set_id=self.tgt_col.domain.data_set.set_code
+                                                                 ,source_code=_src_col_trx
+                                                                 ,domain_id=self.tgt_col.domain.domain_code)
 
         for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
             _src_col_trx = _src_col_trx.replace(col_name, f"{alias}{col_name}")
