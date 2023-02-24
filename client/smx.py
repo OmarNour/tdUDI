@@ -421,7 +421,7 @@ class SMX:
                                                                  , tgt_lvl=self.txf_bkey_layer.layer_level
                                                                  , domain_id=srci_t_col.domain.domain_code
                                                                  )
-                    # txf_table_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
+                    # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
                     txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
                     txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
                     bkey_txf_v_col = Column(table_id=txf_v.id, column_name='source_key')
@@ -449,7 +449,7 @@ class SMX:
 
             assert srci_t_col, col_error_msg
 
-            srci_v_pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, srci_lyr_table.id))
+            srci_v_pipeline = Pipeline.get_instance(_key=(stg_lt.id, srci_lyr_table.id))
             # for col_seq, stg_t_col in enumerate(stg_t_cols):
             ColumnMapping(pipeline_id=srci_v_pipeline.id
                           , col_seq=0
