@@ -324,7 +324,8 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_lookup_core_tables(row):
             if row.code_set_name != '':
-                Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T')
+                table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T')
+                LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_datasets(row):

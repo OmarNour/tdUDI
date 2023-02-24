@@ -306,7 +306,7 @@ class Table(MyID):
         return Schema.get_instance(_id=self._schema_id)
 
     @property
-    def is_lookup(self):
+    def is_bmap(self):
         if self.data_set:
             if self.data_set.data_set_type.name == DS_BMAP:
                 return True
@@ -406,10 +406,11 @@ class DataSet(MyID):
         return [domain for domain in Domain.get_all_instances() if domain.data_set.id == self.id]
 
     @classmethod
-    def get_by_name(cls, set_type_id, set_name):
-        for x in cls.get_all_instances():
-            if x._set_type_id == set_type_id and x.set_name == set_name:
-                return x
+    def get_by_name(cls, set_type_id:int, set_name:str):
+        ds:cls
+        for ds in cls.get_all_instances():
+            if ds._set_type_id == set_type_id and ds.set_name.lower() == set_name.lower():
+                return ds
 
 
 class Domain(MyID):
@@ -428,7 +429,6 @@ class Domain(MyID):
         for x in cls.get_all_instances():
             if x._data_set_id == data_set_id and x.domain_name == domain_name:
                 return x
-        return {}
 
     @property
     def values(self) -> []:
@@ -549,7 +549,7 @@ class LayerTable(MyID):
         table_name = self.table.table_name
         columns = list_to_string([col.column_name for col in self.table.columns], ',')
         dml = ''
-        if self.table.is_lookup:
+        if self.table.is_bmap:
             # based on the layer type, select the data from DomainValues
             domain: Domain
             dv: DomainValue
@@ -561,6 +561,17 @@ class LayerTable(MyID):
                     edw_code = dv.edw_key
                     desc = dv.description
                     dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
+        elif self.layer.layer_type.type_name == 'CORE':
+            bmap_dst: DataSetType
+            ds: DataSet
+
+            bmap_dst = DataSetType.get_instance(_key=DS_BMAP)
+            core_ds = DataSet.get_by_name(set_type_id=bmap_dst.id, set_name=self.table.table_name)
+
+            if core_ds:
+                ds_cols = list_to_string([col.column_name for col in core_ds.table.columns], ',')
+                dml = f"""insert into {schema_name}.{table_name}\n({columns})\nselect {ds_cols} from {core_ds.table.table_name};\n"""
+
         return dml
 
 
@@ -851,9 +862,9 @@ class GroupBy(MyID):
 
 
 if __name__ == '__main__':
-    DataSetType(name='xxxx')
-    x = DataSetType.get_instance(_id=None)
-    # x = DataSetType.get_instance(_key='xxxx')
+    DataSetType(name='xxxX')
+    # x = DataSetType.get_instance(_id=None)
+    x = DataSetType.get_instance(_key='xXxx')
     print(x)
     # for i in x:
     #     print(i.name)

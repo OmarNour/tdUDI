@@ -4,48 +4,50 @@ smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 DB_NAME = 'teradata'
 cls_keys = {
-        'server': 'server_name'
-        , 'DataBaseEngine': 'name'
-        , 'datasource': 'source_name'
-        , 'schema': ('db_id','schema_name')
-        , 'table': ('schema_id', 'table_name')
-        , 'DataSetType': 'name'
-        , 'DataSet': ('set_type_id', 'set_code')
-        , 'Domain': ('data_set_id', 'domain_code')
-        , 'DomainValue': ('domain_id', 'source_key')
-        , 'Column': ('table_id', 'column_name')
-        , 'DataType': ('db_id', 'dt_name')
-        , 'LayerType': 'type_name'
-        , 'Layer': 'layer_name'
-        , 'LayerTable': ('layer_id', 'table_id')
-        , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
-        , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
-        , 'Filter' : ('pipeline_id', 'filter_seq')
-        , 'GroupBy' : ('pipeline_id', 'col_id')
-    }
+    'server': 'server_name'
+    , 'DataBaseEngine': 'name'
+    , 'datasource': 'source_name'
+    , 'schema': ('db_id', 'schema_name')
+    , 'table': ('schema_id', 'table_name')
+    , 'DataSetType': 'name'
+    , 'DataSet': ('set_type_id', 'set_code')
+    , 'Domain': ('data_set_id', 'domain_code')
+    , 'DomainValue': ('domain_id', 'source_key')
+    , 'Column': ('table_id', 'column_name')
+    , 'DataType': ('db_id', 'dt_name')
+    , 'LayerType': 'type_name'
+    , 'Layer': 'layer_name'
+    , 'LayerTable': ('layer_id', 'table_id')
+    , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
+    , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
+    , 'Filter': ('pipeline_id', 'filter_seq')
+    , 'GroupBy': ('pipeline_id', 'col_id')
+}
 
 SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
-        , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
-        , 'supplements']
+    , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
+    , 'supplements']
 
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
-LayerDtl = namedtuple("LayerDetail","type level v_db t_db")
+LayerDtl = namedtuple("LayerDetail", "type level v_db t_db")
 LAYER_TYPES = ['SRC', 'STG', 'SK', 'SRCI', 'CORE']
-LAYERS = {'SRC': LayerDtl(LAYER_TYPES[0], 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
-    , 'STG': LayerDtl(LAYER_TYPES[1], 1, 'GDEV1V_STG', 'GDEV1T_STG')
-    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[1], 2, 'GDEV1V_INP', '')
-    , 'BKEY': LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'BMAP': LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'SRCI': LayerDtl(LAYER_TYPES[3], 4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
-    , 'TXF_CORE': LayerDtl(LAYER_TYPES[3], 5, 'GDEV1V_INP', '')
-    , 'CORE': LayerDtl(LAYER_TYPES[4], 6, 'GDEV1V_BASE', 'GDEV1T_BASE')}
+LAYERS = {
+      'SRC':        LayerDtl(LAYER_TYPES[0], 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
+    , 'STG':        LayerDtl(LAYER_TYPES[1], 1, 'GDEV1V_STG', 'GDEV1T_STG')
+    , 'TXF_BKEY':   LayerDtl(LAYER_TYPES[1], 2, 'GDEV1V_INP', '')
+    , 'BKEY':       LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+    , 'BMAP':       LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
+    , 'SRCI':       LayerDtl(LAYER_TYPES[3], 4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
+    , 'TXF_CORE':   LayerDtl(LAYER_TYPES[3], 5, 'GDEV1V_INP', '')
+    , 'CORE':       LayerDtl(LAYER_TYPES[4], 6, 'GDEV1V_BASE', 'GDEV1T_BASE')
+}
 
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 ALPHABETS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'
-                , 'h', 'i', 'j', 'k', 'l', 'm', 'n'
-                , 'o', 'p', 'q', 'r', 's', 't', 'u'
-                , 'v', 'w', 'x', 'y', 'z']
+    , 'h', 'i', 'j', 'k', 'l', 'm', 'n'
+    , 'o', 'p', 'q', 'r', 's', 't', 'u'
+    , 'v', 'w', 'x', 'y', 'z']
 SPECIAL_CHARACTERS = [
     '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ','
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
