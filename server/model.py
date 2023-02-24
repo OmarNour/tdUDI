@@ -702,7 +702,7 @@ class ColumnMapping(MyID):
         self._src_col_trx = src_col_trx
 
         assert self.valid_src_col_trx, "Invalid source column transformation!"
-        assert self.vaild_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
+        assert self.valid_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
         super().__init__(*args, **kwargs)
 
     @property
@@ -753,7 +753,7 @@ class ColumnMapping(MyID):
         # return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
     @property
-    def vaild_tgt_col(self) -> bool:
+    def valid_tgt_col(self) -> bool:
         return True if self.pipeline.tgt_lyr_table.table.id == self.tgt_col.table.id else False
 
 
