@@ -574,11 +574,11 @@ class LayerTable(MyID):
                     desc = dv.description
                     dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
 
-        else:
-            core_lookup_ds = self.core_lookup_ds
-            if core_lookup_ds:
-                ds_cols = list_to_string([col.column_name for col in core_lookup_ds.table.columns], ',')
-                dml = f"""insert into {schema_name}.{table_name}\n({columns})\nselect {ds_cols} from {core_lookup_ds.table.table_name};\n"""
+        # else:
+        #     core_lookup_ds = self.core_lookup_ds
+        #     if core_lookup_ds:
+        #         ds_cols = list_to_string([col.column_name for col in core_lookup_ds.table.columns], ',')
+        #         dml = f"""insert into {schema_name}.{table_name}\n({columns})\nselect {ds_cols} from {core_lookup_ds.table.table_name};\n"""
 
         return dml
 

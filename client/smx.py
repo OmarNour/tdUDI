@@ -499,6 +499,10 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
         self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
+        ##########################      Start Core TXF view     #####################
+
+        ##########################      End Core TXF view       #####################
+
         print('DataSetType count:', len(DataSetType.get_all_instances()))
         print('Layer count:', len(Layer.get_all_instances()))
         print('Schema count:', len(Schema.get_all_instances()))
