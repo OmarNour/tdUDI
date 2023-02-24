@@ -544,7 +544,7 @@ class LayerTable(MyID):
 
     @property
     def dml(self) -> str:
-        # for data for lookups
+        # for bmap data and base lookups
         schema_name = self.table.schema.schema_name
         table_name = self.table.table_name
         columns = list_to_string([col.column_name for col in self.table.columns], ',')
