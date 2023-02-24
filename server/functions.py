@@ -144,3 +144,8 @@ def read_config_file(file):
 if __name__ == '__main__':
     x = ['s']
     print(list_to_string(x, ','))
+    u = {'name': ['John', 'jane', 'MARY', 'john', 'Jane'], 'city': ['John', 'jane', 'MARY', 'john', 'Jane']}
+    df = pd.DataFrame(u)
+    df = df.apply(lambda x: x.astype(str).str.lower()).drop_duplicates(subset=['name'])
+
+    print(df.head())
