@@ -458,6 +458,34 @@ class SMX:
                           , src_col_trx=row.natural_key if row.natural_key else None
                           )
 
+        @log_error_decorator(self.log_error_path)
+        def extract_core_txf_views(row):
+            ds_error_msg = f"""{row.source}, is not defined, please check the 'System' sheet!"""
+            ds = DataSource.get_instance(_key=row.source)
+            assert ds, ds_error_msg
+
+            main_tables_name = row.main_source.split(',')
+            main_table_name = main_tables_name[0].strip()
+
+            srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
+            srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
+
+            core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
+            core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
+
+            txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(src_lvl=srci_lt.layer.layer_level
+                                                           , src_table_name=srci_t.table_name
+                                                           , tgt_lvl=self.txf_core_layer.layer_level
+                                                           , target_table=core_t.table_name
+                                                           )
+
+            core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
+            LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
+
+            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_lt.id, table_id=core_txf_v.id, src_table_alias=row.main_source_alias)
+            if row.filter_criterion:
+                Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
+
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -500,7 +528,12 @@ class SMX:
         self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
         ##########################      Start Core TXF view     #####################
-        # extract_core_txf_views
+        self.data['table_mapping'][
+            ['target_table_name', 'mapping_name', 'source'
+                , 'main_source', 'main_source_alias'
+                , 'filter_criterion']
+        ].drop_duplicates().apply(extract_core_txf_views, axis=1)
+        #
         # extract_core_txf_view_columns
         ##########################      End Core TXF view       #####################
 

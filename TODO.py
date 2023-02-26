@@ -1,4 +1,5 @@
 # TODO:
+#   change Pipeline.table_id, to Pipeline.view_id
 #   Create new objects, one for attribute names only, and the other for entity names only, then the both will create tables and columns!
 #   Rejection tables and rules, to be distinguished
 #   Connect to the DB, to deploy and report issues
