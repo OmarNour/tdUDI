@@ -473,11 +473,7 @@ class SMX:
             core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
             core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
 
-            txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(src_lvl=srci_lt.layer.layer_level
-                                                           , src_table_name=srci_t.table_name
-                                                           , tgt_lvl=self.txf_core_layer.layer_level
-                                                           , target_table=core_t.table_name
-                                                           )
+            txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
 
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
@@ -531,7 +527,7 @@ class SMX:
         self.data['table_mapping'][
             ['target_table_name', 'mapping_name', 'source'
                 , 'main_source', 'main_source_alias'
-                , 'filter_criterion']
+                , 'filter_criterion', 'mapping_name']
         ].drop_duplicates().apply(extract_core_txf_views, axis=1)
         #
         # extract_core_txf_view_columns

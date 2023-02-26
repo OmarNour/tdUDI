@@ -79,4 +79,4 @@ QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from
 SRCI_V_BKEY_TEMPLATE_QUERY = """select EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key}\n and DOMAIN_ID={domain_id}"""
 SRCI_V_BMAP_TEMPLATE_QUERY = """select EDW_Code\n from {bmap_db}.{bmap_table_name}\n where code_set_id = {code_set_id}\n and source_code = {source_code}\n and domain_id={domain_id}"""
 BK_VIEW_NAME_TEMPLATE = "BKEY_L{src_lvl}_{src_table_name}_{column_name}_L{tgt_lvl}_{domain_id}"
-CORE_VIEW_NAME_TEMPLATE = "TXF_L{src_lvl}_{src_table_name}_L{tgt_lvl}_{target_table}"
+CORE_VIEW_NAME_TEMPLATE = "TXF_CORE_{mapping_name}"
