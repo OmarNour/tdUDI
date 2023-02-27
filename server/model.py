@@ -814,8 +814,10 @@ class Filter(MyID):
     def valid_filter_expr(self) -> bool:
         col: Column
         if self._complete_filter_expr:
+            src_table_alias = (self.pipeline.src_table_alias + '.') if self.pipeline.src_table_alias else ''
             _extra_words = [col.column_name for col in self.pipeline.src_lyr_table.table.columns] + \
-                           [self.pipeline.src_lyr_table.table.table_name]
+                           [self.pipeline.src_lyr_table.table.table_name] + \
+                           [src_table_alias]
             return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_filter_expr
                                                                                 , extra_words=_extra_words)
         return True

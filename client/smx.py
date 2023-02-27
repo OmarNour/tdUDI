@@ -464,8 +464,16 @@ class SMX:
             ds = DataSource.get_instance(_key=row.source)
             assert ds, ds_error_msg
 
-            main_tables_name = row.main_source.split(',')
-            main_table_name = main_tables_name[0].strip()
+            if row.mapped_to == '':
+                main_tables_name = row.main_source.split(',')
+                main_table_name = main_tables_name[0].strip()
+                main_table_alias = row.main_source_alias
+            else:
+                main_tables_name = row.mapped_to.split(',')
+                main_table_name__alias = main_tables_name[0].split(' ')
+                main_table_name__alias = [item for item in main_table_name__alias if item != '']
+                main_table_name = main_table_name__alias[0]
+                main_table_alias = main_table_name__alias[1] if len(main_table_name__alias) >= 2 else row.main_source_alias
 
             srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
             srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
@@ -478,7 +486,7 @@ class SMX:
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
-            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_lt.id, table_id=core_txf_v.id, src_table_alias=row.main_source_alias)
+            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_lt.id, table_id=core_txf_v.id, src_table_alias=main_table_alias)
             if row.filter_criterion:
                 Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
@@ -526,7 +534,7 @@ class SMX:
         ##########################      Start Core TXF view     #####################
         self.data['table_mapping'][
             ['target_table_name', 'mapping_name', 'source'
-                , 'main_source', 'main_source_alias'
+                , 'main_source', 'main_source_alias', 'mapped_to'
                 , 'filter_criterion', 'mapping_name']
         ].drop_duplicates().apply(extract_core_txf_views, axis=1)
         #
