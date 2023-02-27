@@ -168,6 +168,8 @@ class DataBaseEngine(MyID):
         super().__init__(*args, **kwargs)
         self._name = name
         self._reserved_words = None
+        [JoinType(code=x.code, name=x.name) for x in JOIN_TYPES]
+        # print("JoinType count:", len(JoinType.get_all_instances()))
 
     @property
     def name(self):
@@ -406,8 +408,8 @@ class DataSet(MyID):
         return [domain for domain in Domain.get_all_instances() if domain.data_set.id == self.id]
 
     @classmethod
-    def get_by_name(cls, set_type_id:int, set_name:str):
-        ds:cls
+    def get_by_name(cls, set_type_id: int, set_name: str):
+        ds: cls
         for ds in cls.get_all_instances():
             if ds._set_type_id == set_type_id and ds.set_name.lower() == set_name.lower():
                 return ds
@@ -702,6 +704,13 @@ class Pipeline(MyID):
                                       )
 
         return re.sub(r'\n+', '\n', query)
+
+
+class JoinType(MyID):
+    def __init__(self, code: str, name: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.code = code
+        self.name = name
 
 
 class ColumnMapping(MyID):

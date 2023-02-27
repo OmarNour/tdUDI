@@ -24,6 +24,7 @@ cls_keys = {
     , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
     , 'Filter': ('pipeline_id', 'filter_seq')
     , 'GroupBy': ('pipeline_id', 'col_id')
+    , 'JoinType': 'code'
 }
 
 SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
@@ -33,6 +34,9 @@ SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail", "type level v_db t_db")
+JoinTypes = namedtuple("JoinTypes", "code name")
+JOIN_TYPES = [JoinTypes(code='ij', name='inner join'), JoinTypes(code='lj', name='left join'),
+              JoinTypes(code='rj', name='right join'),JoinTypes(code='fj', name='full outer join')]
 LAYER_TYPES = ['SRC', 'STG', 'SK', 'SRCI', 'CORE']
 LAYERS = {
       'SRC':        LayerDtl(LAYER_TYPES[0], 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
