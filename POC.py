@@ -24,7 +24,7 @@ parsed_query = sqlparse.parse(q)[0]
 #     print("--------")
 
 
-def parse_join(join_txt: str, split_by: str = 'join'):
+def parse_join(join_txt: str):
     _join_txt = ' ' + merge_multiple_spaces(join_txt) + ' '
     _join_txt = _join_txt.lower().replace(' inner ', ' ').replace(' outer ', ' ').strip()
     new_input_join = 'join '
