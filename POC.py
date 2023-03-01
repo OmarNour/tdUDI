@@ -50,7 +50,7 @@ def parse_join(join_txt: str):
 
             table__alias = merge_multiple_spaces(_split_0).split(' ', 1)
             table_name = table__alias[0]
-            table_alias = table__alias[1] if len(table__alias)>=2 else ''
+            table_alias = table__alias[1] if len(table__alias) >= 2 else ''
             print(f"table name {table_name}, alias {table_alias}")
 
             _split = _split_1.split(' join ', 1)
@@ -70,7 +70,6 @@ def parse_join(join_txt: str):
             if len(_split) >= 2:
                 parse_join(new_input_join + _split[1])
 
-
     # then no split done
     print("end of txt!")
     # return _join_txt
@@ -84,12 +83,12 @@ inner join DBSS_PC_PRODUCTSITEMVARIANT on DBSS_PC_PRODUCTSITEMVARIANT.id=DBSS_OM
 inner join   DBSS_CRM_TRANSACTIONSPAYMENT on DBSS_CRM_ALYSSASALESINVOICE.transaction_id=DBSS_CRM_TRANSACTIONSPAYMENT.transaction_id
 
     """
-#     x = """
-#      (SEL  beneficiary_national_id, APPLICATION_ID,MEMBER_ID
-#  FROM stg_online.TADAMON_CARDS)A
-#  JOIN stg_online.TADAMON_MEMBERS B
-# ON A.APPLICATION_ID = B.APPLICATION_ID
-#     """
+    #     x = """
+    #      (SEL  beneficiary_national_id, APPLICATION_ID,MEMBER_ID
+    #  FROM stg_online.TADAMON_CARDS)A
+    #  JOIN stg_online.TADAMON_MEMBERS B
+    # ON A.APPLICATION_ID = B.APPLICATION_ID
+    #     """
     y = parse_join(x)
     # print(y)
     # x = 'asd asda fsdf dfggggg and ON'
