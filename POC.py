@@ -27,6 +27,7 @@ parsed_query = sqlparse.parse(q)[0]
 def parse_join(join_txt: str):
     _join_txt = ' ' + merge_multiple_spaces(join_txt) + ' '
     _join_txt = _join_txt.lower().replace(' inner ', ' ').replace(' outer ', ' ').strip()
+    assert ' from ' not in _join_txt, 'Query cannot be found in join!'
     new_input_join = 'join '
 
     _split = _join_txt.split(' ', 1)
@@ -83,7 +84,12 @@ inner join DBSS_PC_PRODUCTSITEMVARIANT on DBSS_PC_PRODUCTSITEMVARIANT.id=DBSS_OM
 inner join   DBSS_CRM_TRANSACTIONSPAYMENT on DBSS_CRM_ALYSSASALESINVOICE.transaction_id=DBSS_CRM_TRANSACTIONSPAYMENT.transaction_id
 
     """
-    # x = '('
+#     x = """
+#      (SEL  beneficiary_national_id, APPLICATION_ID,MEMBER_ID
+#  FROM stg_online.TADAMON_CARDS)A
+#  JOIN stg_online.TADAMON_MEMBERS B
+# ON A.APPLICATION_ID = B.APPLICATION_ID
+#     """
     y = parse_join(x)
     # print(y)
     # x = 'asd asda fsdf dfggggg and ON'
