@@ -54,18 +54,18 @@ def parse_join(join_txt: str):
             print(f"table name {table_name}, alias {table_alias}")
 
             _split = _split_1.split(' join ', 1)
-            _split_0 = _split[0]
-            if _split_0.endswith(' left'):
-                _split_0 = _split[0].removesuffix(' left')
+            join_on = _split[0]
+            if join_on.endswith(' left'):
+                join_on = join_on.removesuffix(' left')
                 new_input_join = 'left join '
-            elif _split_0.endswith(' full'):
-                _split_0 = _split[0].removesuffix(' full')
+            elif join_on.endswith(' full'):
+                join_on = join_on.removesuffix(' full')
                 new_input_join = 'full join '
-            elif _split_0.endswith(' right'):
-                _split_0 = _split[0].removesuffix(' right')
+            elif join_on.endswith(' right'):
+                join_on = join_on.removesuffix(' right')
                 new_input_join = 'right join '
 
-            print(f"joined on {_split_0}")
+            print(f"joined on {join_on}")
             print("===-=-=-=-=-=-=-=-==-=-=-====")
             if len(_split) >= 2:
                 parse_join(new_input_join + _split[1])

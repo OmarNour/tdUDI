@@ -141,6 +141,19 @@ def read_config_file(file):
     return parser
 
 
+def remove_all_from_list(lst: [], word: str):
+    return [item for item in lst if item != word]
+
+
+def merge_multiple_spaces(txt: str):
+    return re.sub('\s+', ' ', txt.strip())
+
+
+def split_text(text, sep, maxsplit=0):
+    return re.split(sep, text, flags=re.IGNORECASE, maxsplit=maxsplit)
+
+
+
 if __name__ == '__main__':
     x = ['s']
     print(list_to_string(x, ','))

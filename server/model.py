@@ -713,6 +713,29 @@ class JoinType(MyID):
         self.name = name
 
 
+class JoinWith(MyID):
+    def __init__(self, pipeline_id: int,
+                 master_lyr_table_id: int, master_alias: str,
+                 join_type_id: int,
+                 with_lyr_table_id: int, with_alias: str,
+                 *args, **kwargs):
+        self._pipeline_id = pipeline_id
+        self._master_lyr_table_id = master_lyr_table_id
+        self.master_alias = master_alias
+        self._join_type_id = join_type_id
+        self._with_lyr_table_id = with_lyr_table_id
+        self.with_alias = with_alias
+
+        super().__init__(*args, **kwargs)
+
+
+class JoinOn(MyID):
+    def __init__(self, join_with_id: int
+                 , complete_join_on_expr: str = None
+                 , *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class ColumnMapping(MyID):
     def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int | None, col_seq: int = 0
                  , src_col_trx: str = None

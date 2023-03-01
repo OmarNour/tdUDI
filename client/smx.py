@@ -460,6 +460,71 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_core_txf_views(row):
+            def parse_join(join_txt: str):
+                join_type: JoinType
+                with_srci_lt: LayerTable
+
+                join_type = None
+                _join_txt = ' ' + merge_multiple_spaces(join_txt) + ' '
+                _join_txt = _join_txt.lower().replace(' inner ', ' ').replace(' outer ', ' ').strip()
+                assert ' from ' not in _join_txt, 'Query cannot be found in join!'
+                new_input_join = 'join '
+
+                _split = _join_txt.split(' ', 1)
+
+                if len(_split) >= 2:
+                    # print("===-=-=-=-=-=-=-=-==-=-=-====")
+                    if _split[0].lower() == 'join':
+                        # print('inner join found')
+                        join_type = JoinType.get_instance(_key='ij')
+                    elif _split[0].lower() == 'left':
+                        # print('left join found')
+                        join_type = JoinType.get_instance(_key='lj')
+                    elif _split[0].lower() == 'right':
+                        # print('right join found')
+                        join_type = JoinType.get_instance(_key='rj')
+                    elif _split[0].lower() == 'full':
+                        # print('full outer join found')
+                        join_type = JoinType.get_instance(_key='fj')
+
+                    assert join_type, 'No join found!'
+
+                    _split = _split[1].split(' on ', 1)
+                    # print('on split: ', _split)
+                    if len(_split) >= 2:
+                        _split_0 = _split[0]
+                        _split_1 = _split[1]
+
+                        table__alias = merge_multiple_spaces(_split_0).split(' ', 1)
+                        table_name = table__alias[0]
+                        table_alias = table__alias[1] if len(table__alias) >= 2 else ''
+                        with_srci_t = Table.get_instance(_key=(self.srci_t_schema.id, table_name))
+                        with_srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, with_srci_t.id))
+                        # print(f"table name {table_name}, alias {table_alias}")
+                        join_with = JoinWith(pipeline_id=core_pipeline.id
+                                             , master_lyr_table_id=srci_lt.id
+                                             , master_alias=core_pipeline.src_table_alias, join_type_id=join_type.id
+                                             , with_lyr_table_id=with_srci_lt.id, with_alias=table_alias)
+
+                        _split = _split_1.split(' join ', 1)
+                        join_on = _split[0]
+                        if join_on.endswith(' left'):
+                            join_on = join_on.removesuffix(' left')
+                            new_input_join = 'left join '
+                        elif join_on.endswith(' full'):
+                            join_on = join_on.removesuffix(' full')
+                            new_input_join = 'full join '
+                        elif join_on.endswith(' right'):
+                            join_on = join_on.removesuffix(' right')
+                            new_input_join = 'right join '
+
+                        # print(f"joined on {join_on}")
+                        JoinOn(join_with_id=join_with.id, complete_join_on_expr=join_on)
+
+                        # print("===-=-=-=-=-=-=-=-==-=-=-====")
+                        if len(_split) >= 2:
+                            parse_join(new_input_join + _split[1])
+
             ds_error_msg = f"""{row.source}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.source)
             assert ds, ds_error_msg
@@ -487,6 +552,9 @@ class SMX:
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
             core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_lt.id, table_id=core_txf_v.id, src_table_alias=main_table_alias)
+
+            parse_join(row.join)
+
             if row.filter_criterion:
                 Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
@@ -533,9 +601,11 @@ class SMX:
 
         ##########################      Start Core TXF view     #####################
         self.data['table_mapping'][
-            ['target_table_name', 'mapping_name', 'source'
+            [
+                'target_table_name', 'mapping_name', 'source'
                 , 'main_source', 'main_source_alias', 'mapped_to'
-                , 'filter_criterion', 'mapping_name']
+                , 'filter_criterion', 'mapping_name', 'join'
+            ]
         ].drop_duplicates().apply(extract_core_txf_views, axis=1)
         #
         # extract_core_txf_view_columns
@@ -554,6 +624,8 @@ class SMX:
         print('Column count:', len(Column.get_all_instances()))
         print('Pipeline count:', len(Pipeline.get_all_instances()))
         print('ColumnMapping count:', len(ColumnMapping.get_all_instances()))
+        print('JoinWith count:', len(JoinWith.get_all_instances()))
+        print('JoinOn count:', len(JoinOn.get_all_instances()))
         print('Filter count:', len(Filter.get_all_instances()))
         print('GroupBy count:', len(GroupBy.get_all_instances()))
 
