@@ -465,13 +465,13 @@ class SMX:
                 with_srci_lt: LayerTable
 
                 join_type = None
-                _join_txt = ' ' + merge_multiple_spaces(join_txt) + ' '
-                _join_txt = _join_txt.lower().replace(' inner ', ' ').replace(' outer ', ' ').strip()
-                assert ' from ' not in _join_txt, 'Query cannot be found in join!'
+                _join_txt = ' ' + merge_multiple_spaces(join_txt).lower() + ' '
+                assert ' select ' or ' sel ' or '(sel ' or '(select ' not in _join_txt, 'Query cannot be found in join!'
+                _join_txt = _join_txt.replace(' inner ', ' ').replace(' outer ', ' ').strip()
+
                 new_input_join = 'join '
 
                 _split = _join_txt.split(' ', 1)
-
                 if len(_split) >= 2:
                     # print("===-=-=-=-=-=-=-=-==-=-=-====")
                     if _split[0].lower() == 'join':
@@ -492,13 +492,15 @@ class SMX:
                     _split = _split[1].split(' on ', 1)
                     # print('on split: ', _split)
                     if len(_split) >= 2:
-                        _split_0 = _split[0]
+                        _split_0 = (' ' +_split[0]+' ').replace(' join ','')
                         _split_1 = _split[1]
 
                         table__alias = merge_multiple_spaces(_split_0).split(' ', 1)
                         table_name = table__alias[0]
                         table_alias = table__alias[1] if len(table__alias) >= 2 else ''
                         with_srci_t = Table.get_instance(_key=(self.srci_t_schema.id, table_name))
+                        err_msg_invalid_srci_tbl = f'invalid join table, {table_name}'
+                        assert with_srci_t, err_msg_invalid_srci_tbl
                         with_srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, with_srci_t.id))
                         # print(f"table name {table_name}, alias {table_alias}")
                         join_with = JoinWith(pipeline_id=core_pipeline.id
