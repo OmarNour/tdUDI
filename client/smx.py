@@ -543,15 +543,15 @@ class SMX:
             srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
             srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
-            core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
-            core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
+            # core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
+            # core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
 
             txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
 
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
-            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_lt.id, table_id=core_txf_v.id, src_table_alias=main_table_alias)
+            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_txf_v.id, src_table_alias=main_table_alias)
 
             parse_join(row.join)
 
@@ -602,7 +602,7 @@ class SMX:
         ##########################      Start Core TXF view     #####################
         self.data['table_mapping'][
             [
-                'target_table_name', 'mapping_name', 'source'
+                'target_table_name', 'source'
                 , 'main_source', 'main_source_alias', 'mapped_to'
                 , 'filter_criterion', 'mapping_name', 'join'
             ]
