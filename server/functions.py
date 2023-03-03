@@ -153,7 +153,6 @@ def split_text(text, sep, maxsplit=0):
     return re.split(sep, text, flags=re.IGNORECASE, maxsplit=maxsplit)
 
 
-
 if __name__ == '__main__':
     x = ['s']
     print(list_to_string(x, ','))
