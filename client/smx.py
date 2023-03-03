@@ -492,7 +492,7 @@ class SMX:
                     _split = _split[1].split(' on ', 1)
                     # print('on split: ', _split)
                     if len(_split) >= 2:
-                        _split_0 = (' ' +_split[0]+' ').replace(' join ','')
+                        _split_0 = (' ' + _split[0] + ' ').replace(' join ', '')
                         _split_1 = _split[1]
 
                         table__alias = merge_multiple_spaces(_split_0).split(' ', 1)
@@ -562,51 +562,59 @@ class SMX:
             if row.filter_criterion:
                 Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
+        ####################################################  Begin DFs  ####################################################
+        system_df = filter_dataframe(self.data['system'], 'schema', source_name)
+        stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', source_name)
+        core_tables_df = self.data['core_tables']
+        bkey_df = self.data['bkey']
+        bmap_df = self.data['bmap']
+        bmap_values_df = self.data['bmap_values']
+        table_mapping_df = filter_dataframe(self.data['table_mapping'], 'source', source_name)
+        ####################################################  End DFs  ####################################################
         ####################################################  Begin   ####################################################
-
-        self.data['system'].drop_duplicates().apply(extract_system, axis=1)
-        self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
-        self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+        system_df.drop_duplicates().apply(extract_system, axis=1)
+        stg_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+        core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
 
         int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
         vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
         ##########################  Start bkey & bmaps   #####################
-        self.data['bkey'][['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
-        self.data['bkey'][['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
-        self.data['bkey'][['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
+        bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
+        bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
+        bkey_df[['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
 
-        self.data['bmap'][['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
-        self.data['bmap'][['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
+        bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
+        bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
 
-        self.data['bmap'][['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
+        bmap_df[['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
         bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
-        self.data['bmap'][['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
-        self.data['bmap_values'][['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
+        bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
+        bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
         ##########################  End bkey & bmaps     #####################
 
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
-        self.data['stg_tables'][['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
-                                 'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
+        stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
+        stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
+                       'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
-        self.data['core_tables'][['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
-        self.data['core_tables'][['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
+        core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+        core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_src_views, axis=1)
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
+        stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_src_views, axis=1)
+        stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
 
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
+        stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
+        stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
         ##########################  Start bkey TXF view  #####################
-        self.data['stg_tables'][['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+        stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
         # extract_bkey_txf_columns
         ##########################  End bkey TXF view    #####################
 
-        self.data['stg_tables'][['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
-        self.data['stg_tables'][['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
+        stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
+        stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
 
         ##########################      Start Core TXF view     #####################
-        self.data['table_mapping'][
+        table_mapping_df[
             [
                 'target_table_name', 'source'
                 , 'main_source', 'main_source_alias', 'mapped_to'

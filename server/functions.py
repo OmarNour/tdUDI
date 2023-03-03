@@ -153,6 +153,14 @@ def split_text(text, sep, maxsplit=0):
     return re.split(sep, text, flags=re.IGNORECASE, maxsplit=maxsplit)
 
 
+def filter_dataframe(df, col: str = None, filter_value=None):
+    if filter_value is None:
+        return df
+    else:
+        mask = df[col].str.contains(filter_value, case=False)
+        return df[mask]
+
+
 if __name__ == '__main__':
     x = ['s']
     print(list_to_string(x, ','))

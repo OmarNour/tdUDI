@@ -1,5 +1,6 @@
 import sqlparse
 from server.functions import *
+import pandas as pd
 
 q = """
 select distinct  l.id layer_id, t.id table_id, 1 active
@@ -45,7 +46,7 @@ def parse_join(join_txt: str):
         _split = _split[1].split(' on ', 1)
         print('on split: ', _split)
         if len(_split) >= 2:
-            _split_0 = (' ' +_split[0]+' ').replace(' join ','')
+            _split_0 = (' ' + _split[0] + ' ').replace(' join ', '')
             _split_1 = _split[1]
 
             table__alias = merge_multiple_spaces(_split_0).split(' ', 1)
@@ -75,6 +76,23 @@ def parse_join(join_txt: str):
     # return _join_txt
 
 
+def filter_df():
+    # create a dataframe
+    df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
+                       'age': [25, 30, 35, 40],
+                       'gender': ['F', 'M', 'M', 'M']})
+
+    # create a boolean mask for the condition
+    mask = df['age'] > 30
+    value = None
+    mask = (df['name'] == value or value is None)
+
+    # apply the boolean mask to filter the dataframe
+    filtered_df = df[mask]
+
+    print(filtered_df)
+
+
 if __name__ == '__main__':
     x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
     """
@@ -84,10 +102,17 @@ if __name__ == '__main__':
     #  JOIN stg_online.TADAMON_MEMBERS B
     # ON A.APPLICATION_ID = B.APPLICATION_ID
     #     """
-    y = parse_join(x)
+    # y = parse_join(x)
     # print(y)
     # x = 'asd asda fsdf dfggggg and ON'
     # print(split_text(x, '('))
 
     # y =split_text(merge_multiple_spaces(x), 'join', 1)
     # print(y)
+    # filter_df()
+    df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
+                       'age': [25, 30, 35, 40],
+                       'gender': ['F', 'M', 'M', 'M']})
+
+    f_df = filter_dataframe(df, 'name', None)
+    print(f_df)
