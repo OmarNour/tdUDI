@@ -543,6 +543,8 @@ class SMX:
                 main_table_alias = main_table_name__alias[1] if len(main_table_name__alias) >= 2 else row.main_source_alias
 
             srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
+            err_msg_invalid_main_tbl = f'invalid main table, {main_table_name}'
+            assert srci_t, err_msg_invalid_main_tbl
             srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
             # core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))

@@ -728,12 +728,51 @@ class JoinWith(MyID):
 
         super().__init__(*args, **kwargs)
 
+    @functools.cached_property
+    def pipeline(self) -> Pipeline:
+        return Pipeline.get_instance(_id=self._pipeline_id)
+
+    @functools.cached_property
+    def master_lyr_table_id(self) -> LayerTable:
+        return LayerTable.get_instance(_id=self._master_lyr_table_id)
+
+    @functools.cached_property
+    def with_lyr_table_id(self) -> LayerTable:
+        return LayerTable.get_instance(_id=self._with_lyr_table_id)
+
+    @functools.cached_property
+    def join_type_id(self) -> JoinType:
+        return JoinType.get_instance(_id=self._join_type_id)
+
 
 class JoinOn(MyID):
     def __init__(self, join_with_id: int
                  , complete_join_on_expr: str = None
                  , *args, **kwargs):
+        self._join_with_id = join_with_id
+        self._complete_join_on_expr = complete_join_on_expr
+
+        assert self.valid_join_on_expr, 'Invalid join on expression!'
+
         super().__init__(*args, **kwargs)
+
+    @functools.cached_property
+    def join_with(self) -> JoinWith:
+        return JoinWith.get_instance(_id=self._join_with_id)
+
+    @property
+    def valid_join_on_expr(self) -> bool:
+        col: Column
+        if self._complete_join_on_expr:
+            master_table_alias = (self.join_with.master_alias + '.') if self.join_with.master_alias else ''
+            with_table_alias = (self.join_with.with_alias + '.') if self.join_with.with_alias else ''
+            _extra_words = [col.column_name for col in self.join_with.pipeline.src_lyr_table.table.columns] + \
+                           [self.join_with.master_lyr_table_id.table.table_name] + \
+                           [self.join_with.with_lyr_table_id.table.table_name] + \
+                           [master_table_alias, with_table_alias]
+            return self.join_with.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_join_on_expr
+                                                                                          , extra_words=_extra_words)
+        return True
 
 
 class ColumnMapping(MyID):
@@ -834,7 +873,7 @@ class Filter(MyID):
         assert self.valid_filter_expr, 'Invalid filter expression!'
         super().__init__(*args, **kwargs)
 
-    @property
+    @functools.cached_property
     def pipeline(self) -> Pipeline:
         return Pipeline.get_instance(_id=self._pipeline_id)
 
