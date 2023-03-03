@@ -81,7 +81,7 @@ class SMX:
 
     @time_elapsed_decorator
     @log_error_decorator(None)
-    def extract_all(self):
+    def extract_all(self, source_name=None):
 
         @log_error_decorator(self.log_error_path)
         def extract_system(row):
@@ -562,6 +562,8 @@ class SMX:
             if row.filter_criterion:
                 Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
+        ####################################################  Begin   ####################################################
+
         self.data['system'].drop_duplicates().apply(extract_system, axis=1)
         self.data['stg_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
         self.data['core_tables'][['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
@@ -615,6 +617,7 @@ class SMX:
         # extract_core_txf_view_columns
         ##########################      End Core TXF view       #####################
 
+        ####################################################  End   ####################################################
         print('DataSetType count:', len(DataSetType.get_all_instances()))
         print('Layer count:', len(Layer.get_all_instances()))
         print('Schema count:', len(Schema.get_all_instances()))
