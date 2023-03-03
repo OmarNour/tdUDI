@@ -153,11 +153,14 @@ def split_text(text, sep, maxsplit=0):
     return re.split(sep, text, flags=re.IGNORECASE, maxsplit=maxsplit)
 
 
-def filter_dataframe(df, col: str = None, filter_value=None):
+def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd.DataFrame:
     if filter_value is None:
         return df
     else:
-        mask = df[col].str.contains(filter_value, case=False)
+        if isinstance(filter_value, str):
+            mask = df[col].str.lower() == filter_value.lower()
+        else:
+            mask = df[col] == filter_value
         return df[mask]
 
 

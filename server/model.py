@@ -95,7 +95,17 @@ class MyID(metaclass=Meta):
     @classmethod
     # @lru_cache
     def get_all_instances(cls):
-        return cls.__instances[cls.__name__].values()
+        try:
+            return cls.__instances[cls.__name__].values()
+        except KeyError:
+            print(f"No instances found for {cls.__name__}")
+
+    @classmethod
+    def count_instances(cls):
+        try:
+            return len(cls.__instances[cls.__name__])
+        except KeyError:
+            return 0
 
     @classmethod
     # @lru_cache
