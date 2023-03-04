@@ -668,6 +668,11 @@ class Pipeline(MyID):
         return [f.filter_expr for f in Filter.get_all_instances() if f.pipeline.id == self.id]
 
     @property
+    def join_with(self) -> []:
+        j: JoinWith
+        return [j for j in JoinWith.get_all_instances() if j.pipeline.id == self.id]
+
+    @property
     def query(self):
 
         distinct = ''
