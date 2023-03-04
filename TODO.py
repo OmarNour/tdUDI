@@ -1,4 +1,5 @@
 # TODO:
+#   return all data from all classes in DF
 #   DataSet:
 #       set_name, should be changed tp core_table_id
 #   change Pipeline.table_id, to Pipeline.view_id
