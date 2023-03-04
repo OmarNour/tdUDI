@@ -85,12 +85,7 @@ class MyID(metaclass=Meta):
             cls.__instances[cls.__name__] = {}
             cls.__ids[cls.__name__] = {}
 
-        if _key:
-            if _key not in cls.__instances[cls.__name__].keys():
-                cls.__instances[cls.__name__][_key] = instance
-            else:
-                erro_message = f'{_key} Already Exists!'
-                raise ValueError(erro_message)
+        cls.__instances[cls.__name__][_key] = instance
 
     @classmethod
     # @lru_cache

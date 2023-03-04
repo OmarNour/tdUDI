@@ -588,24 +588,24 @@ class SMX:
 
         int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
         vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
-        ##########################  Start bkey & bmaps   #####################
-        core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
 
+        core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
+        bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
+        bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
+        stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
+        ##########################  Start bkey & bmaps   #####################
         bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
         bkey_df[['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
 
-        bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
-        bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
-
         bmap_df[['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
         bmaps_data_sets = DataSetType.get_instance(_key=DS_BMAP).data_sets
-        # print(bmaps_data_sets)
+
         bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
         bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
         ##########################  End bkey & bmaps     #####################
 
-        stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
+
         stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
                        'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
