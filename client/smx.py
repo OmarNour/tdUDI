@@ -287,8 +287,11 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bkey_datasets(row):
-            table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
-            DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_name=row.key_set_name, table_id=table.id)
+            surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
+            set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
+            err_msg_set_table = f'Invalid set table {row.key_set_name}'
+            assert set_table, err_msg_set_table
+            DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
 
         @log_error_decorator(self.log_error_path)
         def extract_bkey_domains(row):
@@ -329,8 +332,11 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_datasets(row):
-            table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
-            DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_name=row.code_set_name, table_id=table.id)
+            surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
+            set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
+            err_msg_set_table = f'Invalid set table {row.code_set_name}'
+            assert set_table, err_msg_set_table
+            DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_domains(row):
@@ -339,7 +345,11 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_values(row):
-            data_set_lst = [ds for ds in bmaps_data_sets if ds.set_name == row.code_set_name]
+            ds:DataSet
+            # if row.code_set_name.upper() == 'OFRG_STS_TYPE':
+            #     print(row.code_set_name)
+
+            data_set_lst = [ds for ds in bmaps_data_sets if ds.set_table.table_name == row.code_set_name.lower()]
             if len(data_set_lst) > 0:
                 data_set = data_set_lst[0]
                 domain = Domain.get_instance(_key=(data_set.id, row.code_domain_id))
@@ -579,6 +589,8 @@ class SMX:
         int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
         vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
         ##########################  Start bkey & bmaps   #####################
+        core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+
         bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
         bkey_df[['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
@@ -587,7 +599,8 @@ class SMX:
         bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
 
         bmap_df[['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
-        bmaps_data_sets = DataSetType.get_instance(_key='BMAP').data_sets
+        bmaps_data_sets = DataSetType.get_instance(_key=DS_BMAP).data_sets
+        # print(bmaps_data_sets)
         bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
         bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
         ##########################  End bkey & bmaps     #####################
@@ -596,7 +609,6 @@ class SMX:
         stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
                        'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
-        core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
         stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_src_views, axis=1)

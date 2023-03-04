@@ -317,11 +317,35 @@ class Table(MyID):
     def schema(self) -> Schema:
         return Schema.get_instance(_id=self._schema_id)
 
-    @property
+    @functools.cached_property
+    def surrogate_data_set(self):
+        _data_set: DataSet
+        for _data_set in DataSet.get_all_instances():
+            if _data_set.surrogate_table.id == self.id:
+                return _data_set
+
+    @functools.cached_property
     def is_bmap(self):
-        if self.data_set:
-            if self.data_set.data_set_type.name == DS_BMAP:
+        if self.surrogate_data_set:
+            if self.surrogate_data_set.data_set_type.name == DS_BMAP:
                 return True
+        return False
+
+    # @property
+    @functools.cached_property
+    def is_bkey(self):
+        if self.surrogate_data_set:
+            if self.surrogate_data_set.data_set_type.name == DS_BKEY:
+                return True
+        return False
+
+    @functools.cached_property
+    def is_lkp(self):
+        _data_set: DataSet
+        for _data_set in DataSet.get_all_instances():
+            if _data_set.data_set_type.name == DS_BMAP:
+                if _data_set.set_table.id == self.id:
+                    return True
         return False
 
     @property
@@ -374,14 +398,8 @@ class Table(MyID):
     #     self._ddl = view_ddl
 
     @property
-    def data_set(self):
-        _data_set: DataSet
-        for _data_set in DataSet.get_all_instances():
-            if _data_set.table.id == self.id:
-                return _data_set
-
-    @property
     def pipeline(self):
+        pipe: Pipeline
         for pipe in Pipeline.get_all_instances():
             if pipe.table.id == self.id:
                 return pipe
@@ -398,30 +416,35 @@ class DataSetType(MyID):
 
 
 class DataSet(MyID):
-    def __init__(self, set_type_id: int, set_code: str, set_name: str, table_id: int, *args, **kwargs):
+    def __init__(self, set_type_id: int, set_code: str, set_table_id: int, surrogate_table_id: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._set_type_id = set_type_id
         self.set_code = set_code
-        self.set_name = set_name
-        self._table_id = table_id
+        self._set_table_id = set_table_id
+        self._surrogate_table_id = surrogate_table_id
 
     @property
     def data_set_type(self) -> DataSetType:
         return DataSetType.get_instance(_id=self._set_type_id)
 
     @property
-    def table(self):
-        return Table.get_instance(_id=self._table_id)
+    def surrogate_table(self) -> Table:
+        return Table.get_instance(_id=self._surrogate_table_id)
+
+    @property
+    def set_table(self) -> Table:
+        return Table.get_instance(_id=self._set_table_id)
 
     @property
     def domains(self) -> []:
+        domain:Domain
         return [domain for domain in Domain.get_all_instances() if domain.data_set.id == self.id]
 
     @classmethod
     def get_by_name(cls, set_type_id: int, set_name: str):
         ds: cls
         for ds in cls.get_all_instances():
-            if ds._set_type_id == set_type_id and ds.set_name.lower() == set_name.lower():
+            if ds._set_type_id == set_type_id and ds.set_table.table_name.lower() == set_name.lower():
                 return ds
 
 
@@ -562,7 +585,6 @@ class LayerTable(MyID):
 
             bmap_dst = DataSetType.get_instance(_key=DS_BMAP)
             core_ds = DataSet.get_by_name(set_type_id=bmap_dst.id, set_name=self.table.table_name)
-
             return core_ds
 
     @property
@@ -577,7 +599,7 @@ class LayerTable(MyID):
             # based on the layer type, select the data from DomainValues
             domain: Domain
             dv: DomainValue
-            for domain in self.table.data_set.domains:
+            for domain in self.table.surrogate_data_set.domains:
                 domain_code = domain.domain_code
                 set_code = domain.data_set.set_code
                 for dv in domain.values:
@@ -843,14 +865,14 @@ class ColumnMapping(MyID):
 
         if self.tgt_col.domain:
             if self.tgt_col.domain.data_set.data_set_type.name == DS_BKEY:
-                _src_col_trx = SRCI_V_BKEY_TEMPLATE_QUERY.format(bkey_db=self.tgt_col.domain.data_set.table.schema.schema_name
-                                                                 , bkey_table_name=self.tgt_col.domain.data_set.table.table_name
+                _src_col_trx = SRCI_V_BKEY_TEMPLATE_QUERY.format(bkey_db=self.tgt_col.domain.data_set.surrogate_table.schema.schema_name
+                                                                 , bkey_table_name=self.tgt_col.domain.data_set.surrogate_table.table_name
                                                                  , src_key=_src_col_trx
                                                                  , domain_id=self.tgt_col.domain.domain_code
                                                                  )
             elif self.tgt_col.domain.data_set.data_set_type.name == DS_BMAP:
-                _src_col_trx = SRCI_V_BMAP_TEMPLATE_QUERY.format(bmap_db=self.tgt_col.domain.data_set.table.schema.schema_name
-                                                                 , bmap_table_name=self.tgt_col.domain.data_set.table.table_name
+                _src_col_trx = SRCI_V_BMAP_TEMPLATE_QUERY.format(bmap_db=self.tgt_col.domain.data_set.surrogate_table.schema.schema_name
+                                                                 , bmap_table_name=self.tgt_col.domain.data_set.surrogate_table.table_name
                                                                  , code_set_id=self.tgt_col.domain.data_set.set_code
                                                                  , source_code=_src_col_trx
                                                                  , domain_id=self.tgt_col.domain.domain_code)
