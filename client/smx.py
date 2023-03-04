@@ -108,7 +108,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_core_tables(row):
-            table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T')
+            table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T', _override=1)
             LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
@@ -270,7 +270,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bkey_tables(row):
-            table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T')
+            table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T', _override=1)
             LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
 
             Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
@@ -296,12 +296,14 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_bkey_domains(row):
             data_set = DataSet.get_instance(_key=(self.bkey_set_type.id, row.key_set_id))
+            err_msg_data_set = f'Invalid data set ID: {row.key_set_id}'
+            assert data_set, err_msg_data_set
             Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_tables(row):
             if row.physical_table != '':
-                table = Table(schema_id=self.bmap_t_schema.id, table_name=row.physical_table, table_kind='T')
+                table = Table(schema_id=self.bmap_t_schema.id, table_name=row.physical_table, table_kind='T', _override=1)
                 LayerTable(layer_id=self.bmap_layer.id, table_id=table.id)
 
                 Column(table_id=table.id, column_name='SOURCE_CODE', is_pk=1, mandatory=1
@@ -327,7 +329,7 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_lookup_core_tables(row):
             if row.code_set_name != '':
-                table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T')
+                table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T', _override=1)
                 LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
