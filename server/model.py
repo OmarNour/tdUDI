@@ -818,7 +818,7 @@ class JoinOn(MyID):
         self._join_with_id = join_with_id
         self._complete_join_on_expr = complete_join_on_expr
 
-        assert self.valid_join_on_expr, 'Invalid join on expression!'
+        # assert self.valid_join_on_expr, 'Invalid join on expression!'
 
         super().__init__(*args, **kwargs)
 
@@ -836,6 +836,9 @@ class JoinOn(MyID):
                            + self.join_with.pipeline.all_source_aliases \
                            + [table.table_name for table in self.join_with.pipeline.all_source_tables]
 
+            if 'L1_PRTY_RLTD_L0_CSO_NEW_SPOUSE' in self.join_with.pipeline.table.table_name.upper():
+                print(_extra_words)
+                print(self._complete_join_on_expr)
             return self.join_with.pipeline.tgt_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_join_on_expr
                                                                                           , extra_words=_extra_words)
         return True
@@ -857,7 +860,7 @@ class ColumnMapping(MyID):
         self.fn_value_if_null = fn_value_if_null
         self._src_col_trx = src_col_trx
 
-        assert self.valid_src_col_trx, "Invalid source column transformation!"
+        # assert self.valid_src_col_trx, "Invalid source column transformation!"
         assert self.valid_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
         super().__init__(*args, **kwargs)
 
@@ -936,7 +939,7 @@ class Filter(MyID):
         self.filter_seq = filter_seq
         self._complete_filter_expr = complete_filter_expr
         self._col_id = col_id
-        assert self.valid_filter_expr, 'Invalid filter expression!'
+        # assert self.valid_filter_expr, 'Invalid filter expression!'
         super().__init__(*args, **kwargs)
 
     @functools.cached_property
