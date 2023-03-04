@@ -1,4 +1,6 @@
 # TODO:
+#   DataSet:
+#       set_name, should be changed tp core_table_id
 #   change Pipeline.table_id, to Pipeline.view_id
 #   Create new objects, one for attribute names only, and the other for entity names only, then the both will create tables and columns!
 #   Rejection tables and rules, to be distinguished
