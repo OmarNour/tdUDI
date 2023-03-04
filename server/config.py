@@ -25,7 +25,7 @@ cls_keys = {
     , 'Filter': ('pipeline_id', 'filter_seq')
     , 'GroupBy': ('pipeline_id', 'col_id')
     , 'JoinType': 'code'
-    , 'JoinWith': ('pipeline_id', 'master_lyr_table_id', 'master_alias')
+    , 'JoinWith': ('pipeline_id', 'with_lyr_table_id', 'with_alias')
     , 'joinOn': 'join_with_id'
 }
 

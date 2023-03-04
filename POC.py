@@ -93,8 +93,66 @@ def filter_df():
     print(filtered_df)
 
 
+def replace_():
+    sorted_words = ['FACTORY_CREATION_NUMBER', 'convert_table_header', 'RELIGION_DESCRIPTION', 'DATA_EXTRACTION_DATE', 'RELIGION_DESCRIPTION', 'DATA_EXTRACTION_DATE', 'DATA_EXTRACTION_DATE', 'BM_MARITAL_STATUS_ID', 'current_timestampar', 'character_lengthar', 'timezone_minutear',
+                    'MODIFICATION_TYPE',
+                    'MODIFICATION_TYPE', 'INVALID_DATE_TIME', 'MARITAL_STATUS_ID', 'MODIFICATION_TYPE', 'regr_interceptar', 'deterministicar', 'authorizationar', 'timezone_hourar', 'transactiontime', 'sqlexceptionar', 'octet_lengthar', 'current_rolear', 'current_userar', 'percent_rankar',
+                    'current_datear',
+                    'width_bucketar', 'current_timear', 'IS_TRANSFERRED', 'BM_RELIGION_ID', 'IS_TRANSFERRED', 'BM_RELIGION_ID', 'DELIVERED_DATE', 'IS_TRANSFERRED', 'stddev_sampar', 'until_changed', 'translate_chk', 'constructoran', 'datablocksize', 'transactionan', 'udtcastlparen', 'char_lengthar',
+                    'referencingar', 'CSO_RELIGION.', 'until_closed', 'regr_slopear', 'stddev_popar', 'charactersan', 'sqlwarningar', 'inconsistent', 'row_numberar', 'deallocatear', 'abortsession', 'variant_type', 'referencesar', 'regr_countar', 'constraintar', 'covar_sampar', 'privilegesan',
+                    'normalize ar',
+                    'casespecific', 'cso_religion', 'characterar', 'parameterar', 'replication', 'temporaryan', 'regr_avgxar', 'errortables', 'covar_popar', 'substringar', 'monresource', 'recursivear', 'translatear', 'statementan', 'generatedan', 'transforman', 'timestampar', 'access_lock',
+                    'collationan',
+                    'setsessrate', 'nontemporal', 'replcontrol', 'rollforward', 'immediatean', 'intersectar', 'mcharacters', 'regr_avgyar', 'precisionar', 'procedurear', 'integerdate', 'char2hexint', 'RELIGION_ID', 'RELIGION_ID', 'ST_Geometry', 'regr_sxxar', 'modifiesar', 'coalescear', 'fastexport',
+                    'smallintar',
+                    'externalar', 'multisetar', 'rollbackar', 'specificar', 'checkpoint', 'identityar', 'regr_syyar', 'statistics', 'deferredan', 'regr_sxyar', 'zeroifnull', 'nullifzero', 'revalidate', 'containsan', 'positionar', 'groupingar', 'diagnostic', 'distinctar', 'instancean', 'relativean',
+                    'hashbakamp',
+                    'vargraphic', 'setresrate', 'add_months', 'var_sampar', 'subscriber', 'hashbucket', 'languagear', 'resignalar', 'trailingar', 'errorfiles', 'intervalar', 'overlapsar', 'preservean', 'protection', 'orderingan', 'functionar', 'monsession', 'continuean', 'CSO_NUMBER', 'ISSUE_DATE',
+                    'udtcastas',
+                    'string_cs', 'undefined', 'handlerar', 'extractar', 'varyingar', 'preparear', 'connectar', 'leadingar', 'sessionan', 'dynamicar', 'declarear', 'qualified', 'currentar', 'betweenar', 'aggregate', 'ctcontrol', 'uescapear', 'naturalar', 'defaultar', 'threshold', 'expanding',
+                    'old_table',
+                    'numericar', 'validtime', 'timestamp', 'releasear', 'insteadan', 'permanent', 'executear', 'restartan', 'foreignar', 'triggerar', 'iteratear', 'collectar', 'terminate', 'new_table', 'freespace', 'regr_r2ar', 'returnsar', 'udtmethod', 'integerar', 'varcharar', 'withoutar',
+                    'locatoran',
+                    'decimalar', 'arglparen', 'var_popar', 'primaryar', 'uppercase', 'cso_card.', 'TIMESTAMP', 'coalesce', 'sampleid', 'dateform', 'volatile', 'objectan', 'oreplace', 'atomicar', 'stepinfo', 'password', 'bigintar', 'compress', 'disabled', 'createar', 'udtusage', 'cursorar',
+                    'exceptar', 'deletear',
+                    'selectar', 'insertar', 'secondar', 'rollupar', 'kurtosis', 'optionan', 'scrollar', 'minutear', 'commitar', 'methodar', 'escapear', 'publican', 'database', 'existsar', 'fallback', 'valuesar', 'ansidate', 'trailing', 'uniquear', 'nullifar', 'retrieve', 'havingar', 'domainan',
+                    'resultar',
+                    'equalsan', 'signalar', 'returnar', 'binaryar', 'override', 'repeatar', 'columnar', 'elseifar', 'beforean', 'initiate', 'revokear', 'quantile', 'updatear', 'doublear', 'BATCH_ID', 'BATCH_ID', 'BATCH_ID', 'cso_card', 'usingar', 'logging', 'readsar', 'journal', 'varbyte',
+                    'monthar', 'byteint',
+                    'percent', 'untilar', 'udttype', 'summary', 'radians', 'qualify', 'average', 'fetchar', 'hashrow', 'inputan', 'mlinreg', 'locking', 'adminan', 'groupar', 'lowerar', 'floatar', 'wherear', 'msubstr', 'monitor', 'suspend', 'crossar', 'extract', 'rightar', 'foundan', 'cluster',
+                    'whilear',
+                    'orderar', 'objects', 'inoutar', 'consume', 'range_n', 'closear', 'cyclear', 'grantar', 'tablear', 'comment', 'request', 'maximum', 'unionar', 'mergear', 'innerar', 'countar', 'outerar', 'localar', 'checkar', 'upperar', 'restore', 'sqltext', 'enabled', 'degrees', 'profile',
+                    'xmlplan',
+                    'replace', 'soundex', 'valuear', 'graphic', 'hashamp', 'firstan', 'explain', 'alterar', 'startup', 'account', 'largear', 'loading', 'beginar', 'leavear', 'startar', 'afteran', 'minimum', 'REF_KEY', 'LOAD_ID', 'REF_KEY', 'LOAD_ID', 'REF_KEY', 'LOAD_ID', 'INTEGER', 'DECIMAL',
+                    'VARCHAR', 'userar',
+                    'descan', 'timear', 'rankar', 'rename', 'resume', 'elsear', 'bothar', 'corrar', 'tbl_cs', 'cubear', 'hourar', 'thenar', 'nullar', 'rowsar', 'setsan', 'nonear', 'viewan', 'workan', 'realar', 'somear', 'openar', 'blobar', 'mindex', 'datear', 'sample', 'fromar', 'clobar', 'eachar',
+                    'modify',
+                    'select', 'rolean', 'trimar', 'nextan', 'charar', 'callar', 'sqrtar', 'joinar', 'castar', 'zonean', 'format', 'yearar', 'likear', 'substr', 'undoan', 'whenar', 'typean', 'length', 'leftar', 'case_n', 'expand', 'random', 'nowait', 'intoar', 'rights', 'withar', 'dropar', 'loopar',
+                    'overar',
+                    'exitan', 'fullar', 'casear', 'execar', 'onlyar', 'BIGINT', 'jarar', 'avgar', 'macro', 'sumar', 'modar', 'oldar', 'trace', 'class', 'chars', 'rowid', 'limit', 'acosh', 'anyar', 'endar', 'getar', 'intar', 'mapan', 'sqlar', 'andar', 'atan2', 'logon', 'decar', 'atanh', 'expar',
+                    'allar', 'addan',
+                    'outar', 'title', 'maxar', 'rowar', 'bytes', 'setar', 'right', 'error', 'forar', 'notar', 'mdiff', 'ascan', 'dayar', 'asinh', 'mload', 'newar', 'minus', 'spool', 'abort', 'index', 'named', 'minar', 'keyan', 'queue', 'absar', 'cast', 'lnar', 'then', 'year', 'byte', 'acos', 'byar',
+                    'msum',
+                    'cosh', 'asar', 'date', 'sinh', 'show', 'atar', 'mode', 'null', 'csum', 'echo', 'toar', 'atan', 'else', 'trim', 'ifar', 'lock', 'skew', 'perm', 'isar', 'asin', 'dump', 'noar', 'case', 'help', 'mavg', 'ofar', 'hash', 'left', 'when', 'dual', 'long', 'inar', 'orar', 'onar', 'tanh',
+                    'from', 'doar',
+                    'give', 'DATE', 'TIME', 'CHAR', 'CLOB', 'cos', 'sel', 'ins', 'sin', 'tan', 'upd', 'top', 'not', 'but', 'ave', 'off', 'amp', 'end', 'del', 'log', 'and', 'ret', 'uc', 'cs', 'bt', 'ge', 'or', 'ne', 'ct', 'on', 'in', 'cm', 'cv', 'lt', 'et', 'gt', 'is', 'le', 'eq', 'ss', 'cd', 'as',
+                    '', '']
+
+    _trx = "cso_new_person.cso_number=cso_card.cso_number"
+    replace_ch = ''
+    single_quotes_pattern = r"'[^']*'"
+    _trx = re.sub(single_quotes_pattern, replace_ch, _trx)
+    for word in sorted_words:
+        if word.lower() in _trx.lower():
+            print(word)
+        _trx = _trx.lower().replace(word.lower(), replace_ch).strip()
+
+    print(_trx)
+
+
 if __name__ == '__main__':
-    x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
+    replace_()
+    # x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
     """
     #     x = """
     #      (SEL  beneficiary_national_id, APPLICATION_ID,MEMBER_ID
@@ -110,9 +168,9 @@ if __name__ == '__main__':
     # y =split_text(merge_multiple_spaces(x), 'join', 1)
     # print(y)
     # filter_df()
-    df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
-                       'age': [25, 30, 35, 40],
-                       'gender': ['F', 'M', 'M', 'M']})
-
-    f_df = filter_dataframe(df, 'name', None)
-    print(f_df)
+    # df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
+    #                    'age': [25, 30, 35, 40],
+    #                    'gender': ['F', 'M', 'M', 'M']})
+    #
+    # f_df = filter_dataframe(df, 'name', None)
+    # print(f_df)
