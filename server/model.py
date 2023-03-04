@@ -663,7 +663,7 @@ class Pipeline(MyID):
     @property
     def group_by_col_names(self) -> []:
         gb: GroupBy
-        return [f"{self.src_table_alias}.{gb.column.column_name}" for gb in GroupBy.get_all_instances() if gb.pipeline.id == self.id]
+        return [f"{gb.column.column_name}" for gb in GroupBy.get_all_instances() if gb.pipeline.id == self.id]
 
     def _tgt_col_dic(self) -> dict:
         col_m: ColumnMapping
@@ -891,9 +891,9 @@ class ColumnMapping(MyID):
         alias = ''
         _src_col_trx = self._src_col_trx if self._src_col_trx else f"{self.src_col.column_name}"
 
-        if self.src_col:
-            if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
-                alias = self.pipeline.src_table_alias + '.'
+        # if self.src_col:
+        #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
+        #         alias = self.pipeline.src_table_alias + '.'
 
         if self.tgt_col.domain:
             if self.tgt_col.domain.data_set.data_set_type.name == DS_BKEY:
@@ -909,10 +909,10 @@ class ColumnMapping(MyID):
                                                                  , source_code=_src_col_trx
                                                                  , domain_id=self.tgt_col.domain.domain_code)
 
-        for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
-            _src_col_trx = _src_col_trx.replace(col_name, f"{alias}{col_name}")
+        # for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
+        #     _src_col_trx = _src_col_trx.replace(col_name, f"{alias}{col_name}")
 
-        return _src_col_trx
+        return str(_src_col_trx)
         # return self._src_col_trx if self._src_col_trx else f"{alias}{self.src_col.column_name}"
 
     @property
