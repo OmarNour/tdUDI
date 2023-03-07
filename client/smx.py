@@ -108,7 +108,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_core_tables(row):
-            table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T', _override=1)
+            table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T')
             LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
         @log_error_decorator(self.log_error_path)
@@ -270,7 +270,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bkey_tables(row):
-            table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T', _override=1)
+            table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T')
             LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
 
             Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
@@ -303,7 +303,7 @@ class SMX:
         @log_error_decorator(self.log_error_path)
         def extract_bmap_tables(row):
             if row.physical_table != '':
-                table = Table(schema_id=self.bmap_t_schema.id, table_name=row.physical_table, table_kind='T', _override=1)
+                table = Table(schema_id=self.bmap_t_schema.id, table_name=row.physical_table, table_kind='T')
                 LayerTable(layer_id=self.bmap_layer.id, table_id=table.id)
 
                 Column(table_id=table.id, column_name='SOURCE_CODE', is_pk=1, mandatory=1
@@ -539,6 +539,28 @@ class SMX:
                         if len(_split) >= 2:
                             parse_join(new_input_join + _split[1])
 
+            @log_error_decorator(self.log_error_path)
+            def column_mapping(row):
+                # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule'
+                src_col = None
+                if row.mapped_to_column:
+                    err_msg_invalid_src_tbl = f'Invalid Table, {row.mapped_to_table}'
+                    src_t = Table.get_instance(_key=(self.srci_t_schema.id, row.mapped_to_table))
+                    assert src_t, err_msg_invalid_src_tbl
+                    src_col = Column.get_instance(_key=(src_t.id, row.mapped_to_column))
+
+                tgt_col = Column.get_instance(_key=(core_txf_v.id, row.column_name))
+                err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
+                assert tgt_col, err_msg_invalid_tgt_col
+                ColumnMapping(pipeline_id=core_pipeline.id
+                              ,tgt_col_id=tgt_col.id
+                              ,src_col_id= src_col.id if src_col else None
+                              ,col_seq=0
+                              ,src_col_trx= row.transformation_rule if row.transformation_rule else None
+                              )
+
+            ###########################################################################################################
+            core_t:Table
             ds_error_msg = f"""{row.source}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.source)
             assert ds, ds_error_msg
@@ -559,12 +581,11 @@ class SMX:
             assert srci_t, err_msg_invalid_main_tbl
             srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
-            # core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
-            # core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
+            core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
 
             txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
-
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
+            [Column(table_id=core_txf_v.id,column_name=col.column_name) for col in core_t.columns]
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
             core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_txf_v.id, src_table_alias=main_table_alias)
@@ -574,14 +595,19 @@ class SMX:
             if row.filter_criterion:
                 Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
+            column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
+            column_mapping_df[['column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule']].drop_duplicates().apply(column_mapping, axis=1)
+
         ####################################################  Begin DFs  ####################################################
         system_df = filter_dataframe(self.data['system'], 'schema', source_name)
         stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', source_name)
+        table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', source_name), 'layer', 'CORE')
+
         core_tables_df = self.data['core_tables']
         bkey_df = self.data['bkey']
         bmap_df = self.data['bmap']
         bmap_values_df = self.data['bmap_values']
-        table_mapping_df = filter_dataframe(self.data['table_mapping'], 'source', source_name)
+
         ####################################################  End DFs  ####################################################
         ####################################################  Begin   ####################################################
         system_df.drop_duplicates().apply(extract_system, axis=1)
@@ -594,7 +620,7 @@ class SMX:
         core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
         bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
         bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
-        bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
+        # bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
         stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
         ##########################  Start bkey & bmaps   #####################
         bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)

@@ -151,7 +151,7 @@ def replace_():
 
 
 if __name__ == '__main__':
-    replace_()
+    # replace_()
     # x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
     """
     #     x = """
@@ -168,9 +168,17 @@ if __name__ == '__main__':
     # y =split_text(merge_multiple_spaces(x), 'join', 1)
     # print(y)
     # filter_df()
-    # df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
-    #                    'age': [25, 30, 35, 40],
-    #                    'gender': ['F', 'M', 'M', 'M']})
-    #
-    # f_df = filter_dataframe(df, 'name', None)
-    # print(f_df)
+    df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
+                       'age': [25, 30, 35, 40],
+                       'gender': ['F', 'M', 'M', 'M']})
+
+    df.set_index(['gender', 'age'], inplace=True)
+    df.reset_index(inplace=True)
+    df.set_index(['gender'], inplace=True)
+    f_df = filter_dataframe(df, 'name', 'Charlie')
+    # print(f_df.index.names)
+
+    print(df.index.array)
+    for i in df.iterrows():
+        print(i.index)
+        # print(i[0], i[1])

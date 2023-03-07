@@ -397,8 +397,10 @@ class Table(MyID):
     def pipeline(self):
         pipe: Pipeline
         for pipe in Pipeline.get_all_instances():
-            if pipe.table.id == self.id:
-                return pipe
+            if pipe.table:
+                if pipe.table.id == self.id:
+                    return pipe
+
 
 
 class DataSetType(MyID):

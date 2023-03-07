@@ -157,6 +157,9 @@ def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd
     if filter_value is None:
         return df
     else:
+        # if col in df.index.names:
+        #     pass
+
         if isinstance(filter_value, str):
             mask = df[col].str.lower() == filter_value.lower()
         else:

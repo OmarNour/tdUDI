@@ -1,4 +1,5 @@
 # TODO:
+#   Class to hold error data, then print it in a  proper way for en user!
 #   return all data from all classes in DF
 #   DataSet:
 #       set_name, should be changed tp core_table_id
