@@ -517,8 +517,10 @@ class SMX:
                         # print(f"table name {table_name}, alias {table_alias}")
                         join_with = JoinWith(pipeline_id=core_pipeline.id
                                              , master_lyr_table_id=srci_lt.id
-                                             , master_alias=core_pipeline.src_table_alias, join_type_id=join_type.id
-                                             , with_lyr_table_id=with_srci_lt.id, with_alias=table_alias)
+                                             , master_alias=core_pipeline.src_table_alias
+                                             , join_type_id=join_type.id
+                                             , with_lyr_table_id=with_srci_lt.id
+                                             , with_alias=table_alias)
 
                         _split = _split_1.split(' join ', 1)
                         join_on = _split[0]
