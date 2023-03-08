@@ -5,6 +5,7 @@ from client.smx import *
 def start():
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
+    # print(smx.data['test'])
     smx.extract_all(source_name='CSO')
     smx.generate_scripts(source_name=None)
 

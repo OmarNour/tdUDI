@@ -851,7 +851,6 @@ class ColumnMapping(MyID):
                  , fn_value_if_null=None
                  , *args, **kwargs):
 
-
         self._pipeline_id = pipeline_id
         self.col_seq = col_seq
         self._src_col_id = src_col_id
@@ -860,9 +859,9 @@ class ColumnMapping(MyID):
         self._src_col_trx = src_col_trx
 
         # assert self.valid_src_col_trx, "Invalid source column transformation!"
-        assert tgt_col_id is not None \
-               and (src_col_id is not None or src_col_trx is not None) \
-               and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
+        # assert tgt_col_id is not None \
+        #        and (src_col_id is not None or src_col_trx is not None) \
+        #        and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
         assert self.valid_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
         super().__init__(*args, **kwargs)
 
@@ -891,7 +890,7 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         # alias = ''
-        _src_col_trx = self._src_col_trx if self._src_col_trx else self.src_col.column_name if self.src_col else ''
+        _src_col_trx = self._src_col_trx if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
 
 
         # if self.src_col:

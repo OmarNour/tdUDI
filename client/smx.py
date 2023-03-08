@@ -544,9 +544,6 @@ class SMX:
             @log_error_decorator(self.log_error_path)
             def column_mapping(row):
                 # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule'
-                if row.column_name.upper() == 'DEATH_CRTFCT_NUM':
-                    print("row.transformation_rule", row.transformation_rule)
-                    print(type(row.transformation_rule))
                 src_col = None
                 if row.mapped_to_column:
                     err_msg_invalid_src_tbl = f'Invalid Table, {row.mapped_to_table}'
@@ -556,15 +553,18 @@ class SMX:
 
                 tgt_col = Column.get_instance(_key=(core_txf_v.id, row.column_name))
                 err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
-                # err_msg_invalid_src_col = f'TXF - Source Column Name and Transformation both are empty!'
                 assert tgt_col, err_msg_invalid_tgt_col
-                # assert src_col or row.transformation_rule, err_msg_invalid_src_col
+
+                if row.transformation_rule == "'NULL'":
+                    transformation_rule = None
+                else:
+                    transformation_rule = row.transformation_rule
 
                 ColumnMapping(pipeline_id=core_pipeline.id
                               , tgt_col_id=tgt_col.id
                               , src_col_id=src_col.id if src_col else None
                               , col_seq=0
-                              , src_col_trx=row.transformation_rule if row.transformation_rule else None
+                              , src_col_trx=transformation_rule if transformation_rule else None
                               )
 
             ###########################################################################################################
