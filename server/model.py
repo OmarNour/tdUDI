@@ -611,7 +611,6 @@ class LayerTable(MyID):
         #     if core_lookup_ds:
         #         ds_cols = list_to_string([col.column_name for col in core_lookup_ds.table.columns], ',')
         #         dml = f"""insert into {schema_name}.{table_name}\n({columns})\nselect {ds_cols} from {core_lookup_ds.table.table_name};\n"""
-
         return dml
 
 
@@ -851,9 +850,7 @@ class ColumnMapping(MyID):
                  , src_col_trx: str = None
                  , fn_value_if_null=None
                  , *args, **kwargs):
-        assert tgt_col_id is not None \
-               and (src_col_id is not None or src_col_trx is not None) \
-               and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
+
 
         self._pipeline_id = pipeline_id
         self.col_seq = col_seq
@@ -863,6 +860,9 @@ class ColumnMapping(MyID):
         self._src_col_trx = src_col_trx
 
         # assert self.valid_src_col_trx, "Invalid source column transformation!"
+        assert tgt_col_id is not None \
+               and (src_col_id is not None or src_col_trx is not None) \
+               and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
         assert self.valid_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
         super().__init__(*args, **kwargs)
 
@@ -890,8 +890,9 @@ class ColumnMapping(MyID):
 
     @property
     def src_col_trx(self):
-        alias = ''
-        _src_col_trx = self._src_col_trx if self._src_col_trx else f"{self.src_col.column_name}"
+        # alias = ''
+        _src_col_trx = self._src_col_trx if self._src_col_trx else self.src_col.column_name if self.src_col else ''
+
 
         # if self.src_col:
         #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:

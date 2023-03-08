@@ -347,7 +347,7 @@ class SMX:
 
         @log_error_decorator(self.log_error_path)
         def extract_bmap_values(row):
-            ds:DataSet
+            ds: DataSet
             # if row.code_set_name.upper() == 'OFRG_STS_TYPE':
             #     print(row.code_set_name)
 
@@ -544,6 +544,9 @@ class SMX:
             @log_error_decorator(self.log_error_path)
             def column_mapping(row):
                 # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule'
+                if row.column_name.upper() == 'DEATH_CRTFCT_NUM':
+                    print("row.transformation_rule", row.transformation_rule)
+                    print(type(row.transformation_rule))
                 src_col = None
                 if row.mapped_to_column:
                     err_msg_invalid_src_tbl = f'Invalid Table, {row.mapped_to_table}'
@@ -553,16 +556,19 @@ class SMX:
 
                 tgt_col = Column.get_instance(_key=(core_txf_v.id, row.column_name))
                 err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
+                # err_msg_invalid_src_col = f'TXF - Source Column Name and Transformation both are empty!'
                 assert tgt_col, err_msg_invalid_tgt_col
+                # assert src_col or row.transformation_rule, err_msg_invalid_src_col
+
                 ColumnMapping(pipeline_id=core_pipeline.id
-                              ,tgt_col_id=tgt_col.id
-                              ,src_col_id= src_col.id if src_col else None
-                              ,col_seq=0
-                              ,src_col_trx= row.transformation_rule if row.transformation_rule else None
+                              , tgt_col_id=tgt_col.id
+                              , src_col_id=src_col.id if src_col else None
+                              , col_seq=0
+                              , src_col_trx=row.transformation_rule if row.transformation_rule else None
                               )
 
             ###########################################################################################################
-            core_t:Table
+            core_t: Table
             ds_error_msg = f"""{row.source}, is not defined, please check the 'System' sheet!"""
             ds = DataSource.get_instance(_key=row.source)
             assert ds, ds_error_msg
@@ -587,7 +593,7 @@ class SMX:
 
             txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
-            [Column(table_id=core_txf_v.id,column_name=col.column_name) for col in core_t.columns]
+            [Column(table_id=core_txf_v.id, column_name=col.column_name) for col in core_t.columns]
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
             core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_txf_v.id, src_table_alias=main_table_alias)
@@ -634,7 +640,6 @@ class SMX:
         bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
         bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
         ##########################  End bkey & bmaps     #####################
-
 
         stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
                        'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
@@ -704,14 +709,15 @@ class SMX:
 
                 if lyr_src_name == _source_name or lyr_src_name is None:
                     ddl = layer_table.table.ddl
-                    dml = layer_table.dml
                     if ddl:
                         if layer_table.table.table_kind == 'T':
                             tables_ddl.append(ddl)
                         elif layer_table.table.table_kind == 'V':
                             views_ddl.append(ddl)
-                    if dml:
-                        tables_dml.append(dml)
+
+                    # dml = layer_table.dml
+                    # if dml:
+                    #     tables_dml.append(dml)
 
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)

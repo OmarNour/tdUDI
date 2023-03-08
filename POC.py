@@ -170,15 +170,18 @@ if __name__ == '__main__':
     # filter_df()
     df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
                        'age': [25, 30, 35, 40],
-                       'gender': ['F', 'M', 'M', 'M']})
-
+                       'gender': ['F', 'M', 'M', 'M'],
+                        'xx': ['NULL', 'M', None, 'M']}
+                      )
+    df = df.replace(np.nan, value='', regex=True)
+    df = df.applymap(lambda x: x.replace('\ufeff', '').strip() if type(x) is str else int(x) if type(x) is float else x)
     df.set_index(['gender', 'age'], inplace=True)
     df.reset_index(inplace=True)
     df.set_index(['gender'], inplace=True)
-    f_df = filter_dataframe(df, 'name', 'Charlie')
-    # print(f_df.index.names)
+    # f_df = filter_dataframe(df, 'name', 'Charlie')
+    print(df)
 
-    print(df.index.array)
-    for i in df.iterrows():
-        print(i.index)
-        # print(i[0], i[1])
+    # print(df.index.array)
+    # for i in df.iterrows():
+    #     print(i.index)
+    #     print(i[0], i[1])
