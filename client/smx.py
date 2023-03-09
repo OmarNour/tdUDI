@@ -727,9 +727,9 @@ class SMX:
                         elif layer_table.table.table_kind == 'V':
                             views_ddl.append(ddl)
 
-                    # dml = layer_table.dml
-                    # if dml:
-                    #     tables_dml.append(dml)
+                    dml = layer_table.dml
+                    if dml:
+                        tables_dml.append(dml)
 
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
