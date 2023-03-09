@@ -555,7 +555,7 @@ class SMX:
                 err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
                 assert tgt_col, err_msg_invalid_tgt_col
 
-                if row.transformation_rule == "'NULL'":
+                if str(row.transformation_rule).upper() == "'NULL'":
                     transformation_rule = None
                 else:
                     transformation_rule = row.transformation_rule
