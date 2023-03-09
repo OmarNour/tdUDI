@@ -384,6 +384,7 @@ class Table(MyID):
                                                   , si_index='')
 
         elif self.table_kind == 'V':
+            self.pipeline:Pipeline
             if self.pipeline:
                 self._ddl = DDL_VIEW_TEMPLATE.format(schema_name=self.schema.schema_name, view_name=self.table_name, query_txt=self.pipeline.query)
 
@@ -397,10 +398,9 @@ class Table(MyID):
     def pipeline(self):
         pipe: Pipeline
         for pipe in Pipeline.get_all_instances():
-            if pipe.table:
-                if pipe.table.id == self.id:
+            if pipe.lyr_view:
+                if pipe.lyr_view.table.id == self.id:
                     return pipe
-
 
 
 class DataSetType(MyID):
@@ -618,7 +618,7 @@ class Pipeline(MyID):
     def __init__(self
                  , src_lyr_table_id: int
                  , tgt_lyr_table_id: int
-                 , table_id: int | None = None
+                 , lyr_view_id: int | None = None
                  , transactional_data: bool = False
                  , src_table_alias: str = None
                  , active: int = 1
@@ -626,20 +626,20 @@ class Pipeline(MyID):
         super().__init__(*args, **kwargs)
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
-        self._table_id = table_id
+        self._lyr_view_id = lyr_view_id
         self.transactional_data = transactional_data
         self._alphabets = ALPHABETS.copy()
         self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
         self.active = active
 
         if self.tgt_lyr_table.table.table_kind == 'V':
-            self._table_id = self.tgt_lyr_table.table.id
-        elif self.table:
-            assert self.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
+            self._lyr_view_id = self.tgt_lyr_table.table.id
+        elif self.lyr_view:
+            assert self.lyr_view.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
 
     @property
-    def table(self) -> Table:
-        return Table.get_instance(_id=self._table_id)
+    def lyr_view(self) -> LayerTable:
+        return LayerTable.get_instance(_id=self._lyr_view_id)
 
     @property
     def src_lyr_table(self) -> LayerTable:
@@ -837,9 +837,6 @@ class JoinOn(MyID):
                            + self.join_with.pipeline.all_source_aliases \
                            + [table.table_name for table in self.join_with.pipeline.all_source_tables]
 
-            if 'L1_PRTY_RLTD_L0_CSO_NEW_SPOUSE' in self.join_with.pipeline.table.table_name.upper():
-                print(_extra_words)
-                print(self._complete_join_on_expr)
             return self.join_with.pipeline.tgt_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_join_on_expr
                                                                                           , extra_words=_extra_words)
         return True
@@ -891,7 +888,6 @@ class ColumnMapping(MyID):
     def src_col_trx(self):
         # alias = ''
         _src_col_trx = self._src_col_trx if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
-
 
         # if self.src_col:
         #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:

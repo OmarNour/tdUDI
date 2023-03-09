@@ -20,7 +20,7 @@ cls_keys = {
     , 'LayerType': 'type_name'
     , 'Layer': 'layer_name'
     , 'LayerTable': ('layer_id', 'table_id')
-    , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id')
+    , 'Pipeline': ('src_lyr_table_id', 'tgt_lyr_table_id', 'lyr_view_id')
     , 'ColumnMapping': ('pipeline_id', 'col_seq', 'tgt_col_id')
     , 'Filter': ('pipeline_id', 'filter_seq')
     , 'GroupBy': ('pipeline_id', 'col_id')

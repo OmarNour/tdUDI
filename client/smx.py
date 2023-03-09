@@ -177,7 +177,7 @@ class SMX:
             assert ds, ds_error_msg
 
             src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-            LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
+            src_lv = LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
 
             src_t = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
             stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
@@ -185,21 +185,7 @@ class SMX:
             src_lt = LayerTable.get_instance(_key=(self.src_layer.id, src_t.id))
             stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
 
-            Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=src_v.id)
-
-        @log_error_decorator(self.log_error_path)
-        def extract_stg_views(row):
-            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-            ds = DataSource.get_instance(_key=row.schema)
-            assert ds, ds_error_msg
-
-            stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-            LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
-
-            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-            Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=stg_lt.id, table_id=stg_v.id)
+            Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=src_lv.id)
 
         @log_error_decorator(self.log_error_path)
         def extract_src_view_columns(row):
@@ -215,7 +201,10 @@ class SMX:
                 src_lyr_table = LayerTable.get_instance(_key=(self.src_layer.id, src_table.id))
                 stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
 
-                pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id))
+                src_v = Table.get_instance(_key=(self.src_v_schema.id, row.table_name))
+                src_lv = LayerTable.get_instance(_key=(self.src_layer.id, src_v.id))
+
+                pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id, src_lv.id))
                 src_col = Column.get_instance(_key=(src_table.id, row.column_name))
                 stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
@@ -230,6 +219,20 @@ class SMX:
                               )
 
         @log_error_decorator(self.log_error_path)
+        def extract_stg_views(row):
+            ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
+            ds = DataSource.get_instance(_key=row.schema)
+            assert ds, ds_error_msg
+
+            stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+            stg_lv = LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
+
+            stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+            Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=stg_lv.id)
+
+        @log_error_decorator(self.log_error_path)
         def extract_stg_view_columns(row):
             ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
             col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -240,7 +243,10 @@ class SMX:
                 stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                 stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
 
-                pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id))
+                stg_v = Table.get_instance(_key=(self.stg_v_schema.id, row.table_name))
+                stg_lv = LayerTable.get_instance(_key=(self.stg_layer.id, stg_v.id))
+
+                pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id, stg_lv.id))
                 stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
                 assert stg_col, col_error_msg
@@ -383,10 +389,10 @@ class SMX:
                                                              , domain_id=srci_col.domain.domain_code
                                                              )
                 # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_col.domain.domain_code}"
-                txf_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
-                txf_bkey_lt = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=txf_v.id)
+                bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
+                bkey_vl = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=bkey_v.id)
 
-                bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=txf_bkey_lt.id)
+                bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=bkey_vl.id, lyr_view_id=bkey_vl.id)
                 if row.bkey_filter:
                     Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
@@ -397,7 +403,7 @@ class SMX:
             assert ds, ds_error_msg
 
             srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-            LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
+            srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
 
             stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
             stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
@@ -405,7 +411,7 @@ class SMX:
             srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
             srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
-            Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, table_id=srci_v.id)
+            Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
 
         @log_error_decorator(self.log_error_path)
         def extract_srci_view_columns(row):
@@ -437,7 +443,7 @@ class SMX:
                     txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
                     txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
                     bkey_txf_v_col = Column(table_id=txf_v.id, column_name='source_key')
-                    bkey_txf_pipeline = Pipeline.get_instance(_key=(stg_lt.id, txf_bkey_lt.id))
+                    bkey_txf_pipeline = Pipeline.get_instance(_key=(stg_lt.id, txf_bkey_lt.id, txf_bkey_lt.id))
                     # for col_seq, stg_t_col in enumerate(stg_t_cols):
                     ColumnMapping(pipeline_id=bkey_txf_pipeline.id
                                   , col_seq=0
@@ -460,8 +466,10 @@ class SMX:
             #     # assert weird_txt == '' or weird_txt == 'null', trx_error_msg
 
             assert srci_t_col, col_error_msg
+            srci_v = Table.get_instance(_key=(self.srci_v_schema.id, row.table_name))
+            srci_vl = LayerTable.get_instance(_key=(self.srci_layer.id, srci_v.id))
 
-            srci_v_pipeline = Pipeline.get_instance(_key=(stg_lt.id, srci_lyr_table.id))
+            srci_v_pipeline = Pipeline.get_instance(_key=(stg_lt.id, srci_lyr_table.id, srci_vl.id))
             # for col_seq, stg_t_col in enumerate(stg_t_cols):
             ColumnMapping(pipeline_id=srci_v_pipeline.id
                           , col_seq=0
@@ -595,12 +603,12 @@ class SMX:
             txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
             # [Column(table_id=core_txf_v.id, column_name=col.column_name) for col in core_t.columns]
-            LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
+            core_txf_vl = LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
             core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id
                                      , tgt_lyr_table_id=core_lt.id
                                      , src_table_alias=main_table_alias
-                                     , table_id=core_txf_v.id)
+                                     , lyr_view_id=core_txf_vl.id)
 
             parse_join(row.join)
 

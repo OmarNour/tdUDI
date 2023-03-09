@@ -23,7 +23,8 @@
 #       Handle alias for join tables
 #       use ALPHABETS.pop(), to get aliases!
 #       handle transactional_data flag, to differentiate between trans and non-trans data
-#       change Pipeline.table_id, to Pipeline.layer_view_id
+#       DONE change Pipeline.table_id, to Pipeline.layer_view_id
+#       DONE change the key to be, src_lyr_table_id, tgt_lyr_table_id, layer_view_id
 #   GroupBy:
 #       To handle agg functions
 #   Filter & OrFilter:
