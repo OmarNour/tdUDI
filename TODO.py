@@ -3,7 +3,6 @@
 #   return all data from all classes in DF
 #   DataSet:
 #       set_name, should be changed tp core_table_id
-#   change Pipeline.table_id, to Pipeline.view_id
 #   Create new objects, one for attribute names only, and the other for entity names only, then the both will create tables and columns!
 #   Rejection tables and rules, to be distinguished
 #   Connect to the DB, to deploy and report issues
@@ -24,6 +23,7 @@
 #       Handle alias for join tables
 #       use ALPHABETS.pop(), to get aliases!
 #       handle transactional_data flag, to differentiate between trans and non-trans data
+#       change Pipeline.table_id, to Pipeline.layer_view_id
 #   GroupBy:
 #       To handle agg functions
 #   Filter & OrFilter:

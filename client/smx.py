@@ -551,7 +551,7 @@ class SMX:
                     assert src_t, err_msg_invalid_src_tbl
                     src_col = Column.get_instance(_key=(src_t.id, row.mapped_to_column))
 
-                tgt_col = Column.get_instance(_key=(core_txf_v.id, row.column_name))
+                tgt_col = Column.get_instance(_key=(core_t.id, row.column_name))
                 err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
                 assert tgt_col, err_msg_invalid_tgt_col
 
@@ -590,13 +590,17 @@ class SMX:
             srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
             core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
+            core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
 
             txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
             core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
-            [Column(table_id=core_txf_v.id, column_name=col.column_name) for col in core_t.columns]
+            # [Column(table_id=core_txf_v.id, column_name=col.column_name) for col in core_t.columns]
             LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
 
-            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id, tgt_lyr_table_id=core_txf_v.id, src_table_alias=main_table_alias)
+            core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id
+                                     , tgt_lyr_table_id=core_lt.id
+                                     , src_table_alias=main_table_alias
+                                     , table_id=core_txf_v.id)
 
             parse_join(row.join)
 
