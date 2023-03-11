@@ -675,7 +675,7 @@ class Pipeline(MyID):
         for col_m in self.column_mapping:
             if col_m.tgt_col not in _dic.keys():
                 _dic[col_m.tgt_col] = []
-            _dic[col_m.tgt_col].append('(' + col_m.src_col_trx + ')')
+            _dic[col_m.tgt_col].append(col_m.src_col_trx)
         return _dic
 
     @property
@@ -890,7 +890,7 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         # alias = ''
-        _src_col_trx = self._src_col_trx if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
+        _src_col_trx = '('+str(self._src_col_trx)+')' if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
 
         # if self.src_col:
         #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
