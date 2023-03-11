@@ -2,7 +2,7 @@
 #   Class to hold error data, then print it in a  proper way for en user!
 #   return all data from all classes in DF
 #   DataSet:
-#       set_name, should be changed tp core_table_id
+#       DONE set_name, should be changed tp core_table_id
 #   Create new objects, one for attribute names only, and the other for entity names only, then the both will create tables and columns!
 #   Rejection tables and rules, to be distinguished
 #   Connect to the DB, to deploy and report issues
@@ -12,8 +12,8 @@
 #       DONE reserved_words list
 #       DONE trx validation
 #   Layer:
-#       add new attribute, to distinguish between different layers: 0 landing, 1 staging, 2 surrogate, 3, srci, 4 core model
-#       create new class, named LayerType
+#       DONE add new attribute, to distinguish between different layers: 0 landing, 1 staging, 2 surrogate, 3, srci, 4 core model
+#       DONE create new class, named LayerType
 #   ColumnMapping:
 #       DONE raise error if trx is invalid for columns mapping
 #   Pipeline:
