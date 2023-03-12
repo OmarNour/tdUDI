@@ -716,32 +716,21 @@ class SMX:
         extract_all()
 
     @time_elapsed_decorator
-    def generate_scripts(self, source_name: str = None):
-        _source_name = None
-        if source_name is not None:
-            _source_name = source_name.lower()
-
+    def generate_scripts(self):
         def layer_scripts(layer: Layer):
             @log_error_decorator(None)
             def layer_table_scripts(layer_table: LayerTable):
-                try:
-                    lyr_src_name = None
-                    if _source_name is not None:
-                        lyr_src_name = layer_table.table.data_source.source_name
-                except:
-                    lyr_src_name = None
 
-                if lyr_src_name == _source_name or lyr_src_name is None:
-                    ddl = layer_table.table.ddl
-                    if ddl:
-                        if layer_table.table.table_kind == 'T':
-                            tables_ddl.append(ddl)
-                        elif layer_table.table.table_kind == 'V':
-                            views_ddl.append(ddl)
+                ddl = layer_table.table.ddl
+                if ddl:
+                    if layer_table.table.table_kind == 'T':
+                        tables_ddl.append(ddl)
+                    elif layer_table.table.table_kind == 'V':
+                        views_ddl.append(ddl)
 
-                    dml = layer_table.dml
-                    if dml:
-                        tables_dml.append(dml)
+                dml = layer_table.dml
+                if dml:
+                    tables_dml.append(dml)
 
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
