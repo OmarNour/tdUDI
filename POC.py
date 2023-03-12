@@ -173,15 +173,7 @@ if __name__ == '__main__':
                        'gender': ['F', 'M', 'M', 'M'],
                         'xx': ['NULL', 'M', None, 'M']}
                       )
-    df = df.replace(np.nan, value='', regex=True)
-    df = df.applymap(lambda x: x.replace('\ufeff', '').strip() if type(x) is str else int(x) if type(x) is float else x)
-    df.set_index(['gender', 'age'], inplace=True)
-    df.reset_index(inplace=True)
-    df.set_index(['gender'], inplace=True)
-    # f_df = filter_dataframe(df, 'name', 'Charlie')
+    smx = pd.ExcelFile(smx_path)
+    df = smx.parse('test', encoding='utf-8').replace(np.nan, value='', regex=True).replace('"', value="'", regex=True)
+    # df = pd.read_excel(smx_path, sheet_name='test')
     print(df)
-
-    # print(df.index.array)
-    # for i in df.iterrows():
-    #     print(i.index)
-    #     print(i[0], i[1])

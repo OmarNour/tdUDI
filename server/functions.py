@@ -69,7 +69,10 @@ def list_to_string(_list, separator=None, quotes=0):
 
 
 def single_quotes(string):
-    return "'%s'" % string.replace("'", '"')
+    return "'%s'" % string#.replace("'", '"')
+
+# def single_quotes(string):
+#     return "'%s'" % string
 
 
 def time_elapsed_decorator(function):
@@ -168,10 +171,6 @@ def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd
 
 
 if __name__ == '__main__':
-    x = ['s']
-    print(list_to_string(x, ','))
-    u = {'name': ['John', 'jane', 'MARY', 'john', 'Jane'], 'city': ['John', 'jane', 'MARY', 'john', 'Jane']}
-    df = pd.DataFrame(u)
-    df = df.apply(lambda x: x.astype(str).str.lower()).drop_duplicates(subset=['name'])
-
-    print(df.head())
+    _ = """ dasda's """
+    x = single_quotes(_)
+    print(x)

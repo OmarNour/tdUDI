@@ -69,7 +69,7 @@ class SMX:
     def parse_sheet(self, sheet):
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
         if sheet_name in SHEETS:
-            df = self.xls.parse(sheet).replace(np.nan, value='', regex=True)
+            df = self.xls.parse(sheet, encoding='utf-8').replace(np.nan, value='', regex=True)
             df = df.applymap(lambda x: x.replace('\ufeff', '').strip() if type(x) is str else int(x) if type(x) is float else x)
             df.drop_duplicates()
             df.columns = [c.replace('  ', ' ').replace(' ', '_').lower() for c in df]
@@ -551,7 +551,11 @@ class SMX:
 
             @log_error_decorator(self.log_error_path)
             def column_mapping(row):
-                # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule'
+                # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
+                # transformation_type: COPY, SQL, CONST
+                transformation_type = row.transformation_type.upper()
+                assert transformation_type in ('COPY', 'SQL', 'CONST'), "Transformation Type, should be one of the following COPY, SQL or CONST"
+
                 src_col = None
                 if row.mapped_to_column:
                     err_msg_invalid_src_tbl = f'Invalid Table, {row.mapped_to_table}'
@@ -563,9 +567,19 @@ class SMX:
                 err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
                 assert tgt_col, err_msg_invalid_tgt_col
 
-                if str(row.transformation_rule).upper() == "'NULL'":
+                if transformation_type == 'COPY':
                     transformation_rule = None
+                elif transformation_type == 'CONST':
+                    if str(row.transformation_rule).upper() == '':
+                        transformation_rule = None
+                    else:
+                        transformation_rule = single_quotes(row.transformation_rule) if isinstance(row.transformation_rule, str) else row.transformation_rule
+                    # if str(row.transformation_rule).upper() == "'NULL'":
+                    #     transformation_rule = None
+                    # else:
+                    #     transformation_rule = single_quotes(row.transformation_rule)
                 else:
+                    # means SQL
                     transformation_rule = row.transformation_rule
 
                 ColumnMapping(pipeline_id=core_pipeline.id
@@ -616,7 +630,7 @@ class SMX:
                 Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
             column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
-            column_mapping_df[['column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule']].drop_duplicates().apply(column_mapping, axis=1)
+            column_mapping_df[['column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
         ####################################################  Begin DFs  ####################################################
         system_df = filter_dataframe(self.data['system'], 'schema', source_name)
