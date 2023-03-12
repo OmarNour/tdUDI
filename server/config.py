@@ -30,7 +30,7 @@ cls_keys = {
 }
 
 SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
-    , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping', 'test'
+    , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
     , 'supplements']
 
 DS_BKEY = 'BKEY'
