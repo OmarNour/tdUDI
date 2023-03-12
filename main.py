@@ -5,7 +5,7 @@ from client.smx import *
 def start():
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
-    smx.populate_model(source_name=None)
+    smx.populate_model(source_name='cso')
     smx.generate_scripts()
 
 

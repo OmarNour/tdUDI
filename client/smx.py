@@ -672,19 +672,14 @@ class SMX:
     @time_elapsed_decorator
     def generate_scripts(self):
         def layer_scripts(layer: Layer):
-            @log_error_decorator(None)
+            @log_error_decorator(self.log_error_path)
             def layer_table_scripts(layer_table: LayerTable):
+                if layer_table.table.table_kind == 'T':
+                    tables_ddl.append(layer_table.table.ddl)
+                elif layer_table.table.table_kind == 'V':
+                    views_ddl.append(layer_table.table.ddl)
 
-                ddl = layer_table.table.ddl
-                if ddl:
-                    if layer_table.table.table_kind == 'T':
-                        tables_ddl.append(ddl)
-                    elif layer_table.table.table_kind == 'V':
-                        views_ddl.append(ddl)
-
-                dml = layer_table.dml
-                if dml:
-                    tables_dml.append(dml)
+                tables_dml.append(layer_table.dml)
 
             layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
             layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
