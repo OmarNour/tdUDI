@@ -574,10 +574,6 @@ class SMX:
                         transformation_rule = None
                     else:
                         transformation_rule = single_quotes(row.transformation_rule) if isinstance(row.transformation_rule, str) else row.transformation_rule
-                    # if str(row.transformation_rule).upper() == "'NULL'":
-                    #     transformation_rule = None
-                    # else:
-                    #     transformation_rule = single_quotes(row.transformation_rule)
                 else:
                     # means SQL
                     transformation_rule = row.transformation_rule
