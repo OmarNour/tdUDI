@@ -672,6 +672,7 @@ class SMX:
     @time_elapsed_decorator
     def generate_scripts(self):
         def layer_scripts(layer: Layer):
+            # print(f"Layer: {layer.layer_name}, type is: {layer.layer_type.type_name}, started now!")
             @log_error_decorator(self.log_error_path)
             def layer_table_scripts(layer_table: LayerTable):
                 if layer_table.table.table_kind == 'T':
