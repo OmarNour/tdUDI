@@ -98,13 +98,25 @@ class SMX:
                 ds = DataSource.get_instance(_key=row.schema)
                 assert ds, ds_error_msg
 
-                src_table = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                stg_table = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                srci_table = Table(schema_id=self.srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                src_t = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                stg_t = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                srci_t = Table(schema_id=self.srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
 
-                LayerTable(layer_id=self.src_layer.id, table_id=src_table.id)
-                LayerTable(layer_id=self.stg_layer.id, table_id=stg_table.id)
-                LayerTable(layer_id=self.srci_layer.id, table_id=srci_table.id)
+                src_lt = LayerTable(layer_id=self.src_layer.id, table_id=src_t.id)
+                stg_lt = LayerTable(layer_id=self.stg_layer.id, table_id=stg_t.id)
+                srci_lt = LayerTable(layer_id=self.srci_layer.id, table_id=srci_t.id)
+                #############################################################
+                src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                src_lv = LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
+                Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=src_lv.id)
+                #############################################################
+                stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                stg_lv = LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
+                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=stg_lv.id)
+                #############################################################
+                srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
+                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
 
             @log_error_decorator(self.log_error_path)
             def extract_core_tables(row):
@@ -171,23 +183,6 @@ class SMX:
                            , data_type_id=data_type.id, dt_precision=precision, domain_id=domain_id)
 
             @log_error_decorator(self.log_error_path)
-            def extract_src_views(row):
-                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-                ds = DataSource.get_instance(_key=row.schema)
-                assert ds, ds_error_msg
-
-                src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                src_lv = LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
-
-                src_t = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
-                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-
-                src_lt = LayerTable.get_instance(_key=(self.src_layer.id, src_t.id))
-                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-                Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=src_lv.id)
-
-            @log_error_decorator(self.log_error_path)
             def extract_src_view_columns(row):
                 ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
                 col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -217,20 +212,6 @@ class SMX:
                                   , tgt_col_id=stg_col.id
                                   , src_col_trx=row.column_transformation_rule
                                   )
-
-            @log_error_decorator(self.log_error_path)
-            def extract_stg_views(row):
-                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-                ds = DataSource.get_instance(_key=row.schema)
-                assert ds, ds_error_msg
-
-                stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                stg_lv = LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
-
-                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=stg_lv.id)
 
             @log_error_decorator(self.log_error_path)
             def extract_stg_view_columns(row):
@@ -395,23 +376,6 @@ class SMX:
                     bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=bkey_vl.id, lyr_view_id=bkey_vl.id)
                     if row.bkey_filter:
                         Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
-
-            @log_error_decorator(self.log_error_path)
-            def extract_srci_views(row):
-                ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
-                ds = DataSource.get_instance(_key=row.schema)
-                assert ds, ds_error_msg
-
-                srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
-
-                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
-                srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
-
-                Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
 
             @log_error_decorator(self.log_error_path)
             def extract_srci_view_columns(row):
@@ -650,7 +614,7 @@ class SMX:
             core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
             bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
             bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
-            # bmap_df[['code_set_name']].drop_duplicates().apply(extract_lookup_core_tables, axis=1)
+
             stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
             ##########################  Start bkey & bmaps   #####################
             bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
@@ -666,23 +630,16 @@ class SMX:
             stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
                            'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
-            core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
-
-            stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_src_views, axis=1)
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
-
-            stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_views, axis=1)
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
             ##########################  Start bkey TXF view  #####################
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
             # extract_bkey_txf_columns
             ##########################  End bkey TXF view    #####################
-
-            stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_srci_views, axis=1)
             stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
-
             ##########################      Start Core TXF view     #####################
+            core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
             table_mapping_df[
                 [
                     'target_table_name', 'source'
@@ -690,10 +647,7 @@ class SMX:
                     , 'filter_criterion', 'mapping_name', 'join'
                 ]
             ].drop_duplicates().apply(extract_core_txf_views, axis=1)
-            #
-            # extract_core_txf_view_columns
             ##########################      End Core TXF view       #####################
-
             ####################################################  End   ####################################################
             print('DataSetType count:', DataSetType.count_instances())
             print('Layer count:', Layer.count_instances())
