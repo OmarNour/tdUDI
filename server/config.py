@@ -40,15 +40,16 @@ JoinTypes = namedtuple("JoinTypes", "code name")
 JOIN_TYPES = [JoinTypes(code='ij', name='inner join'), JoinTypes(code='lj', name='left join'),
               JoinTypes(code='rj', name='right join'), JoinTypes(code='fj', name='full outer join')]
 LAYER_TYPES = ['SRC', 'STG', 'SK', 'SRCI', 'CORE']
+PREFIX = 'GDEV1'
 LAYERS = {
-    'SRC': LayerDtl(LAYER_TYPES[0], 0, 'GDEV1V_STG_ONLINE', 'STG_ONLINE')
-    , 'STG': LayerDtl(LAYER_TYPES[1], 1, 'GDEV1V_STG', 'GDEV1T_STG')
-    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[1], 2, 'GDEV1V_INP', '')
-    , 'BKEY': LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'BMAP': LayerDtl(LAYER_TYPES[2], 3, 'GDEV1V_UTLFW', 'GDEV1T_UTLFW')
-    , 'SRCI': LayerDtl(LAYER_TYPES[3], 4, 'GDEV1V_SRCI', 'GDEV1T_SRCI')
-    , 'TXF_CORE': LayerDtl(LAYER_TYPES[3], 5, 'GDEV1V_INP', '')
-    , 'CORE': LayerDtl(LAYER_TYPES[4], 6, 'GDEV1V_BASE', 'GDEV1T_BASE')
+    'SRC': LayerDtl(LAYER_TYPES[0], 0, f'{PREFIX}V_STG_ONLINE', 'STG_ONLINE')
+    , 'STG': LayerDtl(LAYER_TYPES[1], 1, f'{PREFIX}V_STG', f'{PREFIX}T_STG')
+    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[1], 2, f'{PREFIX}V_INP', '')
+    , 'BKEY': LayerDtl(LAYER_TYPES[2], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
+    , 'BMAP': LayerDtl(LAYER_TYPES[2], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
+    , 'SRCI': LayerDtl(LAYER_TYPES[3], 4, f'{PREFIX}V_SRCI', f'{PREFIX}T_SRCI')
+    , 'TXF_CORE': LayerDtl(LAYER_TYPES[3], 5, f'{PREFIX}V_INP', '')
+    , 'CORE': LayerDtl(LAYER_TYPES[4], 6, f'{PREFIX}V_BASE', f'{PREFIX}T_BASE')
 }
 
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
