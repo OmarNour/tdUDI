@@ -2,20 +2,16 @@ from client.smx import *
 
 
 @time_elapsed_decorator
-def start():
+def start(source_name: str|None):
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
-    smx.populate_model(source_name='cso')
-    smx.generate_scripts()
+    smx.populate_model(source_name=source_name)
+    # smx.generate_scripts()
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     try:
-        start()
-        # DataSetType(set_type='xxxx')
-        # DataSetType(set_type='xxxx', _override=1)
-        #
-        # print(DataSetType.get_instance())
+        start(source_name=None)
     except KeyboardInterrupt:
         print("Ops!..")
