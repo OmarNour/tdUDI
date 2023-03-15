@@ -15,6 +15,10 @@ import concurrent.futures
 import time
 import multiprocessing
 import re
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 
 class WriteFile:

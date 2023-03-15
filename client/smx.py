@@ -79,6 +79,10 @@ class SMX:
     def sheet_names(self):
         return self.data.keys()
 
+    @property
+    def source_systems(self):
+        return self.data['system']
+
     @time_elapsed_decorator
     def populate_model(self, source_name):
         @log_error_decorator(self.log_error_path)
@@ -666,6 +670,8 @@ class SMX:
             print('JoinOn count:', JoinOn.count_instances())
             print('Filter count:', Filter.count_instances())
             print('GroupBy count:', GroupBy.count_instances())
+
+            MyID.serialize_all()
 
         extract_all()
 

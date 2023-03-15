@@ -158,6 +158,27 @@ class MyID(metaclass=Meta):
 
         return instance
 
+    @classmethod
+    def _serialize(cls, file_name=None):
+        file_name = cls.__name__ if file_name is None else file_name
+        full_path = os.path.join('{}/{}.pkl'.format(pickle_path, file_name))
+        pickle.dump(cls, open(full_path, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+
+    @classmethod
+    def _deserialize(cls, file_name=None):
+        file_name = cls.__name__ if file_name is None else file_name
+        try:
+            full_path = os.path.join("{}/{}.pkl".format(pickle_path, file_name))
+            return pickle.load(open(full_path, 'rb'))
+        except FileNotFoundError:
+            pass
+
+    @classmethod
+    def serialize_all(cls):
+        create_folder(pickle_path)
+        for class_name in cls.__instances.keys():
+            eval(f"{class_name}._serialize()")
+
 
 class Server(MyID):
     def __init__(self, server_name: str, **kwargs):
@@ -384,7 +405,7 @@ class Table(MyID):
                                                   , si_index='')
 
         elif self.table_kind == 'V':
-            self.pipeline:Pipeline
+            self.pipeline: Pipeline
             if self.pipeline:
                 self._ddl = DDL_VIEW_TEMPLATE.format(schema_name=self.schema.schema_name, view_name=self.table_name, query_txt=self.pipeline.query)
 
@@ -485,7 +506,7 @@ class DomainValue(MyID):
 class Column(MyID):
     def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0
                  , is_start_date: int = 0, is_end_date: int = 0
-                 , is_created_at: int = 0 , is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0
+                 , is_created_at: int = 0, is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0
                  , is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0
                  , scd_type: int = 1, domain_id=None, data_type_id=None
@@ -890,7 +911,7 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         # alias = ''
-        _src_col_trx = '('+str(self._src_col_trx)+')' if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
+        _src_col_trx = '(' + str(self._src_col_trx) + ')' if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
 
         # if self.src_col:
         #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
