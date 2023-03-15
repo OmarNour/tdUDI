@@ -675,51 +675,54 @@ class SMX:
 
         extract_all()
 
-    @time_elapsed_decorator
-    def generate_scripts(self):
-        def layer_scripts(layer: Layer):
-            # print(f"Layer: {layer.layer_name}, type is: {layer.layer_type.type_name}, started now!")
-            @log_error_decorator(self.log_error_path)
-            def layer_table_scripts(layer_table: LayerTable):
-                if layer_table.table.table_kind == 'T':
-                    tables_ddl.append(layer_table.table.ddl)
-                elif layer_table.table.table_kind == 'V':
-                    views_ddl.append(layer_table.table.ddl)
 
-                tables_dml.append(layer_table.dml) if layer_table.dml else None
+@time_elapsed_decorator
+def generate_scripts(smx:SMX):
+    def layer_scripts(layer: Layer):
+        # print(f"Layer: {layer.layer_name}, type is: {layer.layer_type.type_name}, started now!")
+        @log_error_decorator(smx.log_error_path)
+        def layer_table_scripts(layer_table: LayerTable):
+            if layer_table.table.table_kind == 'T':
+                tables_ddl.append(layer_table.table.ddl)
+            elif layer_table.table.table_kind == 'V':
+                views_ddl.append(layer_table.table.ddl)
 
-            layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
-            layer_path = os.path.join(self.current_scripts_path, layer_folder_name)
-            create_folder(layer_path)
+            tables_dml.append(layer_table.dml) if layer_table.dml else None
 
-            tables_ddl = []
-            views_ddl = []
-            tables_dml = []
-            threads(layer_table_scripts, layer.layer_tables)
-            # for layer_table in layer.layer_tables:
+        layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
+        layer_path = os.path.join(smx.current_scripts_path, layer_folder_name)
+        create_folder(layer_path)
 
-            ################ START WRITE TO FILES ################
-            if tables_ddl:
-                tables_ddl = list(filter(None, tables_ddl))
-                tables_ddl = "\n".join(tables_ddl)
-                tables_file = WriteFile(layer_path, 'tables', "sql")
-                tables_file.write(tables_ddl)
-                tables_file.close()
+        tables_ddl = []
+        views_ddl = []
+        tables_dml = []
+        threads(layer_table_scripts, layer.layer_tables)
+        # for layer_table in layer.layer_tables:
 
-            if views_ddl:
-                views_ddl = list(filter(None, views_ddl))
-                views_ddl = "\n".join(views_ddl)
-                views_file = WriteFile(layer_path, 'views', "sql")
-                views_file.write(views_ddl)
-                views_file.close()
+        ################ START WRITE TO FILES ################
+        if tables_ddl:
+            tables_ddl = list(filter(None, tables_ddl))
+            tables_ddl = "\n".join(tables_ddl)
+            tables_file = WriteFile(layer_path, 'tables', "sql")
+            tables_file.write(tables_ddl)
+            tables_file.close()
 
-            if tables_dml:
-                tables_dml = list(filter(None, tables_dml))
-                tables_dml = "\n".join(tables_dml)
-                dml_file = WriteFile(layer_path, 'data', "sql")
-                dml_file.write(tables_dml)
-                dml_file.close()
-            ################ END WRITE TO FILES ################
+        if views_ddl:
+            views_ddl = list(filter(None, views_ddl))
+            views_ddl = "\n".join(views_ddl)
+            views_file = WriteFile(layer_path, 'views', "sql")
+            views_file.write(views_ddl)
+            views_file.close()
 
-        threads(layer_scripts, Layer.get_all_instances())
-        open_folder(self.current_scripts_path)
+        if tables_dml:
+            tables_dml = list(filter(None, tables_dml))
+            tables_dml = "\n".join(tables_dml)
+            dml_file = WriteFile(layer_path, 'data', "sql")
+            dml_file.write(tables_dml)
+            dml_file.close()
+        ################ END WRITE TO FILES ################
+
+    Layer_cls:Layer
+    Layer_cls = Layer._deserialize()
+    threads(layer_scripts, Layer_cls.get_all_instances())
+    open_folder(smx.current_scripts_path)
