@@ -677,7 +677,7 @@ class SMX:
 
 
 @time_elapsed_decorator
-def generate_scripts(smx:SMX):
+def generate_scripts(smx: SMX):
     def layer_scripts(layer: Layer):
         # print(f"Layer: {layer.layer_name}, type is: {layer.layer_type.type_name}, started now!")
         @log_error_decorator(smx.log_error_path)
@@ -722,7 +722,7 @@ def generate_scripts(smx:SMX):
             dml_file.close()
         ################ END WRITE TO FILES ################
 
-    Layer_cls:Layer
+    Layer_cls: Layer
     Layer_cls = Layer._deserialize()
     threads(layer_scripts, Layer_cls.get_all_instances())
     open_folder(smx.current_scripts_path)
