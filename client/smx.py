@@ -671,13 +671,14 @@ class SMX:
             print('Filter count:', Filter.count_instances())
             print('GroupBy count:', GroupBy.count_instances())
 
-            MyID.serialize_all()
+            # MyID.serialize_all()
 
         extract_all()
 
 
 @time_elapsed_decorator
 def generate_scripts(smx: SMX):
+    # print(smx.source_systems['source_system_name'].values.tolist())
     def layer_scripts(layer: Layer):
         # print(f"Layer: {layer.layer_name}, type is: {layer.layer_type.type_name}, started now!")
         @log_error_decorator(smx.log_error_path)
@@ -722,7 +723,5 @@ def generate_scripts(smx: SMX):
             dml_file.close()
         ################ END WRITE TO FILES ################
 
-    Layer_cls: Layer
-    Layer_cls = Layer._deserialize()
-    threads(layer_scripts, Layer_cls.get_all_instances())
+    threads(layer_scripts, Layer.get_all_instances())
     open_folder(smx.current_scripts_path)

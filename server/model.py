@@ -89,7 +89,7 @@ class MyID(metaclass=Meta):
 
     @classmethod
     # @lru_cache
-    def get_all_instances(cls):
+    def get_all_instances(cls) -> []:
         try:
             return cls.__instances[cls.__name__].values()
         except KeyError:
@@ -159,25 +159,28 @@ class MyID(metaclass=Meta):
         return instance
 
     @classmethod
-    def _serialize(cls, file_name=None):
-        file_name = cls.__name__ if file_name is None else file_name
-        full_path = os.path.join('{}/{}.pkl'.format(pickle_path, file_name))
+    def _serialize(cls, _id: int):
+        full_path = os.path.join(f"{pickle_path}/{cls.__name__}/{_id}.pkl")
         pickle.dump(cls, open(full_path, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
-    def _deserialize(cls, file_name=None):
-        file_name = cls.__name__ if file_name is None else file_name
+    def _deserialize(cls, _id: int):
         try:
-            full_path = os.path.join("{}/{}.pkl".format(pickle_path, file_name))
+            full_path = os.path.join(f"{pickle_path}/{cls.__name__}/{_id}.pkl")
             return pickle.load(open(full_path, 'rb'))
         except FileNotFoundError:
             pass
 
     @classmethod
     def serialize_all(cls):
+        instance: MyID
         create_folder(pickle_path)
         for class_name in cls.__instances.keys():
-            eval(f"{class_name}._serialize()")
+            cls_instances = eval(f"{class_name}.get_all_instances()")
+            class_path = f"{pickle_path}/{class_name}"
+            create_folder(class_path)
+            for instance in cls_instances:
+                instance._serialize(instance.id)
 
 
 class Server(MyID):
