@@ -656,7 +656,13 @@ class Pipeline(MyID):
         self._lyr_view_id = lyr_view_id
         self.transactional_data = transactional_data
         self._alphabets = ALPHABETS.copy()
-        self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
+        self._src_table_alias = None
+        self._aliases: dict = {}
+
+        if self.src_lyr_table:
+            self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
+            self.add_new_alias(self._src_table_alias, self.src_lyr_table.table)
+
         self.active = active
 
         if self.tgt_lyr_table.table.table_kind == 'V':
@@ -710,37 +716,46 @@ class Pipeline(MyID):
     @property
     def join_with(self) -> []:
         j: JoinWith
-        return [j for j in JoinWith.get_all_instances() if j.pipeline.id == self.id] if JoinWith.count_instances() > 0 else []
+        return [j for j in JoinWith.get_all_instances() if j.pipeline.id == self.id]
+    # @functools.cached_property
+    # def all_source_tables(self) -> []:
+    #     j: JoinWith
+    #     _tables = [self.src_lyr_table.table]
+    #     for j in self.join_with:
+    #         _tables.append(j.master_lyr_table.table)
+    #         _tables.append(j.with_lyr_table.table)
+    #
+    #     return list(set(_tables))
 
-    @property
-    def all_source_tables(self) -> []:
-        j: JoinWith
-        _tables = [self.src_lyr_table.table]
-        for j in self.join_with:
-            _tables.append(j.master_lyr_table.table)
-            _tables.append(j.with_lyr_table.table)
+    # @property
+    # def all_source_aliases(self) -> []:
+    #     j: JoinWith
+    #     _aliases = [self.src_table_alias]
+    #     for j in self.join_with:
+    #         _aliases.append(j.master_alias)
+    #         _aliases.append(j.with_alias)
+    #     return list(set(_aliases))
 
-        return list(set(_tables))
+    def add_new_alias(self, alias: str, table: Table) -> None:
+        self._aliases[alias.lower()] = table.id
 
-    @property
-    def all_source_aliases(self) -> []:
-        j: JoinWith
-        _aliases = [self.src_table_alias]
-        for j in self.join_with:
-            _aliases.append(j.master_alias)
-            _aliases.append(j.with_alias)
-        return list(set(_aliases))
+    def get_table_by_alias(self, alias: str) -> Table:
+        try:
+            table_id = self._aliases[alias.lower()]
+            return Table.get_instance(_id=table_id)
+        except KeyError:
+            raise ValueError(f"invalid alias '{alias}'\n,Aliases: {self._aliases} \n, Pipeline: {self.lyr_view.table.table_name}!")
 
-    @property
-    def all_src_cols(self) -> []:
-        # to get all columns from all source tables in this pipeline!
-        table: Table
-        col: Column
-        columns = []
-        cols_in_tables = [table.columns for table in self.all_source_tables]
-        for cols_in_table in cols_in_tables:
-            columns.extend(cols_in_table)
-        return [col.column_name for col in columns]
+    # @property
+    # def all_src_cols(self) -> []:
+    #     # to get all columns from all source tables in this pipeline!
+    #     table: Table
+    #     col: Column
+    #     columns = []
+    #     cols_in_tables = [table.columns for table in self.all_source_tables]
+    #     for cols_in_table in cols_in_tables:
+    #         columns.extend(cols_in_table)
+    #     return [col.column_name for col in columns]
 
     @property
     def query(self):
@@ -750,6 +765,9 @@ class Pipeline(MyID):
         from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name
                                            , table_name=self.src_lyr_table.table.table_name
                                            , alias=self.src_table_alias)
+        # jw:JoinWith
+        # for jw in self.join_with:
+        #     jw
         join_clause = ''
         where_clause = where_template.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
         group_by_clause = group_by_template.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
@@ -812,6 +830,7 @@ class JoinWith(MyID):
 
         assert with_lyr_table_id, "join table can't be empty!"
         assert self.with_alias, "join table's alias can't be empty!"
+        self.pipeline.add_new_alias(self.with_alias, self.with_lyr_table.table)
         super().__init__(*args, **kwargs)
 
     @functools.cached_property
@@ -854,31 +873,37 @@ class JoinOn(MyID):
     def join_with(self) -> JoinWith:
         return JoinWith.get_instance(_id=self._join_with_id)
 
-    @property
-    def valid_join_on_expr(self) -> bool:
-        col: Column
-        if self._complete_join_on_expr:
-            # master_table_alias = (self.join_with.master_alias + '.') if self.join_with.master_alias else ''
-            # with_table_alias = (self.join_with.with_alias + '.') if self.join_with.with_alias else ''
-            _extra_words = self.join_with.pipeline.all_src_cols \
-                           + self.join_with.pipeline.all_source_aliases \
-                           + [table.table_name for table in self.join_with.pipeline.all_source_tables]
-
-            return self.join_with.pipeline.tgt_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_join_on_expr
-                                                                                          , extra_words=_extra_words)
-        return True
+    # @property
+    # def valid_join_on_expr(self) -> bool:
+    #     col: Column
+    #     if self._complete_join_on_expr:
+    #         # master_table_alias = (self.join_with.master_alias + '.') if self.join_with.master_alias else ''
+    #         # with_table_alias = (self.join_with.with_alias + '.') if self.join_with.with_alias else ''
+    #         _extra_words = self.join_with.pipeline.all_src_cols \
+    #                        + self.join_with.pipeline.all_source_aliases \
+    #                        + [table.table_name for table in self.join_with.pipeline.all_source_tables]
+    #
+    #         return self.join_with.pipeline.tgt_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_join_on_expr
+    #                                                                                       , extra_words=_extra_words)
+    #     return True
 
 
 class ColumnMapping(MyID):
-    def __init__(self, pipeline_id: int, tgt_col_id: int, src_col_id: int | None, col_seq: int = 0
+    def __init__(self
+                 , pipeline_id: int
+                 , tgt_col_id: int
+                 , col_seq: int = 0
+                 , src_col_id: int | None = None
+                 , src_table_alias: int | None = None
                  , src_col_trx: str = None
                  , fn_value_if_null=None
                  , *args, **kwargs):
 
         self._pipeline_id = pipeline_id
+        self._tgt_col_id = tgt_col_id
         self.col_seq = col_seq
         self._src_col_id = src_col_id
-        self._tgt_col_id = tgt_col_id
+        self.src_table_alias = src_table_alias
         self.fn_value_if_null = fn_value_if_null
         self._src_col_trx = src_col_trx
 
@@ -901,15 +926,15 @@ class ColumnMapping(MyID):
     def src_col(self) -> Column:
         return Column.get_instance(_id=self._src_col_id)
 
-    @property
-    def valid_src_col_trx(self) -> bool:
-        col: Column
-        if self._src_col_trx:
-            _extra_words = self.pipeline.all_src_cols + \
-                           [self.pipeline.src_lyr_table.table.table_name]
-            return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._src_col_trx
-                                                                                , extra_words=_extra_words)
-        return True
+    # @property
+    # def valid_src_col_trx(self) -> bool:
+    #     col: Column
+    #     if self._src_col_trx:
+    #         _extra_words = self.pipeline.all_src_cols + \
+    #                        [self.pipeline.src_lyr_table.table.table_name]
+    #         return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._src_col_trx
+    #                                                                             , extra_words=_extra_words)
+    #     return True
 
     @property
     def src_col_trx(self):
@@ -975,16 +1000,16 @@ class Filter(MyID):
     def column(self) -> Column:
         return Column.get_instance(_id=self._col_id)
 
-    @property
-    def valid_filter_expr(self) -> bool:
-        col: Column
-        if self._complete_filter_expr:
-            _extra_words = self.pipeline.all_src_cols \
-                           + self.pipeline.all_source_aliases \
-                           + [table.table_name for table in self.pipeline.all_source_tables]
-            return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_filter_expr
-                                                                                , extra_words=_extra_words)
-        return True
+    # @property
+    # def valid_filter_expr(self) -> bool:
+    #     col: Column
+    #     if self._complete_filter_expr:
+    #         _extra_words = self.pipeline.all_src_cols \
+    #                        + self.pipeline.all_source_aliases \
+    #                        + [table.table_name for table in self.pipeline.all_source_tables]
+    #         return self.pipeline.src_lyr_table.table.schema.db_engine.valid_trx(trx=self._complete_filter_expr
+    #                                                                             , extra_words=_extra_words)
+    #     return True
 
     @property
     def filter_expr(self):

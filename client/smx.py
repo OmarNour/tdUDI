@@ -485,7 +485,7 @@ class SMX:
 
                             table__alias = merge_multiple_spaces(_split_0).split(' ', 1)
                             table_name = table__alias[0]
-                            table_alias = table__alias[1] if len(table__alias) >= 2 else ''
+                            table_alias = table__alias[1] if len(table__alias) >= 2 else table_name
                             with_srci_t = Table.get_instance(_key=(self.srci_t_schema.id, table_name))
                             err_msg_invalid_srci_tbl = f'invalid join table, {table_name}'
                             assert with_srci_t, err_msg_invalid_srci_tbl
@@ -524,19 +524,22 @@ class SMX:
                     transformation_type = row.transformation_type.upper()
                     assert transformation_type in ('COPY', 'SQL', 'CONST'), "Transformation Type, should be one of the following COPY, SQL or CONST"
 
-                    src_col = None
-                    if row.mapped_to_column:
-                        err_msg_invalid_src_tbl = f'Invalid Table, {row.mapped_to_table}'
-                        src_t = Table.get_instance(_key=(self.srci_t_schema.id, row.mapped_to_table))
-                        assert src_t, err_msg_invalid_src_tbl
-                        src_col = Column.get_instance(_key=(src_t.id, row.mapped_to_column))
-
                     tgt_col = Column.get_instance(_key=(core_t.id, row.column_name))
                     err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
                     assert tgt_col, err_msg_invalid_tgt_col
 
+                    src_col = None
+                    src_table_alias = None
+                    src_table:Table
                     if transformation_type == 'COPY':
                         transformation_rule = None
+                        if row.mapped_to_column:
+                            src_table_alias = row.mapped_to_table
+                            src_table = core_pipeline.get_table_by_alias(src_table_alias)
+                            err_msg_invalid_src_tbl = f'Invalid Table, {src_table.table_name}'
+                            src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
+                            assert src_t, err_msg_invalid_src_tbl
+                            src_col = Column.get_instance(_key=(src_t.id, row.mapped_to_column))
                     elif transformation_type == 'CONST':
                         if str(row.transformation_rule).upper() == '':
                             transformation_rule = None
@@ -549,6 +552,7 @@ class SMX:
                     ColumnMapping(pipeline_id=core_pipeline.id
                                   , tgt_col_id=tgt_col.id
                                   , src_col_id=src_col.id if src_col else None
+                                  , src_table_alias=src_table_alias
                                   , col_seq=0
                                   , src_col_trx=transformation_rule if transformation_rule else None
                                   )
@@ -559,16 +563,16 @@ class SMX:
                 ds = DataSource.get_instance(_key=row.source)
                 assert ds, ds_error_msg
 
-                if row.mapped_to == '':
-                    main_tables_name = row.main_source.split(',')
-                    main_table_name = main_tables_name[0].strip()
-                    main_table_alias = row.main_source_alias
-                else:
-                    main_tables_name = row.mapped_to.split(',')
-                    main_table_name__alias = main_tables_name[0].split(' ')
-                    main_table_name__alias = [item for item in main_table_name__alias if item != '']
-                    main_table_name = main_table_name__alias[0]
-                    main_table_alias = main_table_name__alias[1] if len(main_table_name__alias) >= 2 else row.main_source_alias
+                # if row.mapped_to == '':
+                main_tables_name = row.main_source.split(',')
+                main_table_name = main_tables_name[0].strip()
+                main_table_alias = row.main_source_alias if row.main_source_alias else main_table_name
+                # else:
+                #     main_tables_name = row.mapped_to.split(',')
+                #     main_table_name__alias = main_tables_name[0].split(' ')
+                #     main_table_name__alias = [item for item in main_table_name__alias if item != '']
+                #     main_table_name = main_table_name__alias[0]
+                #     main_table_alias = main_table_name__alias[1] if len(main_table_name__alias) >= 2 else row.main_source_alias
 
                 srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
                 err_msg_invalid_main_tbl = f'invalid main table, {main_table_name}'
@@ -647,7 +651,7 @@ class SMX:
             table_mapping_df[
                 [
                     'target_table_name', 'source'
-                    , 'main_source', 'main_source_alias', 'mapped_to'
+                    , 'main_source', 'main_source_alias'
                     , 'filter_criterion', 'mapping_name', 'join'
                 ]
             ].drop_duplicates().apply(extract_core_txf_views, axis=1)
