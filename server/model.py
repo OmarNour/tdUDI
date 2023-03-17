@@ -159,9 +159,9 @@ class MyID(metaclass=Meta):
         return instance
 
     @classmethod
-    def _serialize(cls, _id: int):
-        full_path = os.path.join(f"{pickle_path}/{cls.__name__}/{_id}.pkl")
-        pickle.dump(cls, open(full_path, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+    def _serialize(cls, instance):
+        full_path = os.path.join(f"{pickle_path}/{cls.__name__}/{instance.id}.pkl")
+        pickle.dump(instance, open(full_path, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
     @classmethod
     def _deserialize(cls, _id: int):
@@ -180,7 +180,7 @@ class MyID(metaclass=Meta):
             class_path = f"{pickle_path}/{class_name}"
             create_folder(class_path)
             for instance in cls_instances:
-                instance._serialize(instance.id)
+                instance._serialize(instance)
 
 
 class Server(MyID):
