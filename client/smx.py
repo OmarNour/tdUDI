@@ -530,7 +530,7 @@ class SMX:
 
                     src_col = None
                     src_table_alias = None
-                    src_table:Table
+                    src_table: Table
                     if transformation_type == 'COPY':
                         transformation_rule = None
                         if row.mapped_to_column:

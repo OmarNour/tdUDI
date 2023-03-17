@@ -924,6 +924,12 @@ class ColumnMapping(MyID):
         self.fn_value_if_null = fn_value_if_null
         self._src_col_trx = src_col_trx
 
+        if src_col_id:
+            alias_error_msg = f'Table alias for {self.src_col.column_name} is missing!'
+            if not self.src_table_alias:
+                self.src_table_alias = self.pipeline.src_table_alias
+
+            assert self.src_table_alias, alias_error_msg
         # assert self.valid_src_col_trx, "Invalid source column transformation!"
         # assert tgt_col_id is not None \
         #        and (src_col_id is not None or src_col_trx is not None) \
@@ -956,7 +962,7 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         # alias = ''
-        _src_col_trx = '(' + str(self._src_col_trx) + ')' if self._src_col_trx else self.src_col.column_name if self.src_col else 'NULL'
+        _src_col_trx = '(' + str(self._src_col_trx) + ')' if self._src_col_trx else f"{self.src_table_alias}.{self.src_col.column_name}" if self.src_col else 'NULL'
 
         # if self.src_col:
         #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
