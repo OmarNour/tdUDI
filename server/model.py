@@ -717,6 +717,7 @@ class Pipeline(MyID):
     def join_with(self) -> []:
         j: JoinWith
         return [j for j in JoinWith.get_all_instances() if j.pipeline.id == self.id]
+
     # @functools.cached_property
     # def all_source_tables(self) -> []:
     #     j: JoinWith
@@ -762,15 +763,21 @@ class Pipeline(MyID):
         distinct = ''
         col_mapping = ''
         with_clause = ''
-        from_clause = from_template.format(schema_name=self.src_lyr_table.table.schema.schema_name
+        from_clause = FROM_TEMPLATE.format(schema_name=self.src_lyr_table.table.schema.schema_name
                                            , table_name=self.src_lyr_table.table.table_name
                                            , alias=self.src_table_alias)
-        # jw:JoinWith
-        # for jw in self.join_with:
-        #     jw
+
         join_clause = ''
-        where_clause = where_template.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
-        group_by_clause = group_by_template.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
+        jw: JoinWith
+        for jw in self.join_with:
+            join_clause += JOIN_CLAUSE_TEMPLATE.format(join_type=jw.join_type.name
+                                                       , with_table=jw.with_lyr_table.table.table_name
+                                                       , with_alias=jw.with_alias
+                                                       , on_clause=jw.join_on.complete_join_on_expr
+                                                       )
+
+        where_clause = WHERE_TEMPLATE.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
+        group_by_clause = GROUP_BY_TEMPLATE.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
         having_clause = ''
 
         #############
@@ -788,9 +795,9 @@ class Pipeline(MyID):
                 dtype_name = tgt_col.data_type.dt_name
                 if tgt_col.dt_precision:
                     precise = '(' + str(tgt_col.dt_precision) + ')'
-                cast_dtype = cast_dtype_template.format(dtype_name=dtype_name, precise=precise)
+                cast_dtype = CAST_DTYPE_TEMPLATE.format(dtype_name=dtype_name, precise=precise)
 
-            col_mapping += col_mapping_template.format(comma=comma
+            col_mapping += COL_MAPPING_TEMPLATE.format(comma=comma
                                                        , col_name=src_cols
                                                        , cast_dtype=cast_dtype
                                                        , alias=alias
@@ -857,6 +864,13 @@ class JoinWith(MyID):
     def master_alias(self) -> str:
         return self._master_alias if self._master_alias else self.master_lyr_table.table.table_name
 
+    @property
+    def join_on(self):
+        join_on: JoinOn
+        for join_on in JoinOn.get_all_instances():
+            if join_on.join_with.id == self.id:
+                return join_on
+
 
 class JoinOn(MyID):
     def __init__(self, join_with_id: int
@@ -873,6 +887,9 @@ class JoinOn(MyID):
     def join_with(self) -> JoinWith:
         return JoinWith.get_instance(_id=self._join_with_id)
 
+    @property
+    def complete_join_on_expr(self):
+        return self._complete_join_on_expr
     # @property
     # def valid_join_on_expr(self) -> bool:
     #     col: Column

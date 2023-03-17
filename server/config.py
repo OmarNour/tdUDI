@@ -63,11 +63,11 @@ SPECIAL_CHARACTERS = [
     , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
 ]
 
-cast_dtype_template = """({dtype_name} {precise})"""
-col_mapping_template = """{comma}{col_name} {cast_dtype} {alias}"""
-from_template = """{schema_name}.{table_name} {alias}"""
-where_template = """where {conditions}"""
-group_by_template = """group by {columns}"""
+CAST_DTYPE_TEMPLATE = """({dtype_name} {precise})"""
+COL_MAPPING_TEMPLATE = """{comma}{col_name} {cast_dtype} {alias}"""
+FROM_TEMPLATE = """{schema_name}.{table_name} {alias}"""
+WHERE_TEMPLATE = """where {conditions}"""
+GROUP_BY_TEMPLATE = """group by {columns}"""
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
 COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} {latin_unicode} {case_sensitive} {not_null}\n """
 DDL_TABLE_TEMPLATE = """ 
@@ -82,7 +82,8 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
 {si_index}
  """
 DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
-QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause}\n{join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
+QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\nfrom {from_clause} {join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
+JOIN_CLAUSE_TEMPLATE = "\n\t{join_type} {with_table} {with_alias}\n\ton {on_clause}"
 SRCI_V_BKEY_TEMPLATE_QUERY = """(select EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key}\n and DOMAIN_ID={domain_id})"""
 SRCI_V_BMAP_TEMPLATE_QUERY = """(select EDW_Code\n from {bmap_db}.{bmap_table_name}\n where code_set_id = {code_set_id}\n and source_code = {source_code}\n and domain_id={domain_id})"""
 BK_VIEW_NAME_TEMPLATE = "BKEY_L{src_lvl}_{src_table_name}_{column_name}_L{tgt_lvl}_{domain_id}"
