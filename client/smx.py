@@ -693,13 +693,13 @@ def generate_scripts(smx: SMX):
     source_dict: dict = {}
     core_model_path = os.path.join(smx.current_scripts_path, CORE_MODEL_FOLDER_NAME)
     src_systems_path = os.path.join(smx.current_scripts_path, SRC_SYSTEMS_FOLDER_NAME)
-    # create_folder(src_systems_path)
-    create_folder(core_model_path)
+
+    # create_folder(core_model_path)
 
     for src in smx.source_systems:
         source_path = os.path.join(smx.current_scripts_path, src_systems_path, src)
-        source_dict[src] = source_path
-        create_folder(source_path)
+        source_dict[src.lower()] = source_path
+        # create_folder(source_path)
         del source_path
 
     def layer_scripts(layer: Layer):
@@ -747,8 +747,33 @@ def generate_scripts(smx: SMX):
             dml_file.close()
         ################ END WRITE TO FILES ################
 
-    def tables_scripts(table: Table):
-        pass
+    def layer_table_scripts(row):
+        row.layer_table: LayerTable
 
-    threads(layer_scripts, Layer.get_all_instances())
+        tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql")
+        tables_file.write(row.layer_table.table.ddl)
+        tables_file.close()
+
+    def layer_table_out_path(row):
+        layer_table: LayerTable
+        layer_table = row.layer_table
+
+        if layer_table.table.data_source:
+            main_folder = source_dict[layer_table.table.data_source.source_name.lower()]
+        else:
+            main_folder = core_model_path
+
+        layer_folder_name = f"Layer_{layer_table.layer.layer_level}_{layer_table.layer.layer_name}"
+        kind_folder = 'tables' if layer_table.table.table_kind == 'T' else 'views'
+        path = os.path.join(smx.current_scripts_path, main_folder, layer_folder_name, kind_folder)
+
+        return path
+    # threads(layer_scripts, Layer.get_all_instances())
+
+    layer_tables_df = pd.DataFrame(LayerTable.get_all_instances(), columns=['layer_table'])
+    layer_tables_df['out_path'] = layer_tables_df.apply(layer_table_out_path, axis=1)
+    layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
+    layer_tables_df.apply(layer_table_scripts, axis=1)
+
+    # threads(tables_scripts, Table.get_all_instances())
     open_folder(smx.current_scripts_path)
