@@ -62,7 +62,8 @@ SPECIAL_CHARACTERS = [
     , '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '['
     , '\\', ']', '^', '_', '`', '{', '|', '}', '~'
 ]
-
+SRC_SYSTEMS_FOLDER_NAME = "SOURCES"
+CORE_MODEL_FOLDER_NAME = "CORE_MODEL"
 CAST_DTYPE_TEMPLATE = """({dtype_name} {precise})"""
 COL_MAPPING_TEMPLATE = """{comma}{col_name} {cast_dtype} {alias}"""
 FROM_TEMPLATE = """from {schema_name}.{table_name} {alias}"""

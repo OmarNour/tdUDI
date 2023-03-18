@@ -14,6 +14,7 @@ class SMX:
         self.log_error_path = self.current_scripts_path
         create_folder(self.current_scripts_path)
         self.xls = None
+        self._source_systems = []
         # self.reserved_words = {}
         self.data = {}
         self.db_engine = DataBaseEngine(name=DB_NAME)
@@ -81,7 +82,7 @@ class SMX:
 
     @property
     def source_systems(self):
-        return self.data['system']
+        return self._source_systems
 
     @time_elapsed_decorator
     def populate_model(self, source_name):
@@ -89,7 +90,8 @@ class SMX:
         def extract_all():
             @log_error_decorator(self.log_error_path)
             def extract_system(row):
-                DataSource(source_name=row.schema, source_level=1, scheduled=1)
+                ds = DataSource(source_name=row.schema, source_level=1, scheduled=1)
+                self._source_systems.append(ds.source_name)
 
             @log_error_decorator(self.log_error_path)
             def extract_data_types(row):
@@ -688,9 +690,20 @@ class SMX:
 
 @time_elapsed_decorator
 def generate_scripts(smx: SMX):
-    # print(smx.source_systems['source_system_name'].values.tolist())
+    source_dict: dict = {}
+    core_model_path = os.path.join(smx.current_scripts_path, CORE_MODEL_FOLDER_NAME)
+    src_systems_path = os.path.join(smx.current_scripts_path, SRC_SYSTEMS_FOLDER_NAME)
+    # create_folder(src_systems_path)
+    create_folder(core_model_path)
+
+    for src in smx.source_systems:
+        source_path = os.path.join(smx.current_scripts_path, src_systems_path, src)
+        source_dict[src] = source_path
+        create_folder(source_path)
+        del source_path
+
     def layer_scripts(layer: Layer):
-        # print(f"Layer: {layer.layer_name}, type is: {layer.layer_type.type_name}, started now!")
+
         @log_error_decorator(smx.log_error_path)
         def layer_table_scripts(layer_table: LayerTable):
             if layer_table.table.table_kind == 'T':
@@ -701,6 +714,7 @@ def generate_scripts(smx: SMX):
             tables_dml.append(layer_table.dml) if layer_table.dml else None
 
         layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
+        # src_core_fldr = source_dict[src] if
         layer_path = os.path.join(smx.current_scripts_path, layer_folder_name)
         create_folder(layer_path)
 
@@ -732,6 +746,9 @@ def generate_scripts(smx: SMX):
             dml_file.write(tables_dml)
             dml_file.close()
         ################ END WRITE TO FILES ################
+
+    def tables_scripts(table: Table):
+        pass
 
     threads(layer_scripts, Layer.get_all_instances())
     open_folder(smx.current_scripts_path)
