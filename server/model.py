@@ -93,7 +93,7 @@ class MyID(metaclass=Meta):
         try:
             return cls.__instances[cls.__name__].values()
         except KeyError:
-            pass
+            return []
             # print(f"No instances found for {cls.__name__}")
 
     @classmethod

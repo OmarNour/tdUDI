@@ -611,7 +611,7 @@ class SMX:
             ####################################################  Begin DFs  ####################################################
             _source_names = []
             if source_name:
-                _source_names = source_name if isinstance(source_name, list) else list(source_name)
+                _source_names = source_name if isinstance(source_name, list) else [source_name]
 
             _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
 
