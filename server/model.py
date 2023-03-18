@@ -658,6 +658,7 @@ class Pipeline(MyID):
         self._alphabets = ALPHABETS.copy()
         self._src_table_alias = None
         self._aliases: dict = {}
+        self.all_cols_constant = True
 
         if self.src_lyr_table:
             self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
@@ -665,10 +666,11 @@ class Pipeline(MyID):
 
         self.active = active
 
-        if self.tgt_lyr_table.table.table_kind == 'V':
-            self._lyr_view_id = self.tgt_lyr_table.table.id
-        elif self.lyr_view:
-            assert self.lyr_view.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
+        if self.tgt_lyr_table:
+            if self.tgt_lyr_table.table.table_kind == 'V':
+                self._lyr_view_id = self.tgt_lyr_table.table.id
+
+        assert self.lyr_view.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
 
     @property
     def lyr_view(self) -> LayerTable:
@@ -763,22 +765,29 @@ class Pipeline(MyID):
         distinct = ''
         col_mapping = ''
         with_clause = ''
-        from_clause = FROM_TEMPLATE.format(schema_name=self.src_lyr_table.table.schema.schema_name
-                                           , table_name=self.src_lyr_table.table.table_name
-                                           , alias=self.src_table_alias)
-
+        from_clause = ''
         join_clause = ''
-        jw: JoinWith
-        for jw in self.join_with:
-            join_clause += JOIN_CLAUSE_TEMPLATE.format(join_type=jw.join_type.name
-                                                       , with_table=jw.with_lyr_table.table.table_name
-                                                       , with_alias=jw.with_alias
-                                                       , on_clause=jw.join_on.complete_join_on_expr
-                                                       )
-
-        where_clause = WHERE_TEMPLATE.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
-        group_by_clause = GROUP_BY_TEMPLATE.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
+        where_clause = ''
+        group_by_clause = ''
         having_clause = ''
+
+        if not self.all_cols_constant:
+            from_clause = FROM_TEMPLATE.format(schema_name=self.src_lyr_table.table.schema.schema_name
+                                               , table_name=self.src_lyr_table.table.table_name
+                                               , alias=self.src_table_alias)
+
+            join_clause = ''
+            jw: JoinWith
+            for jw in self.join_with:
+                join_clause += JOIN_CLAUSE_TEMPLATE.format(join_type=jw.join_type.name
+                                                           , with_table=jw.with_lyr_table.table.table_name
+                                                           , with_alias=jw.with_alias
+                                                           , on_clause=jw.join_on.complete_join_on_expr
+                                                           )
+
+            where_clause = WHERE_TEMPLATE.format(conditions=list_to_string(self._filters, ' and ')) if self._filters else ''
+            group_by_clause = GROUP_BY_TEMPLATE.format(columns=list_to_string(self.group_by_col_names, ',')) if self.group_by_col_names else ''
+            having_clause = ''
 
         #############
         tgt_col: Column
@@ -913,6 +922,7 @@ class ColumnMapping(MyID):
                  , src_col_id: int | None = None
                  , src_table_alias: int | None = None
                  , src_col_trx: str = None
+                 , constant_value: bool = False
                  , fn_value_if_null=None
                  , *args, **kwargs):
 
@@ -923,6 +933,7 @@ class ColumnMapping(MyID):
         self.src_table_alias = src_table_alias
         self.fn_value_if_null = fn_value_if_null
         self._src_col_trx = src_col_trx
+        self.constant_value = constant_value
 
         if src_col_id:
             alias_error_msg = f'Table alias for {self.src_col.column_name} is missing!'
@@ -935,6 +946,9 @@ class ColumnMapping(MyID):
         #        and (src_col_id is not None or src_col_trx is not None) \
         #        and col_seq is not None, "tgt_col_id, src_col_id & col_seq are all mandatory!"
         assert self.valid_tgt_col, "Invalid target column, make sure all target columns are related to one table!"
+
+        if not self.constant_value:
+            self.pipeline.all_cols_constant = False
         super().__init__(*args, **kwargs)
 
     @property

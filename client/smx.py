@@ -203,7 +203,7 @@ class SMX:
                     src_v = Table.get_instance(_key=(self.src_v_schema.id, row.table_name))
                     src_lv = LayerTable.get_instance(_key=(self.src_layer.id, src_v.id))
 
-                    pipeline = Pipeline.get_instance(_key=(src_lyr_table.id, stg_lyr_table.id, src_lv.id))
+                    pipeline = Pipeline.get_instance(_key=src_lv.id)
                     src_col = Column.get_instance(_key=(src_table.id, row.column_name))
                     stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
@@ -231,7 +231,7 @@ class SMX:
                     stg_v = Table.get_instance(_key=(self.stg_v_schema.id, row.table_name))
                     stg_lv = LayerTable.get_instance(_key=(self.stg_layer.id, stg_v.id))
 
-                    pipeline = Pipeline.get_instance(_key=(stg_lyr_table.id, stg_lyr_table.id, stg_lv.id))
+                    pipeline = Pipeline.get_instance(_key=stg_lv.id)
                     stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
 
                     assert stg_col, col_error_msg
@@ -411,7 +411,7 @@ class SMX:
                         txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
                         txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
                         bkey_txf_v_col = Column(table_id=txf_v.id, column_name='source_key')
-                        bkey_txf_pipeline = Pipeline.get_instance(_key=(stg_lt.id, txf_bkey_lt.id, txf_bkey_lt.id))
+                        bkey_txf_pipeline = Pipeline.get_instance(_key=txf_bkey_lt.id)
                         # for col_seq, stg_t_col in enumerate(stg_t_cols):
                         ColumnMapping(pipeline_id=bkey_txf_pipeline.id
                                       , col_seq=0
@@ -437,7 +437,7 @@ class SMX:
                 srci_v = Table.get_instance(_key=(self.srci_v_schema.id, row.table_name))
                 srci_vl = LayerTable.get_instance(_key=(self.srci_layer.id, srci_v.id))
 
-                srci_v_pipeline = Pipeline.get_instance(_key=(stg_lt.id, srci_lyr_table.id, srci_vl.id))
+                srci_v_pipeline = Pipeline.get_instance(_key=srci_vl.id)
                 # for col_seq, stg_t_col in enumerate(stg_t_cols):
                 ColumnMapping(pipeline_id=srci_v_pipeline.id
                               , col_seq=0
@@ -547,6 +547,7 @@ class SMX:
                             transformation_rule = single_quotes(row.transformation_rule) if isinstance(row.transformation_rule, str) else row.transformation_rule
                     else:
                         # means SQL
+                        src_table_alias = row.mapped_to_table
                         transformation_rule = row.transformation_rule
 
                     ColumnMapping(pipeline_id=core_pipeline.id
@@ -555,6 +556,7 @@ class SMX:
                                   , src_table_alias=src_table_alias
                                   , col_seq=0
                                   , src_col_trx=transformation_rule if transformation_rule else None
+                                  , constant_value=True if transformation_type == 'CONST' else False
                                   )
 
                 ###########################################################################################################
@@ -598,7 +600,11 @@ class SMX:
                     Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
                 column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
-                column_mapping_df[['column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
+                column_mapping_df[['column_name'
+                    , 'mapped_to_table'
+                    , 'mapped_to_column'
+                    , 'transformation_rule'
+                    , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
             ####################################################  Begin DFs  ####################################################
             system_df = filter_dataframe(self.data['system'], 'schema', source_name)
