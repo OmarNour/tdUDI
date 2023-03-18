@@ -775,5 +775,4 @@ def generate_scripts(smx: SMX):
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
     layer_tables_df.apply(layer_table_scripts, axis=1)
 
-    # threads(tables_scripts, Table.get_all_instances())
     open_folder(smx.current_scripts_path)
