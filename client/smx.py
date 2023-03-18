@@ -788,4 +788,4 @@ def generate_scripts(smx: SMX):
 
     # layer_tables_df['two_in_one'] = layer_tables_df.apply(lambda row: (row.layer_table, row.out_path), axis=1)
     # layer_tables_df['two_in_one'].map(_layer_table_scripts)
-    open_folder(smx.current_scripts_path)
+
