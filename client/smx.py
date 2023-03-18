@@ -756,9 +756,16 @@ def generate_scripts(smx: SMX):
     def layer_table_scripts(row):
         row.layer_table: LayerTable
 
-        tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql")
+        tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql", 'x')
         tables_file.write(row.layer_table.table.ddl)
         tables_file.close()
+
+        dml = row.layer_table.dml
+        if dml:
+            data_path = os.path.dirname(row.out_path)
+            data_file = WriteFile(data_path, 'data', "sql", 'a')
+            data_file.write(dml)
+            data_file.close()
 
     def _layer_table_scripts(row):
         layer_table: LayerTable
