@@ -4,6 +4,18 @@ import datetime as dt
 import shutil
 import sys, subprocess
 import pandas as pd
+# import modin.pandas as pd
+import swifter
+from swifter import set_defaults
+set_defaults(
+    npartitions=100,
+    dask_threshold=1,
+    scheduler="processes",
+    progress_bar=True,
+    progress_bar_desc=None,
+    allow_dask_on_strings=True,
+    force_parallel=True,
+)
 import numpy as np
 import traceback
 import functools

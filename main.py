@@ -16,5 +16,7 @@ def start(source_name: str|None):
 if __name__ == '__main__':
     try:
         start(source_name='cso')
+        # xls = pd.read_excel(smx_path, sheet_name="STG tables")
+        # print(xls)
     except KeyboardInterrupt:
         print("Ops!..")

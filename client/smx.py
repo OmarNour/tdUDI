@@ -754,6 +754,13 @@ def generate_scripts(smx: SMX):
         tables_file.write(row.layer_table.table.ddl)
         tables_file.close()
 
+    def _layer_table_scripts(row):
+        layer_table: LayerTable
+        layer_table, out_path = row
+        tables_file = WriteFile(out_path, layer_table.table.table_name, "sql")
+        tables_file.write(layer_table.table.ddl)
+        tables_file.close()
+
     def layer_table_out_path(row):
         layer_table: LayerTable
         layer_table = row.layer_table
@@ -773,6 +780,12 @@ def generate_scripts(smx: SMX):
     layer_tables_df = pd.DataFrame(LayerTable.get_all_instances(), columns=['layer_table'])
     layer_tables_df['out_path'] = layer_tables_df.apply(layer_table_out_path, axis=1)
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
+
     layer_tables_df.apply(layer_table_scripts, axis=1)
 
+    # print('start with swifter!')
+    # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
+
+    # layer_tables_df['two_in_one'] = layer_tables_df.apply(lambda row: (row.layer_table, row.out_path), axis=1)
+    # layer_tables_df['two_in_one'].map(_layer_table_scripts)
     open_folder(smx.current_scripts_path)
