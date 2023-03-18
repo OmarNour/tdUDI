@@ -32,7 +32,11 @@ cls_keys = {
 SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
     , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
     , 'supplements']
-
+UNIFIED_SOURCE_SYSTEMS = ['UNIFIED_GOV',
+                          'UNIFIED_CITY',
+                          'UNIFIED_POLICE_STATION',
+                          'UNIFIED_DISTRICT',
+                          'UNIFIED_COUNTRY']
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail", "type level v_db t_db")

@@ -609,9 +609,15 @@ class SMX:
                     , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
             ####################################################  Begin DFs  ####################################################
-            system_df = filter_dataframe(self.data['system'], 'schema', source_name)
-            stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', source_name)
-            table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', source_name), 'layer', 'CORE')
+            _source_names = []
+            if source_name:
+                _source_names = source_name if isinstance(source_name, list) else list(source_name)
+
+            _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
+
+            system_df = filter_dataframe(self.data['system'], 'schema', _source_names)
+            stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
+            table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
 
             core_tables_df = self.data['core_tables']
             bkey_df = self.data['bkey']

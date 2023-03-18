@@ -4,7 +4,7 @@ from client.smx import *
 
 
 @time_elapsed_decorator
-def start(source_name: str|None, with_scripts=True):
+def start(source_name: str|list|None, with_scripts=True):
     smx = SMX(smx_path, scripts_path)
     smx.parse_file()
     smx.populate_model(source_name=source_name)
@@ -17,6 +17,6 @@ def start(source_name: str|None, with_scripts=True):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     try:
-        start(source_name='cso')
+        start(source_name=['cso', 'TADAMON'])
     except KeyboardInterrupt:
         print("Ops!..")

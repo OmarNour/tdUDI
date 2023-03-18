@@ -7,6 +7,7 @@ import pandas as pd
 # import modin.pandas as pd
 import swifter
 from swifter import set_defaults
+
 set_defaults(
     npartitions=100,
     dask_threshold=1,
@@ -27,6 +28,7 @@ import concurrent.futures
 import time
 import multiprocessing
 import re
+
 try:
     import cPickle as pickle
 except:
@@ -85,7 +87,8 @@ def list_to_string(_list, separator=None, quotes=0):
 
 
 def single_quotes(string):
-    return "'%s'" % string#.replace("'", '"')
+    return "'%s'" % string  # .replace("'", '"')
+
 
 # def single_quotes(string):
 #     return "'%s'" % string
@@ -181,8 +184,12 @@ def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd
 
         if isinstance(filter_value, str):
             mask = df[col].str.lower() == filter_value.lower()
+        elif isinstance(filter_value, list):
+            filter_value = [x.lower() for x in filter_value if isinstance(x, str)]
+            mask = df[col].str.lower().isin(filter_value)
         else:
             mask = df[col] == filter_value
+
         return df[mask]
 
 
