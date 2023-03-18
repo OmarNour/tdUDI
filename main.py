@@ -17,8 +17,6 @@ def start(source_name: str|None, with_scripts=True):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     try:
-        start(source_name=None)
-        # xls = pd.read_excel(smx_path, sheet_name="STG tables")
-        # print(xls)
+        start(source_name='cso')
     except KeyboardInterrupt:
         print("Ops!..")
