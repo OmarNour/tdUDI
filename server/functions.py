@@ -176,17 +176,20 @@ def split_text(text, sep, maxsplit=0):
 
 
 def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd.DataFrame:
-    if not filter_value:
+    if filter_value is None:
         return df
     else:
-        # if col in df.index.names:
-        #     pass
-
         if isinstance(filter_value, str):
-            mask = df[col].str.lower() == filter_value.lower()
+            mask = df[col].astype(str).str.lower() == filter_value.lower()
         elif isinstance(filter_value, list):
-            filter_value = [x.lower() for x in filter_value if isinstance(x, str)]
-            mask = df[col].str.lower().isin(filter_value)
+            _filter_value = []
+            for x in filter_value:
+                if isinstance(x, str):
+                    _filter_value.append(x.lower().strip())
+                else:
+                    _filter_value.append(str(x))
+
+            mask = df[col].astype(str).str.lower().isin(_filter_value)
         else:
             mask = df[col] == filter_value
 

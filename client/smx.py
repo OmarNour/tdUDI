@@ -282,7 +282,7 @@ class SMX:
             def extract_bkey_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
-                err_msg_set_table = f'Invalid set table {row.key_set_name}'
+                err_msg_set_table = f'Invalid set table {row.key_set_name}, \nphysical table is {row.physical_table}\n key_set_id: {row.key_set_id} '
                 assert set_table, err_msg_set_table
                 DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
 
@@ -340,10 +340,6 @@ class SMX:
 
             @log_error_decorator(self.log_error_path)
             def extract_bmap_values(row):
-                ds: DataSet
-                # if row.code_set_name.upper() == 'OFRG_STS_TYPE':
-                #     print(row.code_set_name)
-
                 data_set_lst = [ds for ds in bmaps_data_sets if ds.set_table.table_name == row.code_set_name.lower()]
                 if len(data_set_lst) > 0:
                     data_set = data_set_lst[0]
@@ -609,7 +605,7 @@ class SMX:
                     , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
             ####################################################  Begin DFs  ####################################################
-            _source_names = []
+            _source_names = None
             if source_name:
                 _source_names = source_name if isinstance(source_name, list) else [source_name]
                 _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
@@ -618,10 +614,15 @@ class SMX:
             stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
             table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
 
-            core_tables_df = self.data['core_tables']
-            bkey_df = self.data['bkey']
-            bmap_df = self.data['bmap']
-            bmap_values_df = self.data['bmap_values']
+            bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
+            bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
+            bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
+
+            _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
+            _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
+            _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
+            all_core_tables = list(set(_core_tables+_core_tables_bkey+_core_tables_bmap))
+            core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
 
             ####################################################  End DFs  ####################################################
             ####################################################  Begin   ####################################################
