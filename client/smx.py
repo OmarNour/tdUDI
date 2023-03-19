@@ -796,10 +796,10 @@ def generate_scripts(smx: SMX):
     layer_tables_df['out_path'] = layer_tables_df.apply(layer_table_out_path, axis=1)
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
 
-    layer_tables_df.apply(layer_table_scripts, axis=1)
+    # layer_tables_df.apply(layer_table_scripts, axis=1)
 
-    # print('start with swifter!')
-    # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
+    print('start with swifter!')
+    layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
 
     # layer_tables_df['two_in_one'] = layer_tables_df.apply(lambda row: (row.layer_table, row.out_path), axis=1)
     # layer_tables_df['two_in_one'].map(_layer_table_scripts)

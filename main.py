@@ -17,6 +17,6 @@ def start(source_name: str|list|None, with_scripts=True):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     try:
-        start(source_name='cso')
+        start(source_name='ngo')
     except KeyboardInterrupt:
         print("Ops!..")
