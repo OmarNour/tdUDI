@@ -612,8 +612,7 @@ class SMX:
             _source_names = []
             if source_name:
                 _source_names = source_name if isinstance(source_name, list) else [source_name]
-
-            _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
+                _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
 
             system_df = filter_dataframe(self.data['system'], 'schema', _source_names)
             stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
@@ -694,6 +693,21 @@ class SMX:
         extract_all()
 
 
+def layer_table_scripts(row):
+    row.layer_table: LayerTable
+
+    tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql")
+    tables_file.write(row.layer_table.table.ddl)
+    tables_file.close()
+
+    dml = row.layer_table.dml
+    if dml:
+        data_path = os.path.dirname(row.out_path)
+        data_file = WriteFile(data_path, 'data', "sql", 'a')
+        data_file.write(dml)
+        data_file.close()
+
+
 @time_elapsed_decorator
 def generate_scripts(smx: SMX):
     source_dict: dict = {}
@@ -753,20 +767,6 @@ def generate_scripts(smx: SMX):
             dml_file.close()
         ################ END WRITE TO FILES ################
 
-    def layer_table_scripts(row):
-        row.layer_table: LayerTable
-
-        tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql", 'x')
-        tables_file.write(row.layer_table.table.ddl)
-        tables_file.close()
-
-        dml = row.layer_table.dml
-        if dml:
-            data_path = os.path.dirname(row.out_path)
-            data_file = WriteFile(data_path, 'data', "sql", 'a')
-            data_file.write(dml)
-            data_file.close()
-
     def _layer_table_scripts(row):
         layer_table: LayerTable
         layer_table, out_path = row
@@ -788,17 +788,17 @@ def generate_scripts(smx: SMX):
         path = os.path.join(smx.current_scripts_path, main_folder, layer_folder_name, kind_folder)
 
         return path
+
     # threads(layer_scripts, Layer.get_all_instances())
 
     layer_tables_df = pd.DataFrame(LayerTable.get_all_instances(), columns=['layer_table'])
     layer_tables_df['out_path'] = layer_tables_df.apply(layer_table_out_path, axis=1)
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
 
-    layer_tables_df.apply(layer_table_scripts, axis=1)
+    # layer_tables_df.apply(layer_table_scripts, axis=1)
 
-    # print('start with swifter!')
-    # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
+    print('start with swifter!')
+    layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
 
     # layer_tables_df['two_in_one'] = layer_tables_df.apply(lambda row: (row.layer_table, row.out_path), axis=1)
     # layer_tables_df['two_in_one'].map(_layer_table_scripts)
-

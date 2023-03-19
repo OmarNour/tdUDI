@@ -176,7 +176,7 @@ def split_text(text, sep, maxsplit=0):
 
 
 def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd.DataFrame:
-    if filter_value is None:
+    if not filter_value:
         return df
     else:
         # if col in df.index.names:
