@@ -696,10 +696,11 @@ class SMX:
 
 def layer_table_scripts(row):
     row.layer_table: LayerTable
-
-    tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql")
-    tables_file.write(row.layer_table.table.ddl)
-    tables_file.close()
+    ddl = row.layer_table.table.ddl
+    if ddl:
+        tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql")
+        tables_file.write(ddl)
+        tables_file.close()
 
     dml = row.layer_table.dml
     if dml:

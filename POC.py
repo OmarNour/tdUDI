@@ -149,6 +149,12 @@ def replace_():
 
     print(_trx)
 
+def process_row(row):
+    print(row)
+    print('asdadasd')
+    if row.set_of_numbers:
+        print('zzzzzz')
+
 
 if __name__ == '__main__':
     # replace_()
@@ -168,12 +174,7 @@ if __name__ == '__main__':
     # y =split_text(merge_multiple_spaces(x), 'join', 1)
     # print(y)
     # filter_df()
-    df = pd.DataFrame({'name': ['Alice', 'Bob', 'Charlie', 'David'],
-                       'age': [25, 30, 35, 40],
-                       'gender': ['F', 'M', 'M', 'M'],
-                        'xx': ['NULL', 'M', None, 'M']}
-                      )
-    smx = pd.ExcelFile(smx_path)
-    df = smx.parse('test', encoding='utf-8').replace(np.nan, value='', regex=True).replace('"', value="'", regex=True)
-    # df = pd.read_excel(smx_path, sheet_name='test')
-    print(df)
+    data = {'set_of_numbers': []}
+    df = pd.DataFrame(data)
+    dfx = df.fillna('')
+    print(dfx.apply(process_row, axis=1) if not dfx.empty else 'aqaqaq')
