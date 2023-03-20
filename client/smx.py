@@ -2,8 +2,6 @@ from server.model import *
 
 
 class SMX:
-
-    @time_elapsed_decorator
     def __init__(self, smx_path, scripts_path):
         self.run_id = str(generate_run_id())
         print(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
@@ -724,58 +722,6 @@ def generate_scripts(smx: SMX):
         # create_folder(source_path)
         del source_path
 
-    def layer_scripts(layer: Layer):
-
-        @log_error_decorator(smx.log_error_path)
-        def layer_table_scripts(layer_table: LayerTable):
-            if layer_table.table.table_kind == 'T':
-                tables_ddl.append(layer_table.table.ddl)
-            elif layer_table.table.table_kind == 'V':
-                views_ddl.append(layer_table.table.ddl)
-
-            tables_dml.append(layer_table.dml) if layer_table.dml else None
-
-        layer_folder_name = f"Layer_{layer.layer_level}_{layer.layer_name}"
-        # src_core_fldr = source_dict[src] if
-        layer_path = os.path.join(smx.current_scripts_path, layer_folder_name)
-        create_folder(layer_path)
-
-        tables_ddl = []
-        views_ddl = []
-        tables_dml = []
-        threads(layer_table_scripts, layer.layer_tables)
-        # for layer_table in layer.layer_tables:
-
-        ################ START WRITE TO FILES ################
-        if tables_ddl:
-            tables_ddl = list(filter(None, tables_ddl))
-            tables_ddl = "\n".join(tables_ddl)
-            tables_file = WriteFile(layer_path, 'tables', "sql")
-            tables_file.write(tables_ddl)
-            tables_file.close()
-
-        if views_ddl:
-            views_ddl = list(filter(None, views_ddl))
-            views_ddl = "\n".join(views_ddl)
-            views_file = WriteFile(layer_path, 'views', "sql")
-            views_file.write(views_ddl)
-            views_file.close()
-
-        if tables_dml:
-            tables_dml = list(filter(None, tables_dml))
-            tables_dml = "\n".join(tables_dml)
-            dml_file = WriteFile(layer_path, 'data', "sql")
-            dml_file.write(tables_dml)
-            dml_file.close()
-        ################ END WRITE TO FILES ################
-
-    def _layer_table_scripts(row):
-        layer_table: LayerTable
-        layer_table, out_path = row
-        tables_file = WriteFile(out_path, layer_table.table.table_name, "sql")
-        tables_file.write(layer_table.table.ddl)
-        tables_file.close()
-
     def layer_table_out_path(row):
         layer_table: LayerTable
         layer_table = row.layer_table
@@ -788,19 +734,13 @@ def generate_scripts(smx: SMX):
         layer_folder_name = f"Layer_{layer_table.layer.layer_level}_{layer_table.layer.layer_name}"
         kind_folder = 'tables' if layer_table.table.table_kind == 'T' else 'views'
         path = os.path.join(smx.current_scripts_path, main_folder, layer_folder_name, kind_folder)
-
         return path
-
-    # threads(layer_scripts, Layer.get_all_instances())
 
     layer_tables_df = pd.DataFrame(LayerTable.get_all_instances(), columns=['layer_table'])
     layer_tables_df['out_path'] = layer_tables_df.apply(layer_table_out_path, axis=1)
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
 
+    print('start generating scripts!')
     # layer_tables_df.apply(layer_table_scripts, axis=1)
-
-    print('start with swifter!')
     layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
 
-    # layer_tables_df['two_in_one'] = layer_tables_df.apply(lambda row: (row.layer_table, row.out_path), axis=1)
-    # layer_tables_df['two_in_one'].map(_layer_table_scripts)
