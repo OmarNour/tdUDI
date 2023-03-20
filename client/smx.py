@@ -619,7 +619,7 @@ class SMX:
             _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
             _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
             _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
-            all_core_tables = list(set(_core_tables+_core_tables_bkey+_core_tables_bmap))
+            all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
             core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
 
             ####################################################  End DFs  ####################################################
@@ -744,3 +744,19 @@ def generate_scripts(smx: SMX):
     # layer_tables_df.apply(layer_table_scripts, axis=1)
     layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
 
+
+@time_elapsed_decorator
+def generate_metadata_scripts(smx: SMX):
+    """
+    todo:
+        scripts to populate the below tables:
+            source_name_lkp
+            source_table_lkp
+            etl_process
+            history
+            gcfr_process
+            gcfr_transfer_key_col
+
+    :param smx:
+    :return:
+    """

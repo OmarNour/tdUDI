@@ -9,7 +9,9 @@ def start(source_name: str|list|None, with_scripts=True):
     smx.parse_file()
     smx.populate_model(source_name=source_name)
 
-    generate_scripts(smx) if with_scripts else None
+    if with_scripts:
+        generate_scripts(smx)
+        generate_metadata_scripts(smx)
 
     open_folder(smx.current_scripts_path)
 
