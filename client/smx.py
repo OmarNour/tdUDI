@@ -760,3 +760,4 @@ def generate_metadata_scripts(smx: SMX):
     :param smx:
     :return:
     """
+    pass
