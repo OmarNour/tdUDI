@@ -275,6 +275,7 @@ class Schema(MyID):
     def ddl(self) -> str:
         return DATABASE_TEMPLATE.format(db_name=self.schema_name)
 
+
 class DataType(MyID):
     def __init__(self, db_id, dt_name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -385,11 +386,12 @@ class Table(MyID):
             for idx, col in enumerate(self.columns):
                 comma = ',' if idx > 0 else ' '
                 col_name = col.column_name
-                data_type = col.data_type.dt_name
+                data_type = col.data_type.dt_name.upper()
                 precision = "(" + str(col.dt_precision) + ")" if col.dt_precision else ''
                 if 'CHAR' in data_type:
                     latin_unicode = "CHARACTER SET " + ("unicode" if col.unicode == 1 else "latin")
                     case_sensitive = ("not " if col.case_sensitive == 0 else '') + "CASESPECIFIC"
+                    precision = "(50)" if not precision else precision
                 else:
                     latin_unicode = ''
                     case_sensitive = ''
