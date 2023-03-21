@@ -708,6 +708,16 @@ def layer_table_scripts(row):
         data_file.close()
 
 
+def generate_schemas_ddl(smx):
+    db_file = WriteFile(smx.current_scripts_path, "schemas", "sql")
+    for schema in Schema.get_all_instances():
+        ddl = schema.ddl
+        if ddl:
+            db_file.write(ddl)
+            db_file.write("\n")
+    db_file.close()
+
+
 @time_elapsed_decorator
 def generate_scripts(smx: SMX):
     source_dict: dict = {}

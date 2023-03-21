@@ -271,6 +271,9 @@ class Schema(MyID):
     def tables(self) -> []:
         return [table for table in Table.get_all_instances() if self.id == table.schema.id]
 
+    @property
+    def ddl(self) -> str:
+        return DATABASE_TEMPLATE.format(db_name=self.schema_name)
 
 class DataType(MyID):
     def __init__(self, db_id, dt_name: str, *args, **kwargs):
