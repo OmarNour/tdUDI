@@ -605,6 +605,8 @@ class SMX:
                         , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
             ####################################################  Begin DFs  ####################################################
+            assert 'system' in self.data.keys(), "'System' sheet!, does not exists!"
+
             _core_tables = []
             _core_tables_bkey = []
             _core_tables_bmap = []
@@ -615,6 +617,7 @@ class SMX:
 
             system_df = filter_dataframe(self.data['system'], 'schema', _source_names)
             assert not system_df.empty, "No Source systems found in the 'System' sheet!"
+            assert 'stg_tables' in self.data.keys(), "'Stg Tables' sheet, does not exists!"
 
             stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
 
