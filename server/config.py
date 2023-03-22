@@ -1,7 +1,9 @@
 from collections import namedtuple
 
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
+# smx_path = "/Users/omarnour/Downloads/Wasl Schema v1.7.xlsx"
 # smx_path = "/Users/omarnour/Downloads/SALES_SMX.xlsx"
+
 pickle_path = "pickled_objs"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 DB_NAME = 'teradata'

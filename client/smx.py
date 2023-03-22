@@ -62,8 +62,9 @@ class SMX:
         for sheet in self.xls.sheet_names:
             self.parse_sheet(sheet)
 
-        reserved_words_df = self.data['supplements'].applymap(lambda x: x.lower())
-        self.db_engine.reserved_words = reserved_words_df[reserved_words_df['reserved_words_source'] == self.db_engine.name]['reserved_words'].unique().tolist()
+        if 'supplements' in self.data.keys():
+            reserved_words_df = self.data['supplements'].applymap(lambda x: x.lower())
+            self.db_engine.reserved_words = reserved_words_df[reserved_words_df['reserved_words_source'] == self.db_engine.name]['reserved_words'].unique().tolist()
 
     def parse_sheet(self, sheet):
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
@@ -595,14 +596,18 @@ class SMX:
                 if row.filter_criterion:
                     Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
-                column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
-                column_mapping_df[['column_name'
-                    , 'mapped_to_table'
-                    , 'mapped_to_column'
-                    , 'transformation_rule'
-                    , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
+                if 'column_mapping' in self.data.keys():
+                    column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
+                    column_mapping_df[['column_name'
+                        , 'mapped_to_table'
+                        , 'mapped_to_column'
+                        , 'transformation_rule'
+                        , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
             ####################################################  Begin DFs  ####################################################
+            _core_tables = []
+            _core_tables_bkey = []
+            _core_tables_bmap = []
             _source_names = None
             if source_name:
                 _source_names = source_name if isinstance(source_name, list) else [source_name]
@@ -610,17 +615,24 @@ class SMX:
 
             system_df = filter_dataframe(self.data['system'], 'schema', _source_names)
             stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
-            table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
 
-            bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
-            bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
-            bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
+            if 'table_mapping' in self.data.keys():
+                table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
+                _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
 
-            _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
-            _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
-            _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
+            if 'bkey' in self.data.keys():
+                bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
+                _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
+
+            if 'bmap' in self.data.keys():
+                bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
+                _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
+                if 'bmap_values' in self.data.keys():
+                    bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
+
             all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
-            core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
+            if 'core_tables' in self.data.keys():
+                core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
 
             ####################################################  End DFs  ####################################################
             ####################################################  Begin   ####################################################
