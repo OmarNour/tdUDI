@@ -337,11 +337,12 @@ class Table(MyID):
     def table_name(self):
         return self._table_name.strip().lower()
 
-    def get_column_datatype(self, column_name:str):
+    def get_column_datatype(self, column_name: str):
         col: Column
         for col in self.columns:
             if col.column_name == column_name.upper():
                 return col.data_type.dt_name, col.dt_precision
+
     @property
     def schema(self) -> Schema:
         return Schema.get_instance(_id=self._schema_id)
