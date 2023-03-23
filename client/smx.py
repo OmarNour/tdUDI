@@ -730,8 +730,10 @@ def layer_table_scripts(row):
     row.layer_table: LayerTable
     ddl = row.layer_table.table.ddl
     if ddl:
-        tables_file = WriteFile(row.out_path, row.layer_table.table.table_name, "sql")
+        kind_folder = 'tables' if row.layer_table.table.table_kind == 'T' else 'views'
+        tables_file = WriteFile(row.out_path, kind_folder, "sql", 'a')
         tables_file.write(ddl)
+        tables_file.write('\n')
         tables_file.close()
 
     dml = row.layer_table.dml
@@ -776,8 +778,8 @@ def generate_scripts(smx: SMX):
             main_folder = core_model_path
 
         layer_folder_name = f"Layer_{layer_table.layer.layer_level}_{layer_table.layer.layer_name}"
-        kind_folder = 'tables' if layer_table.table.table_kind == 'T' else 'views'
-        path = os.path.join(smx.current_scripts_path, main_folder, layer_folder_name, kind_folder)
+
+        path = os.path.join(smx.current_scripts_path, main_folder, layer_folder_name)
         return path
 
     layer_tables_df = pd.DataFrame(LayerTable.get_all_instances(), columns=['layer_table'])

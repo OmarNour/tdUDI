@@ -1,4 +1,5 @@
 # TODO:
+#   add techical columns, if not exists in the SMX
 #   DONE SRCI view, to cast the data type when joining with the utlfw table
 #   Class to hold error data, then print it in a  proper way for en user!
 #   return all data from all classes in DF
