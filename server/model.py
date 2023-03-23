@@ -992,6 +992,7 @@ class ColumnMapping(MyID):
                 _src_col_trx = SRCI_V_BKEY_TEMPLATE_QUERY.format(bkey_db=self.tgt_col.domain.data_set.surrogate_table.schema.schema_name
                                                                  , bkey_table_name=self.tgt_col.domain.data_set.surrogate_table.table_name
                                                                  , src_key=_src_col_trx
+                                                                 , cast='(varchar(50))'
                                                                  , domain_id=self.tgt_col.domain.domain_code
                                                                  )
             elif self.tgt_col.domain.data_set.data_set_type.name == DS_BMAP:
@@ -999,6 +1000,7 @@ class ColumnMapping(MyID):
                                                                  , bmap_table_name=self.tgt_col.domain.data_set.surrogate_table.table_name
                                                                  , code_set_id=self.tgt_col.domain.data_set.set_code
                                                                  , source_code=_src_col_trx
+                                                                 , cast='(varchar(50))'
                                                                  , domain_id=self.tgt_col.domain.domain_code)
 
         # for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):
