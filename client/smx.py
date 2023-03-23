@@ -704,7 +704,7 @@ class SMX:
                         'target_table_name', 'source'
                         , 'main_source', 'main_source_alias'
                         , 'filter_criterion', 'mapping_name', 'join'
-                        ,'historization_algorithm',	'historization_columns'
+                        , 'historization_algorithm', 'historization_columns'
                     ]
                 ].drop_duplicates().apply(extract_core_txf_views, axis=1)
             ##########################      End Core TXF view       #####################
