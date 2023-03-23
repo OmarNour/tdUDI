@@ -200,9 +200,6 @@ class SMX:
                     src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
                     stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
 
-                    src_lyr_table = LayerTable.get_instance(_key=(self.src_layer.id, src_table.id))
-                    stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
-
                     src_v = Table.get_instance(_key=(self.src_v_schema.id, row.table_name))
                     src_lv = LayerTable.get_instance(_key=(self.src_layer.id, src_v.id))
 
@@ -228,14 +225,13 @@ class SMX:
                     ds = DataSource.get_instance(_key=row.schema)
                     assert ds, ds_error_msg
 
-                    stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                    stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
+                    stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
 
                     stg_v = Table.get_instance(_key=(self.stg_v_schema.id, row.table_name))
                     stg_lv = LayerTable.get_instance(_key=(self.stg_layer.id, stg_v.id))
 
                     pipeline = Pipeline.get_instance(_key=stg_lv.id)
-                    stg_col = Column.get_instance(_key=(stg_table.id, row.column_name))
+                    stg_col = Column.get_instance(_key=(stg_t.id, row.column_name))
 
                     assert stg_col, col_error_msg
 
@@ -387,12 +383,10 @@ class SMX:
 
                 stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                 stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-                srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
-                srci_lyr_table = LayerTable.get_instance(_key=(self.srci_layer.id, srci_table.id))
-
                 stg_t_col = None
-                srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
+
+                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+                srci_t_col = Column.get_instance(_key=(srci_t.id, row.column_name))
 
                 if row.natural_key != '':
                     # nk_error_msg = f'Invalid natural key!,--> {row.natural_key}'
