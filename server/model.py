@@ -337,6 +337,11 @@ class Table(MyID):
     def table_name(self):
         return self._table_name.strip().lower()
 
+    def get_column_datatype(self, column_name:str):
+        col: Column
+        for col in self.columns:
+            if col.column_name == column_name.upper():
+                return col.data_type.dt_name, col.dt_precision
     @property
     def schema(self) -> Schema:
         return Schema.get_instance(_id=self._schema_id)
@@ -524,7 +529,7 @@ class Column(MyID):
         self._domain_id = domain_id
         self._data_type_id = data_type_id
 
-        self.column_name = column_name
+        self._column_name = column_name
         self.mandatory = mandatory
         self.scd_type = scd_type
         self.dt_precision = dt_precision
@@ -548,6 +553,10 @@ class Column(MyID):
     @property
     def data_type(self) -> DataType:
         return DataType.get_instance(_id=self._data_type_id)
+
+    @property
+    def column_name(self):
+        return self._column_name.upper()
 
     @property
     def table(self) -> Table:
@@ -988,19 +997,24 @@ class ColumnMapping(MyID):
         #         alias = self.pipeline.src_table_alias + '.'
 
         if self.tgt_col.domain:
+
             if self.tgt_col.domain.data_set.data_set_type.name == DS_BKEY:
+                source_key_datatype = self.tgt_col.domain.data_set.surrogate_table.get_column_datatype('source_key')
+                source_key_cast = "({data_type} ({precision}))".format(data_type=source_key_datatype[0], precision=source_key_datatype[1])
                 _src_col_trx = SRCI_V_BKEY_TEMPLATE_QUERY.format(bkey_db=self.tgt_col.domain.data_set.surrogate_table.schema.schema_name
                                                                  , bkey_table_name=self.tgt_col.domain.data_set.surrogate_table.table_name
                                                                  , src_key=_src_col_trx
-                                                                 , cast='(varchar(50))'
+                                                                 , cast=source_key_cast
                                                                  , domain_id=self.tgt_col.domain.domain_code
                                                                  )
             elif self.tgt_col.domain.data_set.data_set_type.name == DS_BMAP:
+                source_code_datatype = self.tgt_col.domain.data_set.surrogate_table.get_column_datatype('source_code')
+                source_key_cast = "({data_type} ({precision}))".format(data_type=source_code_datatype[0], precision=source_code_datatype[1])
                 _src_col_trx = SRCI_V_BMAP_TEMPLATE_QUERY.format(bmap_db=self.tgt_col.domain.data_set.surrogate_table.schema.schema_name
                                                                  , bmap_table_name=self.tgt_col.domain.data_set.surrogate_table.table_name
                                                                  , code_set_id=self.tgt_col.domain.data_set.set_code
                                                                  , source_code=_src_col_trx
-                                                                 , cast='(varchar(50))'
+                                                                 , cast=source_key_cast
                                                                  , domain_id=self.tgt_col.domain.domain_code)
 
         # for col_name in sorted(self.pipeline.all_src_cols, key=len, reverse=True):

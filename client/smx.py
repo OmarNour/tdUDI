@@ -264,7 +264,7 @@ class SMX:
                 LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
 
                 Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
-                       , data_type_id=vchar_data_type.id, dt_precision=None
+                       , data_type_id=vchar_data_type.id, dt_precision=100
                        , is_start_date=0, is_end_date=0)
 
                 Column(table_id=table.id, column_name='DOMAIN_ID', is_pk=1, mandatory=1
@@ -297,7 +297,7 @@ class SMX:
                     LayerTable(layer_id=self.bmap_layer.id, table_id=table.id)
 
                     Column(table_id=table.id, column_name='SOURCE_CODE', is_pk=1, mandatory=1
-                           , data_type_id=vchar_data_type.id, dt_precision=None
+                           , data_type_id=vchar_data_type.id, dt_precision=50
                            , is_start_date=0, is_end_date=0)
 
                     Column(table_id=table.id, column_name='DOMAIN_ID', is_pk=1, mandatory=1
