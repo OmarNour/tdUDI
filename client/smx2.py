@@ -1,5 +1,3 @@
-import pandas as pd
-
 from server.model import *
 
 
@@ -200,9 +198,6 @@ class SMX:
                     src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
                     stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
 
-                    src_lyr_table = LayerTable.get_instance(_key=(self.src_layer.id, src_table.id))
-                    stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
-
                     src_v = Table.get_instance(_key=(self.src_v_schema.id, row.table_name))
                     src_lv = LayerTable.get_instance(_key=(self.src_layer.id, src_v.id))
 
@@ -229,8 +224,6 @@ class SMX:
                     assert ds, ds_error_msg
 
                     stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                    stg_lyr_table = LayerTable.get_instance(_key=(self.stg_layer.id, stg_table.id))
-
                     stg_v = Table.get_instance(_key=(self.stg_v_schema.id, row.table_name))
                     stg_lv = LayerTable.get_instance(_key=(self.stg_layer.id, stg_v.id))
 
@@ -387,12 +380,11 @@ class SMX:
 
                 stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                 stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
-
-                srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
-                srci_lyr_table = LayerTable.get_instance(_key=(self.srci_layer.id, srci_table.id))
-
                 stg_t_col = None
-                srci_t_col = Column.get_instance(_key=(srci_table.id, row.column_name))
+
+                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+
+                srci_t_col = Column.get_instance(_key=(srci_t.id, row.column_name))
 
                 if row.natural_key != '':
                     # nk_error_msg = f'Invalid natural key!,--> {row.natural_key}'
@@ -444,7 +436,6 @@ class SMX:
                               , tgt_col_id=srci_t_col.id
                               , src_col_trx=row.natural_key if row.natural_key else None
                               )
-
             @log_error_decorator(self.log_error_path)
             def extract_core_txf_views(row):
                 def parse_join(join_txt: str):
@@ -621,94 +612,69 @@ class SMX:
             assert not system_df.empty, "No Source systems found in the 'System' sheet!"
             assert 'stg_tables' in self.data.keys(), "'Stg Tables' sheet, does not exists!"
 
-            stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
-
-            table_mapping_df = pd.DataFrame()
-            if 'table_mapping' in self.data.keys():
-                table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
-                _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
-
-            bkey_df = pd.DataFrame()
-            if 'bkey' in self.data.keys():
-                bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
-                _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
-
-            bmap_df = pd.DataFrame()
-            bmap_values_df = pd.DataFrame()
-            if 'bmap' in self.data.keys():
-                bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
-                _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
-                if 'bmap_values' in self.data.keys():
-                    bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
-
-            all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
-            core_tables_df = pd.DataFrame()
-            if 'core_tables' in self.data.keys():
-                core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
-
-            ####################################################  End DFs  ####################################################
-            ####################################################  Begin   ####################################################
             system_df.drop_duplicates().apply(extract_system, axis=1)
+            stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
             stg_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
-            if not core_tables_df.empty:
-                core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+            stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
 
             int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
             vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
 
-            if not core_tables_df.empty:
-                core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+            if 'bkey' in self.data.keys():
+                bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
+                core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
+                bkey_core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', list(set(core_tables_bkey)))
+                bkey_core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+                bkey_core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+                bkey_core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
-            if not bkey_df.empty:
                 bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
-
-            if not bmap_df.empty:
-                bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
-
-            stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
-            ##########################  Start bkey & bmaps   #####################
-            if not bkey_df.empty:
                 bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
                 bkey_df[['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
+                stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
 
-            if not bmap_df.empty:
+            if 'bmap' in self.data.keys():
+                bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
+                core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
+                bmap_core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', core_tables_bmap)
+                bmap_core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+                bmap_core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+                bmap_core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
+
+                bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
                 bmap_df[['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
-
-            bmaps_data_sets = DataSetType.get_instance(_key=DS_BMAP).data_sets
-
-            if not bmap_df.empty:
+                bmaps_data_sets = DataSetType.get_instance(_key=DS_BMAP).data_sets
                 bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
 
-            if not bmap_values_df.empty:
-                bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
-            ##########################  End bkey & bmaps     #####################
+                if 'bmap_values' in self.data.keys():
+                    bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
+                    bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
 
-            stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
-                           'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
-
+            stg_tables_df[['table_name', 'column_name'
+                , 'data_type', 'mandatory'
+                , 'natural_key', 'pk'
+                , 'key_set_name', 'key_domain_name'
+                , 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
-
-            ##########################  Start bkey TXF view  #####################
-            stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
-            # extract_bkey_txf_columns
-            ##########################  End bkey TXF view    #####################
             stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
-            ##########################      Start Core TXF view     #####################
-            if not core_tables_df.empty:
+
+            if 'core_tables' in self.data.keys() and 'table_mapping' in self.data.keys():
+                table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
+                core_tables = list(set([i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]))
+                core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', core_tables)
+                core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+                core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
                 core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
-            if not table_mapping_df.empty:
                 table_mapping_df[
                     [
                         'target_table_name', 'source'
                         , 'main_source', 'main_source_alias'
                         , 'filter_criterion', 'mapping_name', 'join'
-                        ,'historization_algorithm',	'historization_columns'
                     ]
                 ].drop_duplicates().apply(extract_core_txf_views, axis=1)
-            ##########################      End Core TXF view       #####################
-            ####################################################  End   ####################################################
+
             print('DataSetType count:', DataSetType.count_instances())
             print('Layer count:', Layer.count_instances())
             print('Schema count:', Schema.count_instances())

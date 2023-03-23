@@ -1,6 +1,7 @@
 import pandas as pd
 
 from client.smx import *
+# from client.smx2 import *
 
 
 @time_elapsed_decorator
@@ -20,6 +21,6 @@ def start(source_name: str|list|None, with_scripts=True):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     try:
-        start(source_name=None)
+        start(source_name='cso')
     except KeyboardInterrupt:
         print("Ops!..")
