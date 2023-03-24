@@ -1,5 +1,6 @@
 """
 TODO:
+    finish generate_metadata_scripts
     generate grant access, script.
     add technical columns, if not exists in the SMX
     DONE SRCI view, to cast the data type when joining with the utlfw table
