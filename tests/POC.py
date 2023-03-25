@@ -1,6 +1,7 @@
 import sqlparse
 from server.functions import *
 import pandas as pd
+import teradatasql
 
 q = """
 select distinct  l.id layer_id, t.id table_id, 1 active
@@ -149,6 +150,7 @@ def replace_():
 
     print(_trx)
 
+
 def process_row(row):
     print(row)
     print('asdadasd')
@@ -156,7 +158,31 @@ def process_row(row):
         print('zzzzzz')
 
 
+def td_test():
+    import teradatasql
+
+    # Connect to the Teradata database
+    host = 'localhost'  # Replace with the IP address of your virtual machine
+    user = 'dbc'
+    password = 'dbc'
+    dbc = teradatasql.connect(host=host, user=user, password=password)
+
+    # Execute a SQL query
+    query = 'SELECT * FROM gdev1t_stg.ngo_ngo_allbanks'
+    with dbc.cursor() as cursor:
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+    # Print the results
+    for row in results:
+        print(row)
+
+    # Disconnect from the database
+    dbc.close()
+
+
 if __name__ == '__main__':
+    td_test()
     # replace_()
     # x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
     """
@@ -174,7 +200,7 @@ if __name__ == '__main__':
     # y =split_text(merge_multiple_spaces(x), 'join', 1)
     # print(y)
     # filter_df()
-    data = {'set_of_numbers': []}
-    df = pd.DataFrame(data)
-    dfx = df.fillna('')
-    print(dfx.apply(process_row, axis=1) if not dfx.empty else 'aqaqaq')
+    # data = {'set_of_numbers': []}
+    # df = pd.DataFrame(data)
+    # dfx = df.fillna('')
+    # print(dfx.apply(process_row, axis=1) if not dfx.empty else 'aqaqaq')
