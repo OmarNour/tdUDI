@@ -193,6 +193,17 @@ class Server(MyID):
         return self._server_name
 
 
+class Ip(MyID):
+    def __init__(self, server_id: int, ip: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._server_id = server_id
+        self.ip = ip
+
+    @property
+    def server(self) -> Server:
+        return Server.get_instance(_id=self._server_id)
+
+
 class DataBaseEngine(MyID):
     def __init__(self, name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -249,6 +260,19 @@ class DataBaseEngine(MyID):
                 return False
 
         return True
+
+
+class Credential(MyID):
+    def __init__(self, db_engine_id: int, user_name: str, password: str, port: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._db_engine_id = db_engine_id
+        self.user_name = user_name
+        self.password = password
+        self.port = port
+
+    @property
+    def db_engine(self) -> DataBaseEngine:
+        return DataBaseEngine.get_instance(_id=self._db_engine_id)
 
 
 class Schema(MyID):

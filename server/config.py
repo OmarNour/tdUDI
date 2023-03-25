@@ -10,7 +10,9 @@ scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 DB_NAME = 'teradata'
 cls_keys = {
     'server': 'server_name'
+    , 'Ip' : ('server_id', 'ip')
     , 'DataBaseEngine': 'name'
+    , 'Credential': ('db_engine_id','user_name')
     , 'datasource': 'source_name'
     , 'schema': ('db_id', 'schema_name')
     , 'table': ('schema_id', 'table_name')
