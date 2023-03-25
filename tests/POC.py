@@ -168,7 +168,7 @@ def td_test():
     dbc = teradatasql.connect(host=host, user=user, password=password)
 
     # Execute a SQL query
-    query = 'SELECT * FROM stg_online.ngo_ngo_allbanks'
+    query = 'SELECT * FROM stg_online.ngo_ngo_allbanks order by 1 desc'
     with dbc.cursor() as cursor:
         cursor.execute(query)
         results = cursor.fetchall()
@@ -181,7 +181,7 @@ def td_test():
     dbc.close()
 
 
-def populate_table():
+def populate_table(add_new_rows:bool):
     from faker import Faker
     import teradatasql
 
@@ -190,41 +190,53 @@ def populate_table():
     user = 'dbc'
     password = 'dbc'
     dbc = teradatasql.connect(host=host, user=user, password=password)
+    cursor = dbc.cursor()
 
-    # Generate fake data
-    fake = Faker()
+    if add_new_rows:
+        # Generate fake data
+        fake = Faker()
 
-    # Generate and execute the INSERT statement
-    insert_template = """
-        INSERT INTO stg_online.ngo_ngo_allbanks (
-            PK_BANKID, NAMEARABIC, NAMEENGLISH, PNUSERCODE, DLASTDMLDATE, BATCH_ID,
-            REF_KEY, CREATION_TIMESTAMP, UPDATE_TIMESTAMP
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
-    params = []
-    for i in range(100000):
-        params.append((
-            i + 1,
-            fake.name(),
-            fake.name(),
-            fake.random_int(),
-            fake.past_datetime(),
-            fake.random_int(),
-            fake.random_int(),
-            fake.past_datetime(),
-            fake.past_datetime()
-        ))
-    with dbc.cursor() as cursor:
+        # Generate and execute the INSERT statement
+        insert_template = """
+            INSERT INTO stg_online.ngo_ngo_allbanks (
+                PK_BANKID, NAMEARABIC, NAMEENGLISH, PNUSERCODE, DLASTDMLDATE, BATCH_ID,
+                REF_KEY, CREATION_TIMESTAMP, UPDATE_TIMESTAMP
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        params = []
+        for i in range(1000):
+            params.append((
+                i + 1,
+                fake.name(),
+                fake.name(),
+                fake.random_int(),
+                fake.past_datetime(),
+                fake.random_int(),
+                fake.random_int(),
+                fake.past_datetime(),
+                fake.past_datetime()
+            ))
+        # with dbc.cursor() as cursor:
+        cursor.execute("delete from stg_online.ngo_ngo_allbanks;")
         cursor.executemany(insert_template, params)
         print(f"{cursor.rowcount} rows inserted.")
+
+    # Execute the COUNT(*) query
+    query = 'SELECT COUNT(*) FROM stg_online.ngo_ngo_allbanks'
+    # with dbc.cursor() as cursor:
+    cursor.execute(query)
+    row = cursor.fetchone()
+
+    # Print the result
+    print(f"Number of rows in the table: {row[0]}")
 
     # Disconnect from the database
     dbc.close()
 
 
 if __name__ == '__main__':
-    # populate_table()
+    populate_table(add_new_rows=True)
     td_test()
     # replace_()
     # x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
