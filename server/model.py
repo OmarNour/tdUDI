@@ -205,7 +205,7 @@ class Ip(MyID):
 
 
 class DataBaseEngine(MyID):
-    def __init__(self, server_id:int, name: str, *args, **kwargs):
+    def __init__(self, server_id: int, name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._server_id = server_id
         self._name = name
