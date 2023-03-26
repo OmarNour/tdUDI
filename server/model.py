@@ -273,7 +273,7 @@ class DataBaseEngine(MyID):
 
 
 class Credential(MyID):
-    def __init__(self, db_engine_id: int, user_name: str, password: str, port: int, *args, **kwargs):
+    def __init__(self, db_engine_id: int, user_name: str, password: str, port: int = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._db_engine_id = db_engine_id
         self.user_name = user_name
@@ -284,14 +284,15 @@ class Credential(MyID):
     def db_engine(self) -> DataBaseEngine:
         return DataBaseEngine.get_instance(_id=self._db_engine_id)
 
-    def get_connection(self):
+    def get_connection(self, ip_idx=0):
+        self.__ip_idx = ip_idx
         try:
-            ip = self.db_engine.server.ips[0]
-            return teradatasql.connect(host=ip, user=self.user_name, password=self.password)
+            ip = self.db_engine.server.ips[self.__ip_idx]
+            return teradatasql.connect(host=ip.ip, user=self.user_name, password=self.password)
+        except IndexError:
+            return None
         except:
-            pass
-
-
+            return self.get_connection(self.__ip_idx + 1)
 
 
 class Schema(MyID):

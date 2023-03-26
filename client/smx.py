@@ -19,6 +19,9 @@ class SMX:
         self.data = {}
         self.server = Server(server_name='TDVM')
         self.db_engine = DataBaseEngine(server_id=self.server.id, name=DB_NAME)
+        Ip(server_id=self.server.id,ip='localhost')
+        self.conn = Credential(db_engine_id=self.db_engine.id,user_name=USER, password=PASSWORD).get_connection()
+        # print(self.conn)
         [LayerType(type_name=lt) for lt in LAYER_TYPES]
         for layer_key, layer_value in LAYERS.items():
             layer_type = LayerType.get_instance(_key=layer_value.type)
