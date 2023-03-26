@@ -808,3 +808,8 @@ def generate_metadata_scripts(smx: SMX):
     :return:
     """
     pass
+
+
+@time_elapsed_decorator
+def deploy(scripts_path):
+    pass

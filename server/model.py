@@ -192,6 +192,11 @@ class Server(MyID):
     def server_name(self):
         return self._server_name
 
+    @property
+    def ips(self) -> []:
+        ip: Ip
+        return [ip for ip in Ip.get_all_instances() if ip.server.id == self.id]
+
 
 class Ip(MyID):
     def __init__(self, server_id: int, ip: str, *args, **kwargs):
@@ -278,6 +283,15 @@ class Credential(MyID):
     @property
     def db_engine(self) -> DataBaseEngine:
         return DataBaseEngine.get_instance(_id=self._db_engine_id)
+
+    def get_connection(self):
+        try:
+            ip = self.db_engine.server.ips[0]
+            return teradatasql.connect(host=ip, user=self.user_name, password=self.password)
+        except:
+            pass
+
+
 
 
 class Schema(MyID):

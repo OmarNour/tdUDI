@@ -6,6 +6,7 @@ import sys, subprocess
 import pandas as pd
 # import modin.pandas as pd
 import swifter
+import teradatasql
 from swifter import set_defaults
 
 set_defaults(

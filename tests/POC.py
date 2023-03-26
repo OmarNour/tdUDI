@@ -1,7 +1,6 @@
 import sqlparse
 from server.functions import *
-import pandas as pd
-import teradatasql
+
 
 q = """
 select distinct  l.id layer_id, t.id table_id, 1 active
@@ -183,7 +182,7 @@ def td_test():
 
 def populate_table(add_new_rows:bool):
     from faker import Faker
-    import teradatasql
+
 
     # Connect to the Teradata database
     host = 'localhost'  # Replace with the IP address of your virtual machine
