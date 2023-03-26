@@ -17,7 +17,8 @@ class SMX:
         self._source_systems = []
         # self.reserved_words = {}
         self.data = {}
-        self.db_engine = DataBaseEngine(name=DB_NAME)
+        self.server = Server(server_name='TDVM')
+        self.db_engine = DataBaseEngine(server_id=self.server.id, name=DB_NAME)
         [LayerType(type_name=lt) for lt in LAYER_TYPES]
         for layer_key, layer_value in LAYERS.items():
             layer_type = LayerType.get_instance(_key=layer_value.type)

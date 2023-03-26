@@ -8,11 +8,15 @@ smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 pickle_path = "pickled_objs"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 DB_NAME = 'teradata'
+HOST = 'localhost'
+USER = 'dbc'
+PASSWORD = 'dbc'
+
 cls_keys = {
     'server': 'server_name'
-    , 'Ip' : ('server_id', 'ip')
-    , 'DataBaseEngine': 'name'
-    , 'Credential': ('db_engine_id','user_name')
+    , 'Ip': ('server_id', 'ip')
+    , 'DataBaseEngine': ('server_id', 'name')
+    , 'Credential': ('db_engine_id', 'user_name')
     , 'datasource': 'source_name'
     , 'schema': ('db_id', 'schema_name')
     , 'table': ('schema_id', 'table_name')

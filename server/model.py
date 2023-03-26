@@ -205,8 +205,9 @@ class Ip(MyID):
 
 
 class DataBaseEngine(MyID):
-    def __init__(self, name: str, *args, **kwargs):
+    def __init__(self, server_id:int, name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._server_id = server_id
         self._name = name
         self._reserved_words = None
         [JoinType(code=x.code, name=x.name) for x in JOIN_TYPES]
@@ -233,6 +234,10 @@ class DataBaseEngine(MyID):
     def data_types(self) -> []:
         data_type: DataType
         return [data_type for data_type in DataType.get_all_instances() if self.id == data_type.db_engine.id]
+
+    @property
+    def server(self) -> Server:
+        return Server.get_instance(_id=self._server_id)
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
         data_type: DataType
