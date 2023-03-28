@@ -742,8 +742,8 @@ def layer_table_scripts(row):
 
     dml = row.layer_table.dml
     if dml:
-        data_path = os.path.dirname(row.out_path)
-        data_file = WriteFile(data_path, 'data', "sql", 'a')
+        # data_path = os.path.dirname(row.out_path)
+        data_file = WriteFile(row.out_path, 'data', "sql", 'a')
         data_file.write(dml)
         data_file.close()
 
