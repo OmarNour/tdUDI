@@ -818,9 +818,13 @@ def generate_metadata_scripts(smx: SMX):
     src_name_lkp = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
     src_tables_lkp = WriteFile(smx.metadata_scripts, 'source_tables_lkp', "sql")
     gcfr_transform_keycol = WriteFile(smx.metadata_scripts, 'gcfr_transform_keycol', "sql")
+    etl_process = WriteFile(smx.metadata_scripts, 'etl_process', "sql")
+
     source: DataSource
     table: Table
     pk_col: Column
+    pipeline: Pipeline
+
     for source in DataSource.get_all_instances():
         src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
                                                               SOURCE_NAME=source.source_name,
@@ -845,9 +849,37 @@ def generate_metadata_scripts(smx: SMX):
                                                                                  KEY_COLUMN=pk_col.column_name
                                                                                  ))
 
+    for pipeline in Pipeline.get_all_instances():
+        if pipeline.tgt_lyr_table:
+            process_type = None
+            apply_type = None
+            if pipeline.lyr_view.layer.id == smx.txf_bkey_layer.id:
+                process_type = 'BKEY'
+                apply_type = 'INSERT'
+            elif pipeline.lyr_view.layer.id == smx.txf_core_layer.id:
+                process_type = 'TXF'
+                apply_type = 'UPSERT'  # to be revisited
+            if process_type:
+                etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_v_schema.schema_name,
+                                                                 SOURCE_NAME=pipeline.src_lyr_table.table.data_source.source_name,
+                                                                 PROCESS_TYPE=process_type,
+                                                                 PROCESS_NAME=pipeline.lyr_view.table.table_name,
+                                                                 BASE_TABLE=pipeline.tgt_lyr_table.table.table_name,
+                                                                 APPLY_TYPE=apply_type,
+                                                                 INPUT_VIEW_DB=pipeline.lyr_view.table.schema.schema_name,
+                                                                 TARGET_TABLE_DB=pipeline.tgt_lyr_table.table.schema.schema_name,
+                                                                 TARGET_VIEW_DB='NULL',
+                                                                 SRCI_TABLE_DB=pipeline.src_lyr_table.table.schema.schema_name,
+                                                                 SRCI_TABLE_NAME=pipeline.src_lyr_table.table.table_name,
+                                                                 KEY_SET_ID='NULL',
+                                                                 DOMAIN_ID='NULL',
+                                                                 CODE_SET_ID='NULL',
+                                                                 ))
+
     src_name_lkp.close()
     src_tables_lkp.close()
     gcfr_transform_keycol.close()
+    etl_process.close()
 
 
 @time_elapsed_decorator
