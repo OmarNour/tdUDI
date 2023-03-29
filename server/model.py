@@ -345,7 +345,7 @@ class DataSource(MyID):
 
     @property
     def tables(self) -> []:
-        return [table for table in Table.get_all_instances() if self.id == table.data_source.id]
+        return [table for table in Table.get_all_instances() if table.data_source if self.id == table.data_source.id]
 
 
 class Table(MyID):
@@ -354,7 +354,8 @@ class Table(MyID):
     """
 
     def __init__(self, schema_id: int, table_name: str, table_kind: str
-                 , source_id: int = None, multiset: int = 1, active: int = 1, ddl: str = None, *args, **kwargs):
+                 , source_id: int = None, multiset: int = 1, active: int = 1
+                 , transactional_data: bool = False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schema_id = schema_id
         self._table_name = table_name
@@ -362,7 +363,8 @@ class Table(MyID):
         self._table_kind = table_kind
         self.active = active
         self.multiset = multiset
-        self._ddl = ddl
+        self._ddl = None
+        self.transactional_data = transactional_data
 
     @property
     def data_source(self) -> DataSource:
@@ -705,7 +707,6 @@ class Pipeline(MyID):
                  , src_lyr_table_id: int
                  , tgt_lyr_table_id: int
                  , lyr_view_id: int | None = None
-                 , transactional_data: bool = False
                  , src_table_alias: str = None
                  , active: int = 1
                  , *args, **kwargs):
@@ -713,7 +714,6 @@ class Pipeline(MyID):
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
         self._lyr_view_id = lyr_view_id
-        self.transactional_data = transactional_data
         self._alphabets = ALPHABETS.copy()
         self._src_table_alias = None
         self._aliases: dict = {}

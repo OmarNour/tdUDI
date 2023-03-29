@@ -815,18 +815,28 @@ def generate_metadata_scripts(smx: SMX):
     :return:
     """
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
-    data_file = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
+    src_name_lkp = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
+    src_tables_lkp = WriteFile(smx.metadata_scripts, 'source_tables_lkp', "sql")
     source: DataSource
+    table: Table
     for source in DataSource.get_all_instances():
-        data_file.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
-                                                           SOURCE_NAME=source.source_name,
-                                                           rejection_table_name='NULL',
-                                                           business_rules_table_name='NULL',
-                                                           LOADING_TYPE='ONLINE',
-                                                           SOURCE_DB=smx.src_v_schema.schema_name,
-                                                           DATA_SRC_CD='NULL'
-                                                           ))
-    data_file.close()
+        src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
+                                                              SOURCE_NAME=source.source_name,
+                                                              rejection_table_name='NULL',
+                                                              business_rules_table_name='NULL',
+                                                              LOADING_TYPE='ONLINE',
+                                                              SOURCE_DB=smx.src_v_schema.schema_name,
+                                                              DATA_SRC_CD='NULL'
+                                                              ))
+        for table in source.tables:
+            if table.schema.id == smx.src_v_schema.id:
+                src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=smx.meta_v_schema.schema_name,
+                                                                          SOURCE_NAME=source.source_name,
+                                                                          TABLE_NAME=table.table_name,
+                                                                          TRANSACTION_DATA=1 if table.transactional_data else 0
+                                                                          ))
+    src_name_lkp.close()
+    src_tables_lkp.close()
 
 
 @time_elapsed_decorator
