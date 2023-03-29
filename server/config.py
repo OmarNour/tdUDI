@@ -108,7 +108,7 @@ AS PERMANENT = 60e6, -- 60MB
     SPOOL = 120e6; -- 120MB
 """
 
-####### Metadata #####
+##################### Metadata ####################
 INSERT_INTO_SOURCE_NAME_LKP = """
 INSERT INTO {meta_db}.SOURCE_NAME_LKP (
     SOURCE_ID,
@@ -146,7 +146,6 @@ INSERT_INTO_SOURCE_TABLES_LKP = """
 INSERT INTO {meta_db}.SOURCE_TABLES_LKP (SOURCE_NAME, TABLE_NAME, active, DATA_EXTRACTION_COLUMN, TRANSACTION_DATA)
 VALUES ('{SOURCE_NAME}', '{TABLE_NAME}', 1, 0, '{TRANSACTION_DATA}');
 """
-
 INSERT_INTO_GCFR_TRANSFORM_KEYCOL="""
 INSERT INTO {meta_db}.GCFR_Transform_KeyCol (Out_DB_Name, Out_Object_Name, Key_Column)
 VALUES ('{OUT_DB_NAME}', '{OUT_OBJECT_NAME}', '{KEY_COLUMN}');
