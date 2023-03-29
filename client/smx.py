@@ -354,15 +354,23 @@ class SMX:
 
             @log_error_decorator(self.log_error_path)
             def extract_bkey_txf_views(row):
-                if row.natural_key != '' and row.key_set_name != '':
+                if row.natural_key != '' and row.key_domain_name != '':
                     ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
                     ds = DataSource.get_instance(_key=row.schema)
                     assert ds, ds_error_msg
-                    utlfw_t: Table
+                    domain: Domain
                     stg_col: Column
                     stg_t: Table
                     stg_lt: LayerTable
                     srci_col: Column
+
+                    data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
+                    bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!"
+                    assert data_set, bkey_dataset_error_msg
+
+                    domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
+                    domain_error_msg = f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!"""
+                    assert domain, domain_error_msg
 
                     stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                     stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
@@ -380,7 +388,7 @@ class SMX:
                     bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
                     bkey_vl = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=bkey_v.id)
 
-                    bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=bkey_vl.id, lyr_view_id=bkey_vl.id)
+                    bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=domain.data_set.surrogate_table.id, lyr_view_id=bkey_vl.id)
                     if row.bkey_filter:
                         Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
@@ -402,6 +410,14 @@ class SMX:
                     # assert stg_t_cols, nk_error_msg
 
                     if row.key_set_name != '':
+                        data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
+                        bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!"
+                        assert data_set, bkey_dataset_error_msg
+
+                        domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
+                        domain_error_msg = f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!"""
+                        assert domain, domain_error_msg
+
                         txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
                                                                      , src_table_name=stg_t.table_name
                                                                      , column_name=srci_t_col.column_name
@@ -411,16 +427,17 @@ class SMX:
                         # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
                         txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
                         txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
-                        bkey_txf_v_col = Column(table_id=txf_v.id, column_name='source_key')
                         bkey_txf_pipeline = Pipeline.get_instance(_key=txf_bkey_lt.id)
+
                         # for col_seq, stg_t_col in enumerate(stg_t_cols):
+                        source_key_col = Column.get_instance(_key=(domain.data_set.surrogate_table.id, 'source_key'))
                         ColumnMapping(pipeline_id=bkey_txf_pipeline.id
                                       , col_seq=0
                                       , src_col_id=None
-                                      , tgt_col_id=bkey_txf_v_col.id
+                                      , tgt_col_id=source_key_col.id
                                       , src_col_trx=row.natural_key
                                       )
-                        GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=bkey_txf_v_col.id)
+                        GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=source_key_col.id)
 
                 else:
                     stg_t_col = Column.get_instance(_key=(stg_t.id, row.column_name))
@@ -692,10 +709,12 @@ class SMX:
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
             ##########################  Start bkey TXF view  #####################
-            stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'key_set_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+            stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name'
+                , 'key_set_name' ,'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
             # extract_bkey_txf_columns
             ##########################  End bkey TXF view    #####################
-            stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key', 'key_set_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
+            stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key'
+                , 'key_set_name', 'key_domain_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
             ##########################      Start Core TXF view     #####################
             if not core_tables_df.empty:
                 core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
