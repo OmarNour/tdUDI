@@ -815,7 +815,7 @@ def generate_metadata_scripts(smx: SMX):
     :return:
     """
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
-    data_file = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql", 'a')
+    data_file = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
     source: DataSource
     for source in DataSource.get_all_instances():
         data_file.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,

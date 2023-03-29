@@ -37,7 +37,7 @@ except:
 
 
 class WriteFile:
-    def __init__(self, file_path, file_name, ext, f_mode="w+", new_line=False):
+    def __init__(self, file_path, file_name, ext, f_mode="w", new_line=False):
         self.new_line = new_line
         self.f = open(os.path.join(file_path, file_name + "." + ext), f_mode, encoding="utf-8")
 
