@@ -817,8 +817,10 @@ def generate_metadata_scripts(smx: SMX):
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
     src_name_lkp = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
     src_tables_lkp = WriteFile(smx.metadata_scripts, 'source_tables_lkp', "sql")
+    gcfr_transform_keycol = WriteFile(smx.metadata_scripts, 'gcfr_transform_keycol', "sql")
     source: DataSource
     table: Table
+    pk_col: Column
     for source in DataSource.get_all_instances():
         src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
                                                               SOURCE_NAME=source.source_name,
@@ -835,8 +837,17 @@ def generate_metadata_scripts(smx: SMX):
                                                                           TABLE_NAME=table.table_name,
                                                                           TRANSACTION_DATA=1 if table.transactional_data else 0
                                                                           ))
+    for table in Table.get_all_instances():
+        for pk_col in table.key_col:
+            gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_v_schema.schema_name,
+                                                                                 OUT_DB_NAME=table.schema.schema_name,
+                                                                                 OUT_OBJECT_NAME=table.table_name,
+                                                                                 KEY_COLUMN=pk_col.column_name
+                                                                                 ))
+
     src_name_lkp.close()
     src_tables_lkp.close()
+    gcfr_transform_keycol.close()
 
 
 @time_elapsed_decorator

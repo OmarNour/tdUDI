@@ -425,6 +425,11 @@ class Table(MyID):
         return False
 
     @property
+    def key_col(self):
+        col: Column
+        return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_pk == 1]
+
+    @property
     # @functools.cached_property
     def ddl(self) -> str:
         self._ddl = None
