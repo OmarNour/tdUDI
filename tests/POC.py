@@ -233,10 +233,25 @@ def populate_table(add_new_rows:bool):
     # Disconnect from the database
     dbc.close()
 
+def insert_stmt():
+    x = """INSERT INTO GDEV1T_GCFR.ETL_PROCESS 
+    (SOURCE_NAME, PROCESS_TYPE, PROCESS_NAME, BASE_TABLE, APPLY_TYPE, RECORD_ID, SEQUENCE, active, BKEY_PRTY_DOMAIN_1
+    , ALWAYS_RUN, INPUT_VIEW_DB, TARGET_TABLE_DB, TARGET_VIEW_DB, SRCI_TABLE_DB, STG_TABLE_NAME) 
+    VALUES ('{ASDA}', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+""".format(ASDA='asdad')
 
+    y = """INSERT INTO GDEV1T_GCFR.ETL_PROCESS 
+        (SOURCE_NAME, PROCESS_TYPE, PROCESS_NAME, BASE_TABLE, APPLY_TYPE, RECORD_ID, SEQUENCE, active, BKEY_PRTY_DOMAIN_1
+        , ALWAYS_RUN, INPUT_VIEW_DB, TARGET_TABLE_DB, TARGET_VIEW_DB, SRCI_TABLE_DB, STG_TABLE_NAME) 
+        VALUES ('%s', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """ % ('adsd')
+
+    print(x)
+    print(y)
 if __name__ == '__main__':
-    populate_table(add_new_rows=True)
-    td_test()
+    insert_stmt()
+    # populate_table(add_new_rows=True)
+    # td_test()
     # replace_()
     # x = """   left  JOIN TADAMON_GOVERNORATE ON TADAMON_GOVERNORATE.GOVERNORATE_ID=TADAMON_CARDS.GOVERNORATE_ID
     """

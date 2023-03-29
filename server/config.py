@@ -52,17 +52,18 @@ LayerDtl = namedtuple("LayerDetail", "type level v_db t_db")
 JoinTypes = namedtuple("JoinTypes", "code name")
 JOIN_TYPES = [JoinTypes(code='ij', name='inner join'), JoinTypes(code='lj', name='left join'),
               JoinTypes(code='rj', name='right join'), JoinTypes(code='fj', name='full outer join')]
-LAYER_TYPES = ['SRC', 'STG', 'SK', 'SRCI', 'CORE']
+LAYER_TYPES = ['META', 'SRC', 'STG', 'SK', 'SRCI', 'CORE']
 PREFIX = 'GDEV1'
 LAYERS = {
-    'SRC': LayerDtl(LAYER_TYPES[0], 0, f'{PREFIX}V_STG_ONLINE', 'STG_ONLINE')
-    , 'STG': LayerDtl(LAYER_TYPES[1], 1, f'{PREFIX}V_STG', f'{PREFIX}T_STG')
-    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[1], 2, f'{PREFIX}V_INP', '')
-    , 'BKEY': LayerDtl(LAYER_TYPES[2], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
-    , 'BMAP': LayerDtl(LAYER_TYPES[2], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
-    , 'SRCI': LayerDtl(LAYER_TYPES[3], 4, f'{PREFIX}V_SRCI', f'{PREFIX}T_SRCI')
-    , 'TXF_CORE': LayerDtl(LAYER_TYPES[3], 5, f'{PREFIX}V_INP', '')
-    , 'CORE': LayerDtl(LAYER_TYPES[4], 6, f'{PREFIX}V_BASE', f'{PREFIX}T_BASE')
+    'META': LayerDtl(LAYER_TYPES[0], 0, f'{PREFIX}V_GCRF', f'{PREFIX}T_GCRF')
+    ,'SRC': LayerDtl(LAYER_TYPES[1], 0, f'{PREFIX}V_STG_ONLINE', 'STG_ONLINE')
+    , 'STG': LayerDtl(LAYER_TYPES[2], 1, f'{PREFIX}V_STG', f'{PREFIX}T_STG')
+    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[2], 2, f'{PREFIX}V_INP', '')
+    , 'BKEY': LayerDtl(LAYER_TYPES[3], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
+    , 'BMAP': LayerDtl(LAYER_TYPES[3], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
+    , 'SRCI': LayerDtl(LAYER_TYPES[4], 4, f'{PREFIX}V_SRCI', f'{PREFIX}T_SRCI')
+    , 'TXF_CORE': LayerDtl(LAYER_TYPES[4], 5, f'{PREFIX}V_INP', '')
+    , 'CORE': LayerDtl(LAYER_TYPES[5], 6, f'{PREFIX}V_BASE', f'{PREFIX}T_BASE')
 }
 
 NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -111,7 +112,6 @@ AS PERMANENT = 60e6, -- 60MB
 ##################### Metadata ####################
 INSERT_INTO_SOURCE_NAME_LKP = """
 INSERT INTO {meta_db}.SOURCE_NAME_LKP (
-    SOURCE_ID,
     SOURCE_NAME,
     rejection_table_name,
     business_rules_table_name,
@@ -125,7 +125,7 @@ INSERT INTO {meta_db}.SOURCE_NAME_LKP (
     IS_BATCH_FULL_DUMP,
     SOURCE_DB,
     DATA_SRC_CD
-) VALUES (SOURCE_ID,
+) VALUES (
     '{SOURCE_NAME}',
     '{rejection_table_name}',
     '{business_rules_table_name}',

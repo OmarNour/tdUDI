@@ -11,16 +11,18 @@ class SMX:
         self.scripts_path = scripts_path
 
         self.current_scripts_path = os.path.join(self.scripts_path, self.run_id)
+        self.metadata_scripts = os.path.join(self.current_scripts_path, "metadata")
         self.log_error_path = self.current_scripts_path
         create_folder(self.current_scripts_path)
+        create_folder(self.metadata_scripts)
         self.xls = None
         self._source_systems = []
         # self.reserved_words = {}
         self.data = {}
         self.server = Server(server_name='TDVM')
         self.db_engine = DataBaseEngine(server_id=self.server.id, name=DB_NAME)
-        Ip(server_id=self.server.id,ip='localhost')
-        self.conn = Credential(db_engine_id=self.db_engine.id,user_name=USER, password=PASSWORD).get_connection()
+        Ip(server_id=self.server.id, ip='localhost')
+        self.conn = Credential(db_engine_id=self.db_engine.id, user_name=USER, password=PASSWORD).get_connection()
         # print(self.conn)
         [LayerType(type_name=lt) for lt in LAYER_TYPES]
         for layer_key, layer_value in LAYERS.items():
@@ -46,6 +48,7 @@ class SMX:
         self.txf_core_layer = Layer.get_instance(_key='TXF_CORE')
         self.core_layer = Layer.get_instance(_key='CORE')
 
+        self.meta_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['META'].t_db))
         self.src_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRC'].t_db))
         self.stg_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['STG'].t_db))
         self.bmap_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BMAP'].t_db))
@@ -53,6 +56,7 @@ class SMX:
         self.srci_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRCI'].t_db))
         self.core_t_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['CORE'].t_db))
 
+        self.meta_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['META'].v_db))
         self.src_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRC'].v_db))
         self.stg_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['STG'].v_db))
         self.bmap_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BMAP'].v_db))
@@ -810,7 +814,19 @@ def generate_metadata_scripts(smx: SMX):
     :param smx:
     :return:
     """
-    pass
+    # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
+    data_file = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql", 'a')
+    source: DataSource
+    for source in DataSource.get_all_instances():
+        data_file.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
+                                                           SOURCE_NAME=source.source_name,
+                                                           rejection_table_name='NULL',
+                                                           business_rules_table_name='NULL',
+                                                           LOADING_TYPE='ONLINE',
+                                                           SOURCE_DB=smx.src_v_schema.schema_name,
+                                                           DATA_SRC_CD='NULL'
+                                                           ))
+    data_file.close()
 
 
 @time_elapsed_decorator
