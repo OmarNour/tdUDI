@@ -533,11 +533,21 @@ class DataSet(MyID):
 
 
 class Domain(MyID):
+    __domain_name_dic = {}
+
     def __init__(self, data_set_id, domain_code, domain_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._data_set_id = data_set_id
         self.domain_code = domain_code
         self._domain_name = domain_name
+        self.__add_name_dic()
+
+    def __add_name_dic(self):
+        if self._data_set_id not in self.__domain_name_dic.keys():
+            self.__domain_name_dic[self._data_set_id] = {}
+
+        if self.domain_name not in self.__domain_name_dic[self._data_set_id].keys():
+            self.__domain_name_dic[self._data_set_id][self.domain_name] = self.domain_code
 
     @property
     def data_set(self) -> DataSet:
@@ -548,10 +558,12 @@ class Domain(MyID):
         return self._domain_name.lower()
 
     @classmethod
-    def get_by_name(cls, data_set_id:int, domain_name:str):
-        for x in cls.get_all_instances():
-            if x._data_set_id == data_set_id and x.domain_name == domain_name.lower():
-                return x
+    def get_by_name(cls, data_set_id: int, domain_name: str):
+        try:
+            domain_code = cls.__domain_name_dic[data_set_id][domain_name.lower()]
+            return cls.get_instance(_key=(data_set_id, domain_code))
+        except:
+            return None
 
     @property
     def values(self) -> []:
