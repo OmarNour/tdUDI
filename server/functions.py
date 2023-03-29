@@ -14,7 +14,7 @@ set_defaults(
     dask_threshold=1,
     scheduler="processes",
     progress_bar=True,
-    progress_bar_desc=None,
+    progress_bar_desc="Generating Scripts!",
     allow_dask_on_strings=True,
     force_parallel=True,
 )
