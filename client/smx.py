@@ -252,22 +252,20 @@ class SMX:
 
             @log_error_decorator(self.log_error_path)
             def extract_core_columns(row):
+                is_hist_table = True if row.table_name in history_tables_lst else False
                 core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
                 data_type_lst = row.data_type.split(sep='(')
                 _data_type = data_type_lst[0]
                 data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
                 if data_type:
-                    pk = 1 if row.pk.upper() == 'Y' else 0
-                    hk = 1 if row.historization_key.upper() == 'Y' else 0
-                    mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
                     is_start_date = 1 if row.historization_key.upper() == 'S' else 0
                     is_end_date = 1 if row.historization_key.upper() == 'E' else 0
+                    pk = 1 if (row.pk.upper() == 'Y' and not is_hist_table) \
+                              or (row.historization_key.upper() == 'Y' and is_hist_table) \
+                              or (is_start_date and is_hist_table) else 0
+                    mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
                     scd_type = 1
-                    if hk:
-                        hk_err_msg = f"History key column '{row.column_name}', should be primary key as well!"
-                        assert pk, hk_err_msg
-                        scd_type = 2
 
                     if is_start_date:
                         sd_err_msg = f"Start date column '{row.column_name}', should be primary key as well!"
@@ -673,6 +671,7 @@ class SMX:
 
             all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
             core_tables_df = pd.DataFrame()
+            history_tables_lst = []
             if 'core_tables' in self.data.keys():
                 core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
                 history_core_tables_df = filter_dataframe(core_tables_df, 'historization_key', 'Y')
@@ -724,7 +723,7 @@ class SMX:
 
             ##########################  Start bkey TXF view  #####################
             stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name'
-                , 'key_set_name' ,'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+                , 'key_set_name', 'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
             # extract_bkey_txf_columns
             ##########################  End bkey TXF view    #####################
             stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key'
