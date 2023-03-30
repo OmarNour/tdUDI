@@ -675,6 +675,9 @@ class SMX:
             core_tables_df = pd.DataFrame()
             if 'core_tables' in self.data.keys():
                 core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
+                history_core_tables_df = filter_dataframe(core_tables_df, 'historization_key', 'Y')
+                if not history_core_tables_df.empty:
+                    history_tables_lst = history_core_tables_df['table_name'].drop_duplicates().tolist()
 
             ####################################################  End DFs  ####################################################
             ####################################################  Begin   ####################################################
