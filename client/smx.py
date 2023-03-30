@@ -258,13 +258,24 @@ class SMX:
                 data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
                 if data_type:
                     pk = 1 if row.pk.upper() == 'Y' else 0
-                    mandatory = 1 if row.mandatory.upper() == 'Y' else 0
+                    hk = 1 if row.historization_key.upper() == 'Y' else 0
+                    mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
                     is_start_date = 1 if row.historization_key.upper() == 'S' else 0
                     is_end_date = 1 if row.historization_key.upper() == 'E' else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                    scd_type = 1
+                    if hk:
+                        hk_err_msg = f"History key column '{row.column_name}', should be primary key as well!"
+                        assert pk, hk_err_msg
+                        scd_type = 2
+
+                    if is_start_date:
+                        sd_err_msg = f"Start date column '{row.column_name}', should be primary key as well!"
+                        assert pk, sd_err_msg
+
                     Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
                            , data_type_id=data_type.id, dt_precision=precision
-                           , is_start_date=is_start_date, is_end_date=is_end_date)
+                           , is_start_date=is_start_date, is_end_date=is_end_date, scd_type=scd_type)
 
             @log_error_decorator(self.log_error_path)
             def extract_bkey_tables(row):
