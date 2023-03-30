@@ -585,6 +585,12 @@ class DomainValue(MyID):
 
 
 class Column(MyID):
+    """
+    scd_type:
+        Type 0 – Fixed Dimension. No changes allowed, dimension never changes.
+        Type 1 – No History.
+        Type 2 – Row Versioning.
+    """
     def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0
                  , is_start_date: int = 0, is_end_date: int = 0
                  , is_created_at: int = 0, is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0
