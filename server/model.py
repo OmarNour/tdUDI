@@ -355,7 +355,7 @@ class Table(MyID):
 
     def __init__(self, schema_id: int, table_name: str, table_kind: str
                  , source_id: int = None, multiset: int = 1, active: int = 1
-                 , transactional_data: bool = False, *args, **kwargs):
+                 , history_table: bool = False, transactional_data: bool = False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schema_id = schema_id
         self._table_name = table_name
@@ -364,6 +364,7 @@ class Table(MyID):
         self.active = active
         self.multiset = multiset
         self._ddl = None
+        self.history_table = history_table
         self.transactional_data = transactional_data
 
     @property
@@ -591,6 +592,7 @@ class Column(MyID):
         Type 1 – No History.
         Type 2 – Row Versioning.
     """
+
     def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0
                  , is_start_date: int = 0, is_end_date: int = 0
                  , is_created_at: int = 0, is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0

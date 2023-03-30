@@ -135,7 +135,8 @@ class SMX:
 
             @log_error_decorator(self.log_error_path)
             def extract_core_tables(row):
-                table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T')
+                history_table = True if row.table_name in history_tables_lst else False
+                table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T', history_table=history_table)
                 LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
             @log_error_decorator(self.log_error_path)
@@ -252,7 +253,7 @@ class SMX:
 
             @log_error_decorator(self.log_error_path)
             def extract_core_columns(row):
-                is_hist_table = True if row.table_name in history_tables_lst else False
+                core_table: Table
                 core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
                 data_type_lst = row.data_type.split(sep='(')
                 _data_type = data_type_lst[0]
@@ -260,9 +261,9 @@ class SMX:
                 if data_type:
                     is_start_date = 1 if row.historization_key.upper() == 'S' else 0
                     is_end_date = 1 if row.historization_key.upper() == 'E' else 0
-                    pk = 1 if (row.pk.upper() == 'Y' and not is_hist_table) \
-                              or (row.historization_key.upper() == 'Y' and is_hist_table) \
-                              or (is_start_date and is_hist_table) else 0
+                    pk = 1 if (row.pk.upper() == 'Y' and not core_table.history_table) \
+                              or (row.historization_key.upper() == 'Y' and core_table.history_table) \
+                              or (is_start_date and core_table.history_table) else 0
                     mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
                     scd_type = 1
