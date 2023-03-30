@@ -598,7 +598,7 @@ class Column(MyID):
                  , is_created_at: int = 0, is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0
                  , is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0
-                 , scd_type: int = 1, domain_id=None, data_type_id=None
+                 , domain_id=None, data_type_id=None
                  , dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._table_id = table_id
@@ -607,7 +607,6 @@ class Column(MyID):
 
         self._column_name = column_name
         self.mandatory = mandatory
-        self.scd_type = scd_type
         self.dt_precision = dt_precision
         self.active = active
         self.unicode = unicode
@@ -1012,6 +1011,7 @@ class ColumnMapping(MyID):
                  , src_col_trx: str = None
                  , constant_value: bool = False
                  , fn_value_if_null=None
+                 , scd_type: int = 1
                  , *args, **kwargs):
 
         self._pipeline_id = pipeline_id
@@ -1021,6 +1021,7 @@ class ColumnMapping(MyID):
         self.src_table_alias = src_table_alias
         self.fn_value_if_null = fn_value_if_null
         self._src_col_trx = src_col_trx
+        self.scd_type = scd_type
         self.constant_value = constant_value
 
         if src_col_id:

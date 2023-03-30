@@ -545,14 +545,14 @@ class SMX:
                                 parse_join(new_input_join + _split[1])
 
                 @log_error_decorator(self.log_error_path)
-                def column_mapping(row):
+                def column_mapping(_row):
                     # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
                     # transformation_type: COPY, SQL, CONST
-                    transformation_type = row.transformation_type.upper()
+                    transformation_type = _row.transformation_type.upper()
                     assert transformation_type in ('COPY', 'SQL', 'CONST'), "Transformation Type, should be one of the following COPY, SQL or CONST"
-
-                    tgt_col = Column.get_instance(_key=(core_t.id, row.column_name))
-                    err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {row.column_name}'
+                    scd_type = 2 if _row.column_name in row.historization_columns else 1
+                    tgt_col = Column.get_instance(_key=(core_t.id, _row.column_name))
+                    err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {_row.column_name}'
                     assert tgt_col, err_msg_invalid_tgt_col
 
                     src_col = None
@@ -560,22 +560,22 @@ class SMX:
                     src_table: Table
                     if transformation_type == 'COPY':
                         transformation_rule = None
-                        if row.mapped_to_column:
-                            src_table_alias = row.mapped_to_table
+                        if _row.mapped_to_column:
+                            src_table_alias = _row.mapped_to_table
                             src_table = core_pipeline.get_table_by_alias(src_table_alias)
                             err_msg_invalid_src_tbl = f'Invalid Table, {src_table.table_name}'
                             src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
                             assert src_t, err_msg_invalid_src_tbl
-                            src_col = Column.get_instance(_key=(src_t.id, row.mapped_to_column))
+                            src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
                     elif transformation_type == 'CONST':
-                        if str(row.transformation_rule).upper() == '':
+                        if str(_row.transformation_rule).upper() == '':
                             transformation_rule = None
                         else:
-                            transformation_rule = single_quotes(row.transformation_rule) if isinstance(row.transformation_rule, str) else row.transformation_rule
+                            transformation_rule = single_quotes(_row.transformation_rule) if isinstance(_row.transformation_rule, str) else _row.transformation_rule
                     else:
                         # means SQL
-                        src_table_alias = row.mapped_to_table
-                        transformation_rule = row.transformation_rule
+                        src_table_alias = _row.mapped_to_table
+                        transformation_rule = _row.transformation_rule
 
                     ColumnMapping(pipeline_id=core_pipeline.id
                                   , tgt_col_id=tgt_col.id
@@ -584,6 +584,7 @@ class SMX:
                                   , col_seq=0
                                   , src_col_trx=transformation_rule if transformation_rule else None
                                   , constant_value=True if transformation_type == 'CONST' else False
+                                  , scd_type=scd_type
                                   )
 
                 ###########################################################################################################
