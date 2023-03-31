@@ -411,8 +411,6 @@ class SMX:
 
             @log_error_decorator()
             def extract_srci_view_columns(row):
-                col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
-
                 stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                 stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
                 stg_t_col = None
@@ -423,58 +421,52 @@ class SMX:
                 if row.natural_key != '':
                     if row.key_set_name != '':
                         data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
-                        bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!"
-                        assert data_set, bkey_dataset_error_msg
+                        if not data_set:
+                            logging.error(f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!")
+                        else:
+                            domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
+                            if not domain:
+                                logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!""")
+                            else:
+                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
+                                                                             , src_table_name=stg_t.table_name
+                                                                             , column_name=srci_t_col.column_name
+                                                                             , tgt_lvl=self.txf_bkey_layer.layer_level
+                                                                             , domain_id=srci_t_col.domain.domain_code
+                                                                             )
+                                # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
+                                txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
+                                txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
+                                bkey_txf_pipeline = Pipeline.get_instance(_key=txf_bkey_lt.id)
 
-                        domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
-                        domain_error_msg = f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!"""
-                        assert domain, domain_error_msg
-
-                        txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
-                                                                     , src_table_name=stg_t.table_name
-                                                                     , column_name=srci_t_col.column_name
-                                                                     , tgt_lvl=self.txf_bkey_layer.layer_level
-                                                                     , domain_id=srci_t_col.domain.domain_code
-                                                                     )
-                        # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
-                        txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
-                        txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
-                        bkey_txf_pipeline = Pipeline.get_instance(_key=txf_bkey_lt.id)
-
-                        # for col_seq, stg_t_col in enumerate(stg_t_cols):
-                        source_key_col = Column.get_instance(_key=(domain.data_set.surrogate_table.id, 'source_key'))
-                        ColumnMapping(pipeline_id=bkey_txf_pipeline.id
-                                      , col_seq=0
-                                      , src_col_id=None
-                                      , tgt_col_id=source_key_col.id
-                                      , src_col_trx=row.natural_key
-                                      )
-                        GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=source_key_col.id)
+                                # for col_seq, stg_t_col in enumerate(stg_t_cols):
+                                source_key_col = Column.get_instance(_key=(domain.data_set.surrogate_table.id, 'source_key'))
+                                ColumnMapping(pipeline_id=bkey_txf_pipeline.id
+                                              , col_seq=0
+                                              , src_col_id=None
+                                              , tgt_col_id=source_key_col.id
+                                              , src_col_trx=row.natural_key
+                                              )
+                                GroupBy(pipeline_id=bkey_txf_pipeline.id, col_id=source_key_col.id)
 
                 else:
                     stg_t_col = Column.get_instance(_key=(stg_t.id, row.column_name))
-                    assert stg_t_col, col_error_msg
-                #
-                #
-                #     # weird_txt = self.clean_trx(row.natural_key, extra=[col.column_name for col in stg_table.columns])
-                #     # trx_error_msg = f'invalid transformation for {row.schema}, {row.table_name}.{row.column_name} ' \
-                #     #                 f'\n-> {row.natural_key} ' \
-                #     #                 f'\n-xx->{weird_txt}<-xx-'
-                #     #
-                #     # assert weird_txt == '' or weird_txt == 'null', trx_error_msg
+                    if not stg_t_col:
+                        logging.error(f"Invalid column {row.column_name}, while processing row:\n{row}")
 
-                assert srci_t_col, col_error_msg
-                srci_v = Table.get_instance(_key=(self.srci_v_schema.id, row.table_name))
-                srci_vl = LayerTable.get_instance(_key=(self.srci_layer.id, srci_v.id))
+                if not srci_t_col:
+                    logging.error(f"Invalid column {row.column_name}, while processing row:\n{row}")
+                else:
+                    srci_v = Table.get_instance(_key=(self.srci_v_schema.id, row.table_name))
+                    srci_vl = LayerTable.get_instance(_key=(self.srci_layer.id, srci_v.id))
 
-                srci_v_pipeline = Pipeline.get_instance(_key=srci_vl.id)
-                # for col_seq, stg_t_col in enumerate(stg_t_cols):
-                ColumnMapping(pipeline_id=srci_v_pipeline.id
-                              , col_seq=0
-                              , src_col_id=stg_t_col.id if stg_t_col else None
-                              , tgt_col_id=srci_t_col.id
-                              , src_col_trx=row.natural_key if row.natural_key else None
-                              )
+                    srci_v_pipeline = Pipeline.get_instance(_key=srci_vl.id)
+                    ColumnMapping(pipeline_id=srci_v_pipeline.id
+                                  , col_seq=0
+                                  , src_col_id=stg_t_col.id if stg_t_col else None
+                                  , tgt_col_id=srci_t_col.id
+                                  , src_col_trx=row.natural_key if row.natural_key else None
+                                  )
 
             @log_error_decorator()
             def extract_core_txf_views(row):
