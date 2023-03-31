@@ -852,27 +852,27 @@ def generate_metadata_scripts(smx: SMX):
     pipeline: Pipeline
 
     for source in DataSource.get_all_instances():
-        src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
-                                                              SOURCE_NAME=source.source_name,
+        src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
+                                                              SOURCE_NAME=single_quotes(source.source_name),
                                                               rejection_table_name='NULL',
                                                               business_rules_table_name='NULL',
-                                                              LOADING_TYPE='ONLINE',
-                                                              SOURCE_DB=smx.src_v_schema.schema_name,
+                                                              LOADING_TYPE=single_quotes('ONLINE'),
+                                                              SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
                                                               DATA_SRC_CD='NULL'
                                                               ))
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
-                src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=smx.meta_v_schema.schema_name,
-                                                                          SOURCE_NAME=source.source_name,
-                                                                          TABLE_NAME=table.table_name,
+                src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
+                                                                          SOURCE_NAME=single_quotes(source.source_name),
+                                                                          TABLE_NAME=single_quotes(table.table_name),
                                                                           TRANSACTION_DATA=1 if table.transactional_data else 0
                                                                           ))
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
-            gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_v_schema.schema_name,
-                                                                                 OUT_DB_NAME=table.schema.schema_name,
-                                                                                 OUT_OBJECT_NAME=table.table_name,
-                                                                                 KEY_COLUMN=pk_col.column_name
+            gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
+                                                                                 OUT_DB_NAME=single_quotes(table.schema.schema_name),
+                                                                                 OUT_OBJECT_NAME=single_quotes(table.table_name),
+                                                                                 KEY_COLUMN=single_quotes(pk_col.column_name)
                                                                                  ))
 
     for pipeline in Pipeline.get_all_instances():
@@ -886,21 +886,22 @@ def generate_metadata_scripts(smx: SMX):
                 process_type = 'TXF'
                 apply_type = 'UPSERT'  # to be revisited
             if process_type:
-                etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_v_schema.schema_name,
-                                                                 SOURCE_NAME=pipeline.src_lyr_table.table.data_source.source_name,
-                                                                 PROCESS_TYPE=process_type,
-                                                                 PROCESS_NAME=pipeline.lyr_view.table.table_name,
-                                                                 BASE_TABLE=pipeline.tgt_lyr_table.table.table_name,
-                                                                 APPLY_TYPE=apply_type,
-                                                                 INPUT_VIEW_DB=pipeline.lyr_view.table.schema.schema_name,
-                                                                 TARGET_TABLE_DB=pipeline.tgt_lyr_table.table.schema.schema_name,
+                etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
+                                                                 SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
+                                                                 PROCESS_TYPE=single_quotes(process_type),
+                                                                 PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
+                                                                 BASE_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
+                                                                 APPLY_TYPE=single_quotes(apply_type),
+                                                                 INPUT_VIEW_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
+                                                                 TARGET_TABLE_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
                                                                  TARGET_VIEW_DB='NULL',
-                                                                 SRCI_TABLE_DB=pipeline.src_lyr_table.table.schema.schema_name,
-                                                                 SRCI_TABLE_NAME=pipeline.src_lyr_table.table.table_name,
+                                                                 SRCI_TABLE_DB=single_quotes(pipeline.src_lyr_table.table.schema.schema_name),
+                                                                 SRCI_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
                                                                  KEY_SET_ID='NULL',
                                                                  DOMAIN_ID='NULL',
-                                                                 CODE_SET_ID='NULL',
-                                                                 ))
+                                                                 CODE_SET_ID='NULL'
+                                                                 )
+                                  )
 
     src_name_lkp.close()
     src_tables_lkp.close()
