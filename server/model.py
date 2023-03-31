@@ -834,7 +834,7 @@ class Pipeline(MyID):
             table_id = self._aliases[alias.lower()]
             return Table.get_instance(_id=table_id)
         except KeyError:
-            raise ValueError(f"invalid alias '{alias}'\n,Aliases: {self._aliases} \n, Pipeline: {self.lyr_view.table.table_name}!")
+            return None
 
     # @property
     # def all_src_cols(self) -> []:
