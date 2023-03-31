@@ -553,209 +553,203 @@ class SMX:
                     else:
                         scd_type = 2 if _row.column_name in row.historization_columns else 1
                         tgt_col = Column.get_instance(_key=(core_t.id, _row.column_name))
-                        err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {_row.column_name}'
-                        assert tgt_col, err_msg_invalid_tgt_col
-
-                        src_col = None
-                        src_table_alias = None
-                        src_table: Table
-                        if transformation_type == 'COPY':
-                            transformation_rule = None
-                            if _row.mapped_to_column:
-                                src_table_alias = _row.mapped_to_table
-                                src_table = core_pipeline.get_table_by_alias(src_table_alias)
-                                if src_table:
-                                    src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
-                                    if src_t:
-                                        src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
-                                    else:
-                                        logging.error(f"Invalid Table '{src_table.table_name}', while processing the following row:\n{_row}")
-                                else:
-                                    logging.error(f"Invalid alias '{src_table_alias}', while processing the following row:\n{_row}")
-                        elif transformation_type == 'CONST':
-                            if str(_row.transformation_rule).upper() == '':
-                                transformation_rule = None
-                            else:
-                                transformation_rule = single_quotes(_row.transformation_rule) if isinstance(_row.transformation_rule, str) else _row.transformation_rule
+                        if not tgt_col:
+                            logging.error(f"Invalid Target Column Name, {_row.column_name}, while processing row:\n{_row}")
                         else:
-                            # means SQL
-                            src_table_alias = _row.mapped_to_table
-                            transformation_rule = _row.transformation_rule
+                            src_col = None
+                            src_table_alias = None
+                            src_table: Table
+                            if transformation_type == 'COPY':
+                                transformation_rule = None
+                                if _row.mapped_to_column:
+                                    src_table_alias = _row.mapped_to_table
+                                    src_table = core_pipeline.get_table_by_alias(src_table_alias)
+                                    if src_table:
+                                        src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
+                                        if src_t:
+                                            src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
+                                        else:
+                                            logging.error(f"Invalid Table '{src_table.table_name}', while processing the following row:\n{_row}")
+                                    else:
+                                        logging.error(f"Invalid alias '{src_table_alias}', while processing the following row:\n{_row}")
+                            elif transformation_type == 'CONST':
+                                if str(_row.transformation_rule).upper() == '':
+                                    transformation_rule = None
+                                else:
+                                    transformation_rule = single_quotes(_row.transformation_rule) if isinstance(_row.transformation_rule, str) else _row.transformation_rule
+                            else:
+                                # means SQL
+                                src_table_alias = _row.mapped_to_table
+                                transformation_rule = _row.transformation_rule
 
-                        ColumnMapping(pipeline_id=core_pipeline.id
-                                      , tgt_col_id=tgt_col.id
-                                      , src_col_id=src_col.id if src_col else None
-                                      , src_table_alias=src_table_alias
-                                      , col_seq=0
-                                      , src_col_trx=transformation_rule if transformation_rule else None
-                                      , constant_value=True if transformation_type == 'CONST' else False
-                                      , scd_type=scd_type
-                                      )
+                            ColumnMapping(pipeline_id=core_pipeline.id
+                                          , tgt_col_id=tgt_col.id
+                                          , src_col_id=src_col.id if src_col else None
+                                          , src_table_alias=src_table_alias
+                                          , col_seq=0
+                                          , src_col_trx=transformation_rule if transformation_rule else None
+                                          , constant_value=True if transformation_type == 'CONST' else False
+                                          , scd_type=scd_type
+                                          )
 
                 ###########################################################################################################
                 core_t: Table
-                ds_error_msg = f"""{row.source}, is not defined, please check the 'System' sheet!"""
                 ds = DataSource.get_instance(_key=row.source)
-                assert ds, ds_error_msg
+                if not ds:
+                    logging.error(f"Invalid source name {row.source}, while processing row:\{row}")
+                else:
+                    main_tables_name = row.main_source.split(',')
+                    main_table_name = main_tables_name[0].strip()
+                    main_table_alias = row.main_source_alias if row.main_source_alias else main_table_name
 
-                # if row.mapped_to == '':
-                main_tables_name = row.main_source.split(',')
-                main_table_name = main_tables_name[0].strip()
-                main_table_alias = row.main_source_alias if row.main_source_alias else main_table_name
-                # else:
-                #     main_tables_name = row.mapped_to.split(',')
-                #     main_table_name__alias = main_tables_name[0].split(' ')
-                #     main_table_name__alias = [item for item in main_table_name__alias if item != '']
-                #     main_table_name = main_table_name__alias[0]
-                #     main_table_alias = main_table_name__alias[1] if len(main_table_name__alias) >= 2 else row.main_source_alias
+                    srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
+                    if not srci_t:
+                        logging.error(f"invalid main table, {main_table_name}, while processing row:\n{row}")
+                    else:
+                        srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
-                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
-                err_msg_invalid_main_tbl = f'invalid main table, {main_table_name}'
-                assert srci_t, err_msg_invalid_main_tbl
-                srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
+                        core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
+                        core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
 
-                core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
-                core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
+                        txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
+                        core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
 
-                txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
-                core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
-                # [Column(table_id=core_txf_v.id, column_name=col.column_name) for col in core_t.columns]
-                core_txf_vl = LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
+                        core_txf_vl = LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
+                        core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id
+                                                 , tgt_lyr_table_id=core_lt.id
+                                                 , src_table_alias=main_table_alias
+                                                 , lyr_view_id=core_txf_vl.id)
 
-                core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id
-                                         , tgt_lyr_table_id=core_lt.id
-                                         , src_table_alias=main_table_alias
-                                         , lyr_view_id=core_txf_vl.id)
+                        if row.join:
+                            parse_join(row.join)
 
-                if row.join:
-                    parse_join(row.join)
+                        if row.filter_criterion:
+                            Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
 
-                if row.filter_criterion:
-                    Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
-
-                if 'column_mapping' in self.data.keys():
-                    column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
-                    column_mapping_df[['column_name'
-                        , 'mapped_to_table'
-                        , 'mapped_to_column'
-                        , 'transformation_rule'
-                        , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
+                        if 'column_mapping' in self.data.keys():
+                            column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
+                            column_mapping_df[['column_name'
+                                , 'mapped_to_table'
+                                , 'mapped_to_column'
+                                , 'transformation_rule'
+                                , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
 
             ####################################################  Begin DFs  ####################################################
-            assert 'system' in self.data.keys(), "'System' sheet!, does not exists!"
+            if ('system' or 'stg_tables') not in self.data.keys():
+                logging.error("Make sure 'System' and 'Stg Tables' sheets are both exists!")
+            else:
+                _core_tables = []
+                _core_tables_bkey = []
+                _core_tables_bmap = []
+                _source_names = None
+                if source_name:
+                    _source_names = source_name if isinstance(source_name, list) else [source_name]
+                    _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
 
-            _core_tables = []
-            _core_tables_bkey = []
-            _core_tables_bmap = []
-            _source_names = None
-            if source_name:
-                _source_names = source_name if isinstance(source_name, list) else [source_name]
-                _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
+                system_df = filter_dataframe(self.data['system'], 'schema', _source_names)
+                stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
 
-            system_df = filter_dataframe(self.data['system'], 'schema', _source_names)
-            assert not system_df.empty, "No Source systems found in the 'System' sheet!"
-            assert 'stg_tables' in self.data.keys(), "'Stg Tables' sheet, does not exists!"
+                if system_df.empty or stg_tables_df.empty:
+                    logging.error("Please make sure there data in both 'System' and 'Stg Tables' sheets!")
+                else:
+                    table_mapping_df = pd.DataFrame()
+                    if 'table_mapping' in self.data.keys():
+                        table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
+                        _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
 
-            stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
+                    bkey_df = pd.DataFrame()
+                    if 'bkey' in self.data.keys():
+                        bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
+                        _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
 
-            table_mapping_df = pd.DataFrame()
-            if 'table_mapping' in self.data.keys():
-                table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
-                _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
+                    bmap_df = pd.DataFrame()
+                    bmap_values_df = pd.DataFrame()
+                    if 'bmap' in self.data.keys():
+                        bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
+                        _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
+                        if 'bmap_values' in self.data.keys():
+                            bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
 
-            bkey_df = pd.DataFrame()
-            if 'bkey' in self.data.keys():
-                bkey_df = filter_dataframe(self.data['bkey'], 'key_domain_name', [i for i in set(stg_tables_df['key_domain_name'].values.tolist()) if i])
-                _core_tables_bkey = [i for i in set(bkey_df['key_set_name'].values.tolist()) if i]
+                    all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
+                    core_tables_df = pd.DataFrame()
+                    history_tables_lst = []
+                    if 'core_tables' in self.data.keys():
+                        core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
+                        history_core_tables_df = filter_dataframe(core_tables_df, 'historization_key', 'Y')
+                        if not history_core_tables_df.empty:
+                            history_tables_lst = history_core_tables_df['table_name'].drop_duplicates().tolist()
 
-            bmap_df = pd.DataFrame()
-            bmap_values_df = pd.DataFrame()
-            if 'bmap' in self.data.keys():
-                bmap_df = filter_dataframe(self.data['bmap'], 'code_domain_name', [i for i in set(stg_tables_df['code_domain_name'].values.tolist()) if i])
-                _core_tables_bmap = [i for i in set(bmap_df['code_set_name'].values.tolist()) if i]
-                if 'bmap_values' in self.data.keys():
-                    bmap_values_df = filter_dataframe(self.data['bmap_values'], 'code_domain_id', [i for i in set(bmap_df['code_domain_id'].values.tolist()) if i])
+                    ####################################################  End DFs  ####################################################
+                    ####################################################  Begin   ####################################################
+                    system_df.drop_duplicates().apply(extract_system, axis=1)
+                    stg_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+                    if not core_tables_df.empty:
+                        core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
 
-            all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
-            core_tables_df = pd.DataFrame()
-            history_tables_lst = []
-            if 'core_tables' in self.data.keys():
-                core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
-                history_core_tables_df = filter_dataframe(core_tables_df, 'historization_key', 'Y')
-                if not history_core_tables_df.empty:
-                    history_tables_lst = history_core_tables_df['table_name'].drop_duplicates().tolist()
+                    int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
+                    vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
 
-            ####################################################  End DFs  ####################################################
-            ####################################################  Begin   ####################################################
-            system_df.drop_duplicates().apply(extract_system, axis=1)
-            stg_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
-            if not core_tables_df.empty:
-                core_tables_df[['data_type']].drop_duplicates().apply(extract_data_types, axis=1)
+                    if not core_tables_df.empty:
+                        core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
 
-            int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
-            vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
+                    if not bkey_df.empty:
+                        bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
 
-            if not core_tables_df.empty:
-                core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
+                    if not bmap_df.empty:
+                        bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
 
-            if not bkey_df.empty:
-                bkey_df[['physical_table']].drop_duplicates().apply(extract_bkey_tables, axis=1)
+                    stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
+                    ##########################  Start bkey & bmaps   #####################
+                    if not bkey_df.empty:
+                        bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
+                        bkey_df[['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
 
-            if not bmap_df.empty:
-                bmap_df[['physical_table']].drop_duplicates().apply(extract_bmap_tables, axis=1)
+                    if not bmap_df.empty:
+                        bmap_df[['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
 
-            stg_tables_df[['schema', 'table_name']].drop_duplicates().apply(extract_stg_tables, axis=1)
-            ##########################  Start bkey & bmaps   #####################
-            if not bkey_df.empty:
-                bkey_df[['key_set_name', 'key_set_id', 'physical_table']].drop_duplicates().apply(extract_bkey_datasets, axis=1)
-                bkey_df[['key_set_id', 'key_domain_id', 'key_domain_name']].drop_duplicates().apply(extract_bkey_domains, axis=1)
+                    bmaps_data_sets = DataSetType.get_instance(_key=DS_BMAP).data_sets
 
-            if not bmap_df.empty:
-                bmap_df[['code_set_name', 'code_set_id', 'physical_table']].drop_duplicates().apply(extract_bmap_datasets, axis=1)
+                    if not bmap_df.empty:
+                        bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
 
-            bmaps_data_sets = DataSetType.get_instance(_key=DS_BMAP).data_sets
+                    if not bmap_values_df.empty:
+                        bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
+                    ##########################  End bkey & bmaps     #####################
 
-            if not bmap_df.empty:
-                bmap_df[['code_set_id', 'code_domain_id', 'code_domain_name']].drop_duplicates().apply(extract_bmap_domains, axis=1)
+                    stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
+                                   'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
-            if not bmap_values_df.empty:
-                bmap_values_df[['code_set_name', 'code_domain_id', 'edw_code', 'source_code', 'description']].drop_duplicates().apply(extract_bmap_values, axis=1)
-            ##########################  End bkey & bmaps     #####################
+                    stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
+                    stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
-            stg_tables_df[['table_name', 'column_name', 'data_type', 'mandatory', 'natural_key', 'pk',
-                           'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
+                    ##########################  Start bkey TXF view  #####################
+                    stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name'
+                        , 'key_set_name', 'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
+                    # extract_bkey_txf_columns
+                    ##########################  End bkey TXF view    #####################
+                    stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key'
+                        , 'key_set_name', 'key_domain_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
+                    ##########################      Start Core TXF view     #####################
+                    if not core_tables_df.empty:
+                        core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
-            stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
-            stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
+                    if not table_mapping_df.empty:
+                        table_mapping_df[
+                            [
+                                'target_table_name', 'source'
+                                , 'main_source', 'main_source_alias'
+                                , 'filter_criterion', 'mapping_name', 'join'
+                                , 'historization_algorithm', 'historization_columns'
+                            ]
+                        ].drop_duplicates().apply(extract_core_txf_views, axis=1)
+                    ##########################      End Core TXF view       #####################
+                    ####################################################  End   ####################################################
+                    logging.info("\n####################################################  Summary   ####################################################")
+                    for class_name in MyID.get_all_classes_instances().keys():
+                        cls_instances_cout = eval(f"{class_name}.count_instances()")
+                        logging.info(f'{class_name} count: {cls_instances_cout}')
 
-            ##########################  Start bkey TXF view  #####################
-            stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name'
-                , 'key_set_name', 'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
-            # extract_bkey_txf_columns
-            ##########################  End bkey TXF view    #####################
-            stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key'
-                , 'key_set_name', 'key_domain_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
-            ##########################      Start Core TXF view     #####################
-            if not core_tables_df.empty:
-                core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
-
-            if not table_mapping_df.empty:
-                table_mapping_df[
-                    [
-                        'target_table_name', 'source'
-                        , 'main_source', 'main_source_alias'
-                        , 'filter_criterion', 'mapping_name', 'join'
-                        , 'historization_algorithm', 'historization_columns'
-                    ]
-                ].drop_duplicates().apply(extract_core_txf_views, axis=1)
-            ##########################      End Core TXF view       #####################
-            ####################################################  End   ####################################################
-            logging.info("\n####################################################  Summary   ####################################################")
-            for class_name in MyID.get_all_classes_instances().keys():
-                cls_instances_cout = eval(f"{class_name}.count_instances()")
-                logging.info(f'{class_name} count: {cls_instances_cout}')
-
-            # MyID.serialize_all()
+                    # MyID.serialize_all()
 
         extract_all()
 
