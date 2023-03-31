@@ -578,12 +578,13 @@ class SMX:
                             src_table_alias = _row.mapped_to_table
                             src_table = core_pipeline.get_table_by_alias(src_table_alias)
                             if src_table:
-                                err_msg_invalid_src_tbl = f'Invalid Table, {src_table.table_name}'
                                 src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
-                                assert src_t, err_msg_invalid_src_tbl
-                                src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
+                                if src_t:
+                                    src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
+                                else:
+                                    logging.error(f"Invalid Table '{src_table.table_name}', while processing the following row:\n{_row}")
                             else:
-                                logging.error(f"Invalid alias '{src_table_alias}', while building {core_pipeline.lyr_view.table.table_name}")
+                                logging.error(f"Invalid alias '{src_table_alias}', while processing the following row:\n{_row}")
                     elif transformation_type == 'CONST':
                         if str(_row.transformation_rule).upper() == '':
                             transformation_rule = None
