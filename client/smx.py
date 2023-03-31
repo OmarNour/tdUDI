@@ -16,10 +16,10 @@ class SMX:
     def __init__(self):
         create_folder(self.current_scripts_path)
         create_folder(self.metadata_scripts)
-
+        separator = "**********************************************************************************"
         logging.basicConfig(encoding='utf-8'
                             , level=logging.DEBUG
-                            , format="[%(levelname)s] %(message)s\n"
+                            , format=f"[%(levelname)s] %(message)s\n{separator}\n"
                             , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
                                         # ,logging.StreamHandler()
                                         ]
@@ -628,11 +628,14 @@ class SMX:
 
                         if 'column_mapping' in self.data.keys():
                             column_mapping_df = filter_dataframe(self.data['column_mapping'], 'mapping_name', row.mapping_name)
-                            column_mapping_df[['column_name'
-                                , 'mapped_to_table'
-                                , 'mapped_to_column'
-                                , 'transformation_rule'
-                                , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
+                            if not column_mapping_df.empty:
+                                column_mapping_df[['column_name'
+                                    , 'mapped_to_table'
+                                    , 'mapped_to_column'
+                                    , 'transformation_rule'
+                                    , 'transformation_type']].drop_duplicates().apply(column_mapping, axis=1)
+                            else:
+                                logging.error(f"No column mapping found for {row.mapping_name}, processing row:\n{row}")
 
             ####################################################  Begin DFs  ####################################################
             if ('system' or 'stg_tables') not in self.data.keys():
@@ -744,10 +747,13 @@ class SMX:
                         ].drop_duplicates().apply(extract_core_txf_views, axis=1)
                     ##########################      End Core TXF view       #####################
                     ####################################################  End   ####################################################
-                    logging.info("\n####################################################  Summary   ####################################################")
+                    myid_summary = "\n\nSummary:\n######################\n\n"
                     for class_name in MyID.get_all_classes_instances().keys():
                         cls_instances_cout = eval(f"{class_name}.count_instances()")
-                        logging.info(f'{class_name} count: {cls_instances_cout}')
+                        class_count = f'{class_name} count: {cls_instances_cout}\n'
+                        myid_summary += class_count
+
+                    logging.info(myid_summary)
 
                     # MyID.serialize_all()
 
