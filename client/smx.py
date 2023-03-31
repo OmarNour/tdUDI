@@ -859,21 +859,24 @@ def generate_metadata_scripts(smx: SMX):
                                                               LOADING_TYPE=single_quotes('ONLINE'),
                                                               SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
                                                               DATA_SRC_CD='NULL'
-                                                              ))
+                                                              )
+                           )
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
                 src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
                                                                           SOURCE_NAME=single_quotes(source.source_name),
                                                                           TABLE_NAME=single_quotes(table.table_name),
                                                                           TRANSACTION_DATA=1 if table.transactional_data else 0
-                                                                          ))
+                                                                          )
+                                     )
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
             gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
                                                                                  OUT_DB_NAME=single_quotes(table.schema.schema_name),
                                                                                  OUT_OBJECT_NAME=single_quotes(table.table_name),
                                                                                  KEY_COLUMN=single_quotes(pk_col.column_name)
-                                                                                 ))
+                                                                                 )
+                                        )
 
     for pipeline in Pipeline.get_all_instances():
         if pipeline.tgt_lyr_table:
