@@ -17,7 +17,7 @@ class SMX:
 
         logging.basicConfig(encoding='utf-8'
                             , level=logging.DEBUG
-                            , format="%(asctime)s [%(levelname)s] %(message)s"
+                            , format="[%(levelname)s] %(message)s"
                             , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
                                         # ,logging.StreamHandler()
                                         ]
