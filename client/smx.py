@@ -371,46 +371,46 @@ class SMX:
             @log_error_decorator()
             def extract_bkey_txf_views(row):
                 if row.natural_key != '' and row.key_domain_name != '':
-                    ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
                     ds = DataSource.get_instance(_key=row.schema)
-                    assert ds, ds_error_msg
-                    domain: Domain
-                    stg_col: Column
-                    stg_t: Table
-                    stg_lt: LayerTable
-                    srci_col: Column
+                    if not ds:
+                        logging.error(f"Invalid source name '{row.schema}', while processing row:\n{row}")
+                    else:
+                        domain: Domain
+                        stg_col: Column
+                        stg_t: Table
+                        stg_lt: LayerTable
+                        srci_col: Column
 
-                    data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
-                    bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!"
-                    assert data_set, bkey_dataset_error_msg
+                        data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
+                        if not data_set:
+                            logging.error(f"Invalid key set '{row.key_set_name}', while processing row:\n{row}")
+                        else:
+                            domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
+                            if not domain:
+                                logging.error(f"Invalid key domain name '{row.key_domain_name}', while processing row:\n{row}")
+                            else:
+                                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+                                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
 
-                    domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
-                    domain_error_msg = f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!"""
-                    assert domain, domain_error_msg
+                                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+                                srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
 
-                    stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                    stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
+                                                                             , src_table_name=stg_t.table_name
+                                                                             , column_name=srci_col.column_name
+                                                                             , tgt_lvl=self.txf_bkey_layer.layer_level
+                                                                             , domain_id=srci_col.domain.domain_code
+                                                                             )
 
-                    srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
-                    srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
+                                bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
+                                bkey_vl = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=bkey_v.id)
 
-                    txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
-                                                                 , src_table_name=stg_t.table_name
-                                                                 , column_name=srci_col.column_name
-                                                                 , tgt_lvl=self.txf_bkey_layer.layer_level
-                                                                 , domain_id=srci_col.domain.domain_code
-                                                                 )
-                    # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_col.domain.domain_code}"
-                    bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
-                    bkey_vl = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=bkey_v.id)
-
-                    bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=domain.data_set.surrogate_table.id, lyr_view_id=bkey_vl.id)
-                    if row.bkey_filter:
-                        Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
+                                bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=domain.data_set.surrogate_table.id, lyr_view_id=bkey_vl.id)
+                                if row.bkey_filter:
+                                    Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
             @log_error_decorator()
             def extract_srci_view_columns(row):
-
                 col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
 
                 stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
@@ -421,10 +421,6 @@ class SMX:
                 srci_t_col = Column.get_instance(_key=(srci_t.id, row.column_name))
 
                 if row.natural_key != '':
-                    # nk_error_msg = f'Invalid natural key!,--> {row.natural_key}'
-                    # stg_t_cols = [col for col in stg_table.columns if col.column_name in row.natural_key]
-                    # assert stg_t_cols, nk_error_msg
-
                     if row.key_set_name != '':
                         data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
                         bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!"
