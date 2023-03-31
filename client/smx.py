@@ -163,7 +163,7 @@ class SMX:
                 _data_type = data_type_lst[0]
                 data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
                 if not data_type:
-                    logging.error(f"Invalid data type, while processing the following row from 'stg tables' sheet:\n{row}")
+                    logging.error(f"Invalid data type, processing row:\n{row}")
                 else:
                     pk = 1 if row.pk.upper() == 'Y' else 0
                     mandatory = 1 if row.pk.upper() == 'Y' else 0
@@ -233,7 +233,7 @@ class SMX:
                                       , src_col_trx=row.column_transformation_rule
                                       )
                     else:
-                        logging.error(f"Invalid column '{row.column_name}', while processing the following row:\n{row}")
+                        logging.error(f"Invalid column '{row.column_name}', processing row:\n{row}")
 
             @log_error_decorator()
             def extract_stg_view_columns(row):
@@ -254,7 +254,7 @@ class SMX:
                                       , src_col_trx=None
                                       )
                     else:
-                        logging.error(f"Invalid column '{row.column_name}', while processing the following row:\n{row}")
+                        logging.error(f"Invalid column '{row.column_name}', processing row:\n{row}")
 
             @log_error_decorator()
             def extract_core_columns(row):
@@ -569,9 +569,9 @@ class SMX:
                                         if src_t:
                                             src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
                                         else:
-                                            logging.error(f"Invalid Table '{src_table.table_name}', while processing the following row:\n{_row}")
+                                            logging.error(f"Invalid Table '{src_table.table_name}', processing row:\n{_row}")
                                     else:
-                                        logging.error(f"Invalid alias '{src_table_alias}', while processing the following row:\n{_row}")
+                                        logging.error(f"Invalid alias '{src_table_alias}', processing row:\n{_row}")
                             elif transformation_type == 'CONST':
                                 if str(_row.transformation_rule).upper() == '':
                                     transformation_rule = None
