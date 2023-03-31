@@ -19,7 +19,7 @@ class SMX:
 
         logging.basicConfig(encoding='utf-8'
                             , level=logging.DEBUG
-                            , format="[%(levelname)s] %(message)s"
+                            , format="[%(levelname)s] %(message)s\n"
                             , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
                                         # ,logging.StreamHandler()
                                         ]
@@ -477,7 +477,7 @@ class SMX:
                     join_type = None
                     _join_txt = ' ' + merge_multiple_spaces(join_txt).lower() + ' '
                     if (' select ' or ' sel ' or '(sel ' or '(select ') in _join_txt:
-                        logging.error(f"Query cannot be found in join, {_join_txt}!, while processing row:\n{row}")
+                        logging.error(f"Query cannot be found in join!, while processing row:\n{row}")
                     _join_txt = _join_txt.replace(' inner ', ' ').replace(' outer ', ' ').strip()
 
                     new_input_join = 'join '
@@ -498,7 +498,8 @@ class SMX:
                             # print('full outer join found')
                             join_type = JoinType.get_instance(_key='fj')
 
-                        assert join_type, 'No join found!'
+                        if not join_type:
+                            logging.error(f"No join found!, while processing row:\n{row}")
 
                         _split = _split[1].split(' on ', 1)
                         # print('on split: ', _split)
@@ -510,82 +511,86 @@ class SMX:
                             table_name = table__alias[0]
                             table_alias = table__alias[1] if len(table__alias) >= 2 else table_name
                             with_srci_t = Table.get_instance(_key=(self.srci_t_schema.id, table_name))
-                            err_msg_invalid_srci_tbl = f'invalid join table, {table_name}'
-                            assert with_srci_t, err_msg_invalid_srci_tbl
-                            with_srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, with_srci_t.id))
-                            # print(f"table name {table_name}, alias {table_alias}")
-                            join_with = JoinWith(pipeline_id=core_pipeline.id
-                                                 , master_lyr_table_id=srci_lt.id
-                                                 , master_alias=core_pipeline.src_table_alias
-                                                 , join_type_id=join_type.id
-                                                 , with_lyr_table_id=with_srci_lt.id
-                                                 , with_alias=table_alias)
 
-                            _split = _split_1.split(' join ', 1)
-                            join_on = _split[0]
-                            if join_on.endswith(' left'):
-                                join_on = join_on.removesuffix(' left')
-                                new_input_join = 'left join '
-                            elif join_on.endswith(' full'):
-                                join_on = join_on.removesuffix(' full')
-                                new_input_join = 'full join '
-                            elif join_on.endswith(' right'):
-                                join_on = join_on.removesuffix(' right')
-                                new_input_join = 'right join '
+                            if not with_srci_t:
+                                logging.error(f"invalid join table '{table_name}', while processing row:\n{row}")
+                            else:
+                                with_srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, with_srci_t.id))
+                                # print(f"table name {table_name}, alias {table_alias}")
+                                join_with = JoinWith(pipeline_id=core_pipeline.id
+                                                     , master_lyr_table_id=srci_lt.id
+                                                     , master_alias=core_pipeline.src_table_alias
+                                                     , join_type_id=join_type.id
+                                                     , with_lyr_table_id=with_srci_lt.id
+                                                     , with_alias=table_alias)
 
-                            # print(f"joined on {join_on}")
-                            JoinOn(join_with_id=join_with.id, complete_join_on_expr=join_on)
+                                _split = _split_1.split(' join ', 1)
+                                join_on = _split[0]
+                                if join_on.endswith(' left'):
+                                    join_on = join_on.removesuffix(' left')
+                                    new_input_join = 'left join '
+                                elif join_on.endswith(' full'):
+                                    join_on = join_on.removesuffix(' full')
+                                    new_input_join = 'full join '
+                                elif join_on.endswith(' right'):
+                                    join_on = join_on.removesuffix(' right')
+                                    new_input_join = 'right join '
 
-                            # print("===-=-=-=-=-=-=-=-==-=-=-====")
-                            if len(_split) >= 2:
-                                parse_join(new_input_join + _split[1])
+                                # print(f"joined on {join_on}")
+                                JoinOn(join_with_id=join_with.id, complete_join_on_expr=join_on)
+
+                                # print("===-=-=-=-=-=-=-=-==-=-=-====")
+                                if len(_split) >= 2:
+                                    parse_join(new_input_join + _split[1])
 
                 @log_error_decorator()
                 def column_mapping(_row):
                     # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
                     # transformation_type: COPY, SQL, CONST
                     transformation_type = _row.transformation_type.upper()
-                    assert transformation_type in ('COPY', 'SQL', 'CONST'), "Transformation Type, should be one of the following COPY, SQL or CONST"
-                    scd_type = 2 if _row.column_name in row.historization_columns else 1
-                    tgt_col = Column.get_instance(_key=(core_t.id, _row.column_name))
-                    err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {_row.column_name}'
-                    assert tgt_col, err_msg_invalid_tgt_col
-
-                    src_col = None
-                    src_table_alias = None
-                    src_table: Table
-                    if transformation_type == 'COPY':
-                        transformation_rule = None
-                        if _row.mapped_to_column:
-                            src_table_alias = _row.mapped_to_table
-                            src_table = core_pipeline.get_table_by_alias(src_table_alias)
-                            if src_table:
-                                src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
-                                if src_t:
-                                    src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
-                                else:
-                                    logging.error(f"Invalid Table '{src_table.table_name}', while processing the following row:\n{_row}")
-                            else:
-                                logging.error(f"Invalid alias '{src_table_alias}', while processing the following row:\n{_row}")
-                    elif transformation_type == 'CONST':
-                        if str(_row.transformation_rule).upper() == '':
-                            transformation_rule = None
-                        else:
-                            transformation_rule = single_quotes(_row.transformation_rule) if isinstance(_row.transformation_rule, str) else _row.transformation_rule
+                    if transformation_type not in ('COPY', 'SQL', 'CONST'):
+                        logging.error(f"Transformation Type, should be one of the following COPY, SQL or CONST, processing row:\n{_row}")
                     else:
-                        # means SQL
-                        src_table_alias = _row.mapped_to_table
-                        transformation_rule = _row.transformation_rule
+                        scd_type = 2 if _row.column_name in row.historization_columns else 1
+                        tgt_col = Column.get_instance(_key=(core_t.id, _row.column_name))
+                        err_msg_invalid_tgt_col = f'TXF - Invalid Target Column Name, {_row.column_name}'
+                        assert tgt_col, err_msg_invalid_tgt_col
 
-                    ColumnMapping(pipeline_id=core_pipeline.id
-                                  , tgt_col_id=tgt_col.id
-                                  , src_col_id=src_col.id if src_col else None
-                                  , src_table_alias=src_table_alias
-                                  , col_seq=0
-                                  , src_col_trx=transformation_rule if transformation_rule else None
-                                  , constant_value=True if transformation_type == 'CONST' else False
-                                  , scd_type=scd_type
-                                  )
+                        src_col = None
+                        src_table_alias = None
+                        src_table: Table
+                        if transformation_type == 'COPY':
+                            transformation_rule = None
+                            if _row.mapped_to_column:
+                                src_table_alias = _row.mapped_to_table
+                                src_table = core_pipeline.get_table_by_alias(src_table_alias)
+                                if src_table:
+                                    src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
+                                    if src_t:
+                                        src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
+                                    else:
+                                        logging.error(f"Invalid Table '{src_table.table_name}', while processing the following row:\n{_row}")
+                                else:
+                                    logging.error(f"Invalid alias '{src_table_alias}', while processing the following row:\n{_row}")
+                        elif transformation_type == 'CONST':
+                            if str(_row.transformation_rule).upper() == '':
+                                transformation_rule = None
+                            else:
+                                transformation_rule = single_quotes(_row.transformation_rule) if isinstance(_row.transformation_rule, str) else _row.transformation_rule
+                        else:
+                            # means SQL
+                            src_table_alias = _row.mapped_to_table
+                            transformation_rule = _row.transformation_rule
+
+                        ColumnMapping(pipeline_id=core_pipeline.id
+                                      , tgt_col_id=tgt_col.id
+                                      , src_col_id=src_col.id if src_col else None
+                                      , src_table_alias=src_table_alias
+                                      , col_seq=0
+                                      , src_col_trx=transformation_rule if transformation_rule else None
+                                      , constant_value=True if transformation_type == 'CONST' else False
+                                      , scd_type=scd_type
+                                      )
 
                 ###########################################################################################################
                 core_t: Table
