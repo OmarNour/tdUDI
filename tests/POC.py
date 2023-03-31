@@ -1,7 +1,6 @@
 import sqlparse
 from server.functions import *
 
-
 q = """
 select distinct  l.id layer_id, t.id table_id, 1 active
 from edw_config."tables" t, edw_config.layers l
@@ -180,9 +179,8 @@ def td_test():
     dbc.close()
 
 
-def populate_table(add_new_rows:bool):
+def populate_table(add_new_rows: bool):
     from faker import Faker
-
 
     # Connect to the Teradata database
     host = 'localhost'  # Replace with the IP address of your virtual machine
@@ -233,6 +231,7 @@ def populate_table(add_new_rows:bool):
     # Disconnect from the database
     dbc.close()
 
+
 def insert_stmt():
     x = """INSERT INTO GDEV1T_GCFR.ETL_PROCESS 
     (SOURCE_NAME, PROCESS_TYPE, PROCESS_NAME, BASE_TABLE, APPLY_TYPE, RECORD_ID, SEQUENCE, active, BKEY_PRTY_DOMAIN_1
@@ -248,8 +247,21 @@ def insert_stmt():
 
     print(x)
     print(y)
+
+
+class XCV:
+    run_id = str(generate_run_id())
+    def __init__(self):
+        self.run_id_2 = str(generate_run_id())
+
+
 if __name__ == '__main__':
-    insert_stmt()
+    x = XCV()
+    y = XCV()
+    print(x.run_id, x.run_id_2)
+    print(y.run_id, y.run_id_2)
+    print(XCV.run_id)
+    # insert_stmt()
     # populate_table(add_new_rows=True)
     # td_test()
     # replace_()

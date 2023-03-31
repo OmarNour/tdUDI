@@ -4,17 +4,26 @@ from server.model import *
 
 
 class SMX:
-    def __init__(self, smx_path, scripts_path):
-        self.run_id = str(generate_run_id())
-        print(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
-        self.path = smx_path
-        self.scripts_path = scripts_path
+    run_id = str(generate_run_id())
+    path = smx_path
+    current_scripts_path = os.path.join(scripts_path, run_id)
+    metadata_scripts = os.path.join(current_scripts_path, "metadata")
+    log_error_path = current_scripts_path
+    log_file_name = f"{run_id}.log"
 
-        self.current_scripts_path = os.path.join(self.scripts_path, self.run_id)
-        self.metadata_scripts = os.path.join(self.current_scripts_path, "metadata")
-        self.log_error_path = self.current_scripts_path
+    def __init__(self):
         create_folder(self.current_scripts_path)
         create_folder(self.metadata_scripts)
+
+        logging.basicConfig(encoding='utf-8'
+                            , level=logging.DEBUG
+                            , format="%(asctime)s [%(levelname)s] %(message)s"
+                            , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
+                                        ,logging.StreamHandler()
+                                        ]
+                            )
+        logging.info(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
+
         self.xls = None
         self._source_systems = []
         # self.reserved_words = {}
@@ -93,21 +102,22 @@ class SMX:
     def source_systems(self):
         return self._source_systems
 
+    @log_error_decorator()
     @time_elapsed_decorator
     def populate_model(self, source_name):
-        @log_error_decorator(self.log_error_path)
+        @log_error_decorator()
         def extract_all():
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_system(row):
                 ds = DataSource(source_name=row.schema, source_level=1, scheduled=1)
                 self._source_systems.append(ds.source_name)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_data_types(row):
                 data_type_lst = row.data_type.split(sep='(')
                 DataType(db_id=self.db_engine.id, dt_name=data_type_lst[0], _override=1)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_stg_tables(row):
                 ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
                 ds = DataSource.get_instance(_key=row.schema)
@@ -133,13 +143,13 @@ class SMX:
                 srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
                 Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_core_tables(row):
                 history_table = True if row.table_name in history_tables_lst else False
                 table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T', history_table=history_table)
                 LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_stg_srci_table_columns(row):
                 data_type_error_msg = f"Data type {row.data_type} for {row.table_name}.{row.column_name} column is invalid, please check 'Stg tables' sheet! "
                 bkey_dataset_error_msg = f"key set '{row.key_set_name}', is not defined"
@@ -198,7 +208,7 @@ class SMX:
                     Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
                            , data_type_id=data_type.id, dt_precision=precision, domain_id=domain_id)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_src_view_columns(row):
                 ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
                 col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -226,7 +236,7 @@ class SMX:
                                   , src_col_trx=row.column_transformation_rule
                                   )
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_stg_view_columns(row):
                 ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
                 col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -251,7 +261,7 @@ class SMX:
                                   , src_col_trx=None
                                   )
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_core_columns(row):
                 core_table: Table
                 core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
@@ -275,7 +285,7 @@ class SMX:
                            , data_type_id=data_type.id, dt_precision=precision
                            , is_start_date=is_start_date, is_end_date=is_end_date)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bkey_tables(row):
                 table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T')
                 LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
@@ -292,7 +302,7 @@ class SMX:
                        , data_type_id=int_data_type.id, dt_precision=None
                        , is_start_date=0, is_end_date=0)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bkey_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
@@ -300,14 +310,14 @@ class SMX:
                 assert set_table, err_msg_set_table
                 DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bkey_domains(row):
                 data_set = DataSet.get_instance(_key=(self.bkey_set_type.id, row.key_set_id))
                 err_msg_data_set = f'Invalid data set ID: {row.key_set_id}'
                 assert data_set, err_msg_data_set
                 Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bmap_tables(row):
                 if row.physical_table != '':
                     table = Table(schema_id=self.bmap_t_schema.id, table_name=row.physical_table, table_kind='T')
@@ -333,13 +343,13 @@ class SMX:
                            , data_type_id=vchar_data_type.id, dt_precision=None
                            , is_start_date=0, is_end_date=0)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_lookup_core_tables(row):
                 if row.code_set_name != '':
                     table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T', _override=1)
                     LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bmap_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
@@ -347,12 +357,12 @@ class SMX:
                 assert set_table, err_msg_set_table
                 DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bmap_domains(row):
                 data_set = DataSet.get_instance(_key=(self.bmap_set_type.id, row.code_set_id))
                 Domain(data_set_id=data_set.id, domain_code=row.code_domain_id, domain_name=row.code_domain_name)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bmap_values(row):
                 data_set_lst = [ds for ds in bmaps_data_sets if ds.set_table.table_name == row.code_set_name.lower()]
                 if len(data_set_lst) > 0:
@@ -361,7 +371,7 @@ class SMX:
                     if domain:
                         DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_bkey_txf_views(row):
                 if row.natural_key != '' and row.key_domain_name != '':
                     ds_error_msg = f"""{row.schema}, is not defined, please check the 'System' sheet!"""
@@ -401,7 +411,7 @@ class SMX:
                     if row.bkey_filter:
                         Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_srci_view_columns(row):
 
                 col_error_msg = f'{row.schema}, {row.table_name}.{row.column_name} has no object defined!'
@@ -473,7 +483,7 @@ class SMX:
                               , src_col_trx=row.natural_key if row.natural_key else None
                               )
 
-            @log_error_decorator(self.log_error_path)
+            @log_error_decorator()
             def extract_core_txf_views(row):
                 def parse_join(join_txt: str):
                     join_type: JoinType
@@ -544,7 +554,7 @@ class SMX:
                             if len(_split) >= 2:
                                 parse_join(new_input_join + _split[1])
 
-                @log_error_decorator(self.log_error_path)
+                @log_error_decorator()
                 def column_mapping(_row):
                     # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
                     # transformation_type: COPY, SQL, CONST
@@ -744,23 +754,23 @@ class SMX:
                 ].drop_duplicates().apply(extract_core_txf_views, axis=1)
             ##########################      End Core TXF view       #####################
             ####################################################  End   ####################################################
-            print('DataSetType count:', DataSetType.count_instances())
-            print('Layer count:', Layer.count_instances())
-            print('Schema count:', Schema.count_instances())
-            print('DataType count:', DataType.count_instances())
-            print('DataSource count:', DataSource.count_instances())
-            print('Table count:', Table.count_instances())
-            print('LayerTable count:', LayerTable.count_instances())
-            print('DataSet count:', DataSet.count_instances())
-            print('Domain count:', Domain.count_instances())
-            print('DomainValue count:', DomainValue.count_instances())
-            print('Column count:', Column.count_instances())
-            print('Pipeline count:', Pipeline.count_instances())
-            print('ColumnMapping count:', ColumnMapping.count_instances())
-            print('JoinWith count:', JoinWith.count_instances())
-            print('JoinOn count:', JoinOn.count_instances())
-            print('Filter count:', Filter.count_instances())
-            print('GroupBy count:', GroupBy.count_instances())
+            logging.info(f'DataSetType count: {DataSetType.count_instances()}')
+            logging.info(f'Layer count: {Layer.count_instances()}')
+            logging.info(f'Schema count: {Schema.count_instances()}')
+            logging.info(f'DataType count: {DataType.count_instances()}')
+            logging.info(f'DataSource count: {DataSource.count_instances()}')
+            logging.info(f'Table count: {Table.count_instances()}')
+            logging.info(f'LayerTable count: {LayerTable.count_instances()}')
+            logging.info(f'DataSet count: {DataSet.count_instances()}')
+            logging.info(f'Domain count: {Domain.count_instances()}')
+            logging.info(f'DomainValue count: {DomainValue.count_instances()}')
+            logging.info(f'Column count: {Column.count_instances()}')
+            logging.info(f'Pipeline count: {Pipeline.count_instances()}')
+            logging.info(f'ColumnMapping count: {ColumnMapping.count_instances()}')
+            logging.info(f'JoinWith count: {JoinWith.count_instances()}')
+            logging.info(f'JoinOn count: {JoinOn.count_instances()}')
+            logging.info(f'Filter count: {Filter.count_instances()}')
+            logging.info(f'GroupBy count: {GroupBy.count_instances()}')
 
             # MyID.serialize_all()
 
