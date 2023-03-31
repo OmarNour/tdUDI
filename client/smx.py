@@ -551,7 +551,6 @@ class SMX:
                     if transformation_type not in ('COPY', 'SQL', 'CONST'):
                         logging.error(f"Transformation Type, should be one of the following COPY, SQL or CONST, processing row:\n{_row}")
                     else:
-                        scd_type = 2 if _row.column_name in row.historization_columns else 1
                         tgt_col = Column.get_instance(_key=(core_t.id, _row.column_name))
                         if not tgt_col:
                             logging.error(f"Invalid Target Column Name, {_row.column_name}, processing row:\n{_row}")
@@ -559,6 +558,7 @@ class SMX:
                             src_col = None
                             src_table_alias = None
                             src_table: Table
+                            scd_type = 2 if _row.column_name in row.historization_columns else 1
                             if transformation_type == 'COPY':
                                 transformation_rule = None
                                 if _row.mapped_to_column:
