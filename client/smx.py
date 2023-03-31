@@ -183,7 +183,7 @@ class SMX:
 
                             data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
                             if not data_set:
-                                logging.error(f"invalid key set name '{row.key_set_name}', while processing row:\n{row}")
+                                logging.error(f"invalid key set name '{row.key_set_name}', processing row:\n{row}")
                             else:
                                 domain = Domain.get_by_name(data_set.id, row.key_domain_name)
                                 domain_error_msg = f"Bkey Domain not found for {row.table_name}.{row.column_name} column, " \
@@ -195,7 +195,7 @@ class SMX:
 
                             data_set = DataSet.get_by_name(self.bmap_set_type.id, row.code_set_name)
                             if not data_set:
-                                logging.error(f"invalid code set name '{row.code_set_name}', while processing row:\n{row}")
+                                logging.error(f"invalid code set name '{row.code_set_name}', processing row:\n{row}")
                             else:
                                 domain = Domain.get_by_name(data_set.id, row.code_domain_name)
                                 domain_error_msg = f"Bmap Domain not found for {row.table_name}.{row.column_name} column, " \
@@ -373,7 +373,7 @@ class SMX:
                 if row.natural_key != '' and row.key_domain_name != '':
                     ds = DataSource.get_instance(_key=row.schema)
                     if not ds:
-                        logging.error(f"Invalid source name '{row.schema}', while processing row:\n{row}")
+                        logging.error(f"Invalid source name '{row.schema}', processing row:\n{row}")
                     else:
                         domain: Domain
                         stg_col: Column
@@ -383,11 +383,11 @@ class SMX:
 
                         data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
                         if not data_set:
-                            logging.error(f"Invalid key set '{row.key_set_name}', while processing row:\n{row}")
+                            logging.error(f"Invalid key set '{row.key_set_name}', processing row:\n{row}")
                         else:
                             domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
                             if not domain:
-                                logging.error(f"Invalid key domain name '{row.key_domain_name}', while processing row:\n{row}")
+                                logging.error(f"Invalid key domain name '{row.key_domain_name}', processing row:\n{row}")
                             else:
                                 stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
                                 stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
@@ -452,10 +452,10 @@ class SMX:
                 else:
                     stg_t_col = Column.get_instance(_key=(stg_t.id, row.column_name))
                     if not stg_t_col:
-                        logging.error(f"Invalid column {row.column_name}, while processing row:\n{row}")
+                        logging.error(f"Invalid column {row.column_name}, processing row:\n{row}")
 
                 if not srci_t_col:
-                    logging.error(f"Invalid column {row.column_name}, while processing row:\n{row}")
+                    logging.error(f"Invalid column {row.column_name}, processing row:\n{row}")
                 else:
                     srci_v = Table.get_instance(_key=(self.srci_v_schema.id, row.table_name))
                     srci_vl = LayerTable.get_instance(_key=(self.srci_layer.id, srci_v.id))
@@ -477,7 +477,7 @@ class SMX:
                     join_type = None
                     _join_txt = ' ' + merge_multiple_spaces(join_txt).lower() + ' '
                     if (' select ' or ' sel ' or '(sel ' or '(select ') in _join_txt:
-                        logging.error(f"Query cannot be found in join!, while processing row:\n{row}")
+                        logging.error(f"Query cannot be found in join!, processing row:\n{row}")
                     _join_txt = _join_txt.replace(' inner ', ' ').replace(' outer ', ' ').strip()
 
                     new_input_join = 'join '
@@ -499,7 +499,7 @@ class SMX:
                             join_type = JoinType.get_instance(_key='fj')
 
                         if not join_type:
-                            logging.error(f"No join found!, while processing row:\n{row}")
+                            logging.error(f"No join found!, processing row:\n{row}")
 
                         _split = _split[1].split(' on ', 1)
                         # print('on split: ', _split)
@@ -513,7 +513,7 @@ class SMX:
                             with_srci_t = Table.get_instance(_key=(self.srci_t_schema.id, table_name))
 
                             if not with_srci_t:
-                                logging.error(f"invalid join table '{table_name}', while processing row:\n{row}")
+                                logging.error(f"invalid join table '{table_name}', processing row:\n{row}")
                             else:
                                 with_srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, with_srci_t.id))
                                 # print(f"table name {table_name}, alias {table_alias}")
@@ -554,7 +554,7 @@ class SMX:
                         scd_type = 2 if _row.column_name in row.historization_columns else 1
                         tgt_col = Column.get_instance(_key=(core_t.id, _row.column_name))
                         if not tgt_col:
-                            logging.error(f"Invalid Target Column Name, {_row.column_name}, while processing row:\n{_row}")
+                            logging.error(f"Invalid Target Column Name, {_row.column_name}, processing row:\n{_row}")
                         else:
                             src_col = None
                             src_table_alias = None
@@ -596,7 +596,7 @@ class SMX:
                 core_t: Table
                 ds = DataSource.get_instance(_key=row.source)
                 if not ds:
-                    logging.error(f"Invalid source name {row.source}, while processing row:\{row}")
+                    logging.error(f"Invalid source name {row.source}, processing row:\n{row}")
                 else:
                     main_tables_name = row.main_source.split(',')
                     main_table_name = main_tables_name[0].strip()
@@ -604,7 +604,7 @@ class SMX:
 
                     srci_t = Table.get_instance(_key=(self.srci_t_schema.id, main_table_name))
                     if not srci_t:
-                        logging.error(f"invalid main table, {main_table_name}, while processing row:\n{row}")
+                        logging.error(f"invalid main table, {main_table_name}, processing row:\n{row}")
                     else:
                         srci_lt = LayerTable.get_instance(_key=(self.srci_layer.id, srci_t.id))
 
