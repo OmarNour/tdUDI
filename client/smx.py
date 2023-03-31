@@ -349,10 +349,10 @@ class SMX:
             def extract_bmap_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
-                if set_table and row.code_set_id:
+                if set_table and row.code_set_id and surrogate_table:
                     DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
                 else:
-                    logging.error(f"Invalid set table {row.code_set_name}, processing row:\n{row}")
+                    logging.error(f"Invalid set or surrogate table '{row.code_set_name}' '{surrogate_table}', processing row:\n{row}")
 
             @log_error_decorator()
             def extract_bmap_domains(row):
