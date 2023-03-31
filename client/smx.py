@@ -19,7 +19,7 @@ class SMX:
                             , level=logging.DEBUG
                             , format="%(asctime)s [%(levelname)s] %(message)s"
                             , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
-                                        ,logging.StreamHandler()
+                                        # ,logging.StreamHandler()
                                         ]
                             )
         logging.info(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
@@ -75,6 +75,7 @@ class SMX:
         self.txf_core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_CORE'].v_db))
         self.core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['CORE'].v_db))
 
+    @log_error_decorator()
     @time_elapsed_decorator
     def parse_file(self):
         self.xls = pd.ExcelFile(self.path)
@@ -85,6 +86,7 @@ class SMX:
             reserved_words_df = self.data['supplements'].applymap(lambda x: x.lower())
             self.db_engine.reserved_words = reserved_words_df[reserved_words_df['reserved_words_source'] == self.db_engine.name]['reserved_words'].unique().tolist()
 
+    @log_error_decorator()
     def parse_sheet(self, sheet):
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
         if sheet_name in SHEETS:
