@@ -308,9 +308,10 @@ class SMX:
             @log_error_decorator()
             def extract_bkey_domains(row):
                 data_set = DataSet.get_instance(_key=(self.bkey_set_type.id, row.key_set_id))
-                err_msg_data_set = f'Invalid data set ID: {row.key_set_id}'
-                assert data_set, err_msg_data_set
-                Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
+                if data_set and row.key_domain_id:
+                    Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
+                else:
+                    logging.error(f"invalid data set or domain ID, processing row:\n{row}")
 
             @log_error_decorator()
             def extract_bmap_tables(row):
@@ -348,9 +349,10 @@ class SMX:
             def extract_bmap_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
-                err_msg_set_table = f'Invalid set table {row.code_set_name}'
-                assert set_table, err_msg_set_table
-                DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                if set_table and row.code_set_id:
+                    DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                else:
+                    logging.error(f"Invalid set table {row.code_set_name}, processing row:\n{row}")
 
             @log_error_decorator()
             def extract_bmap_domains(row):
