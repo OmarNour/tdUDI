@@ -300,9 +300,10 @@ class SMX:
             def extract_bkey_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
-                err_msg_set_table = f'Invalid set table {row.key_set_name}, \nphysical table is {row.physical_table}\n key_set_id: {row.key_set_id} '
-                assert set_table, err_msg_set_table
-                DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                if set_table:
+                    DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                else:
+                    logging.error(f"Invalid set table, processing row:\n {row}")
 
             @log_error_decorator()
             def extract_bkey_domains(row):

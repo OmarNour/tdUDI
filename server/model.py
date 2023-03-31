@@ -506,6 +506,7 @@ class DataSetType(MyID):
 
 class DataSet(MyID):
     def __init__(self, set_type_id: int, set_code: str, set_table_id: int, surrogate_table_id: int, *args, **kwargs):
+        assert set_table_id, "set_table_id is mandatory!"
         super().__init__(*args, **kwargs)
         self._set_type_id = set_type_id
         self.set_code = set_code
