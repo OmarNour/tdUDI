@@ -762,23 +762,11 @@ class SMX:
                 ].drop_duplicates().apply(extract_core_txf_views, axis=1)
             ##########################      End Core TXF view       #####################
             ####################################################  End   ####################################################
-            logging.info(f'DataSetType count: {DataSetType.count_instances()}')
-            logging.info(f'Layer count: {Layer.count_instances()}')
-            logging.info(f'Schema count: {Schema.count_instances()}')
-            logging.info(f'DataType count: {DataType.count_instances()}')
-            logging.info(f'DataSource count: {DataSource.count_instances()}')
-            logging.info(f'Table count: {Table.count_instances()}')
-            logging.info(f'LayerTable count: {LayerTable.count_instances()}')
-            logging.info(f'DataSet count: {DataSet.count_instances()}')
-            logging.info(f'Domain count: {Domain.count_instances()}')
-            logging.info(f'DomainValue count: {DomainValue.count_instances()}')
-            logging.info(f'Column count: {Column.count_instances()}')
-            logging.info(f'Pipeline count: {Pipeline.count_instances()}')
-            logging.info(f'ColumnMapping count: {ColumnMapping.count_instances()}')
-            logging.info(f'JoinWith count: {JoinWith.count_instances()}')
-            logging.info(f'JoinOn count: {JoinOn.count_instances()}')
-            logging.info(f'Filter count: {Filter.count_instances()}')
-            logging.info(f'GroupBy count: {GroupBy.count_instances()}')
+            logging.info("\n####################################################  Summary   ####################################################")
+            for class_name in MyID.get_all_classes_instances().keys():
+                cls_instances_cout = eval(f"{class_name}.count_instances()")
+                logging.info(f'{class_name} count: {cls_instances_cout}')
+
 
             # MyID.serialize_all()
 

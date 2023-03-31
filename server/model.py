@@ -136,6 +136,10 @@ class MyID(metaclass=Meta):
         else:
             del cls.__instances[cls.__name__][instance_key]
 
+    @classmethod
+    def get_all_classes_instances(cls):
+        return cls.__instances
+
     def __new__(cls, *args, **kwargs):
         """
         This method overrides the default new method and is used to return existing instances of the class
