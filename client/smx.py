@@ -476,7 +476,8 @@ class SMX:
 
                     join_type = None
                     _join_txt = ' ' + merge_multiple_spaces(join_txt).lower() + ' '
-                    assert ' select ' or ' sel ' or '(sel ' or '(select ' not in _join_txt, 'Query cannot be found in join!'
+                    if (' select ' or ' sel ' or '(sel ' or '(select ') in _join_txt:
+                        logging.error(f"Query cannot be found in join, {_join_txt}!, while processing row:\n{row}")
                     _join_txt = _join_txt.replace(' inner ', ' ').replace(' outer ', ' ').strip()
 
                     new_input_join = 'join '
@@ -621,7 +622,8 @@ class SMX:
                                          , src_table_alias=main_table_alias
                                          , lyr_view_id=core_txf_vl.id)
 
-                parse_join(row.join)
+                if row.join:
+                    parse_join(row.join)
 
                 if row.filter_criterion:
                     Filter(pipeline_id=core_pipeline.id, filter_seq=1, complete_filter_expr=row.filter_criterion)
