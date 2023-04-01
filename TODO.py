@@ -2,7 +2,7 @@
 TODO:
     finish generate_metadata_scripts
     generate grant access, script.
-    add technical columns, if not exists in the SMX
+    add technical columns for all tables (src, stg, srci & core), if not exists in the SMX
     DONE SRCI view, to cast the data type when joining with the utlfw table
     Class to hold error data, then print it in a  proper way for en user!
     return all data from all classes in DF
