@@ -22,12 +22,12 @@ TODO:
     ColumnMapping:
         DONE raise error if trx is invalid for columns mapping
     Pipeline:
-        A function to get table by alias
+        DONE A function to get table by alias
         DONE Handle alias for main tables
         handle alias in difference expressions (col, where, etc.)
         Handle alias for join tables
-        use ALPHABETS.pop(), to get aliases!
-        handle transactional_data flag, to differentiate between trans and non-trans data
+        DONE use ALPHABETS.pop(), to get aliases!
+        DONE handle transactional_data flag, to differentiate between trans and non-trans data
         DONE change Pipeline.table_id, to Pipeline.layer_view_id
         DONE change the key to be, src_lyr_table_id, tgt_lyr_table_id, layer_view_id
     GroupBy:
