@@ -371,7 +371,8 @@ class SMX:
 
             @log_error_decorator()
             def extract_bmap_values(row):
-                data_set_lst = [ds for ds in bmaps_data_sets if ds.set_table.table_name == row.code_set_name.lower()]
+                ds:DataSet
+                data_set_lst = [ds for ds in bmaps_data_sets if ds.set_table.table_name == row.code_set_name.upper()]
                 if len(data_set_lst) > 0:
                     data_set = data_set_lst[0]
                     domain = Domain.get_instance(_key=(data_set.id, row.code_domain_id))
@@ -769,14 +770,25 @@ class SMX:
                         core_tables_df[['table_name', 'column_name', 'data_type', 'pk'
                             , 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
                         table: Table
+                        col:Column
                         invalid_history_tables = []
+                        invalid_lookup_tables = []
                         for table in Table.get_all_instances():
                             if table.history_table:
                                 if not (table.key_col and table.start_date_col and table.end_date_col):
                                     invalid_history_tables.append(table.table_name)
+                            elif table.is_lkp:
+                                col_names = [col.column_name for col in table.columns]
+                                if f"{table.table_name}_CD" not in col_names:
+                                    invalid_lookup_tables.append(table.table_name)
+                                elif f"{table.table_name}_DESC" not in col_names:
+                                    invalid_lookup_tables.append(table.table_name)
 
                         if invalid_history_tables:
                             logging.error(f"These are invalid history tables, {invalid_history_tables}")
+
+                        if invalid_lookup_tables:
+                            logging.error(f"These are invalid lookup tables, {invalid_lookup_tables}")
 
                     if not table_mapping_df.empty:
                         table_mapping_df[
@@ -854,7 +866,7 @@ def generate_scripts(smx: SMX):
 
     for src in smx.source_systems:
         source_path = os.path.join(smx.current_scripts_path, src_systems_path, src)
-        source_dict[src.lower()] = source_path
+        source_dict[src.upper()] = source_path
         # create_folder(source_path)
         del source_path
 
@@ -863,7 +875,7 @@ def generate_scripts(smx: SMX):
         layer_table = row.layer_table
 
         if layer_table.table.data_source:
-            main_folder = source_dict[layer_table.table.data_source.source_name.lower()]
+            main_folder = source_dict[layer_table.table.data_source.source_name]
         else:
             main_folder = core_model_path
 

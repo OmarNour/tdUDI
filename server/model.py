@@ -226,7 +226,7 @@ class DataBaseEngine(MyID):
 
     @property
     def name(self):
-        return self._name.lower()
+        return self._name.upper()
 
     @property
     def reserved_words(self) -> []:
@@ -311,7 +311,7 @@ class Schema(MyID):
 
     @property
     def schema_name(self):
-        return self._schema_name.lower()
+        return self._schema_name.upper()
 
     @property
     def db_engine(self) -> DataBaseEngine:
@@ -347,7 +347,7 @@ class DataSource(MyID):
 
     @property
     def source_name(self):
-        return self._source_name.lower()
+        return self._source_name.upper()
 
     @property
     def tables(self) -> []:
@@ -391,7 +391,7 @@ class Table(MyID):
 
     @property
     def table_name(self):
-        return self._table_name.strip().lower()
+        return self._table_name.strip().upper()
 
     def get_column_datatype(self, column_name: str):
         col: Column
@@ -526,7 +526,7 @@ class DataSet(MyID):
     def get_by_name(cls, set_type_id: int, set_name: str):
         ds: cls
         for ds in cls.get_all_instances():
-            if ds._set_type_id == set_type_id and ds.set_table.table_name.lower() == set_name.lower():
+            if ds._set_type_id == set_type_id and ds.set_table.table_name == set_name.upper():
                 return ds
 
 
@@ -553,12 +553,12 @@ class Domain(MyID):
 
     @property
     def domain_name(self) -> str:
-        return self._domain_name.lower()
+        return self._domain_name.upper()
 
     @classmethod
     def get_by_name(cls, data_set_id: int, domain_name: str):
         try:
-            domain_code = cls.__domain_name_dic[data_set_id][domain_name.lower()]
+            domain_code = cls.__domain_name_dic[data_set_id][domain_name.upper()]
             return cls.get_instance(_key=(data_set_id, domain_code))
         except:
             return None
