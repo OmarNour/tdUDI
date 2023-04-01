@@ -786,7 +786,26 @@ class Pipeline(MyID):
 
     @property
     def column_mapping(self) -> []:
+        cm: ColumnMapping
         return [cm for cm in ColumnMapping.get_all_instances() if cm.pipeline.id == self.id]
+
+    @property
+    def scd_type0_col(self) -> []:
+        cm: ColumnMapping
+        if self.column_mapping:
+            return [cm for cm in self.column_mapping if cm.scd_type == 0]
+
+    @property
+    def scd_type1_col(self) -> []:
+        cm: ColumnMapping
+        if self.column_mapping:
+            return [cm for cm in self.column_mapping if cm.scd_type == 1]
+
+    @property
+    def scd_type2_col(self) -> []:
+        cm: ColumnMapping
+        if self.column_mapping:
+            return [cm for cm in self.column_mapping if cm.scd_type == 2]
 
     @property
     def group_by(self) -> []:
@@ -1017,6 +1036,7 @@ class ColumnMapping(MyID):
         Type 1 – No History.
         Type 2 – Row Versioning.
     """
+
     def __init__(self
                  , pipeline_id: int
                  , tgt_col_id: int

@@ -268,7 +268,7 @@ class SMX:
                     if core_table.history_table:
                         is_start_date = 1 if row.historization_key.upper() == 'S' else 0
                         is_end_date = 1 if row.historization_key.upper() == 'E' else 0
-                        pk = 1 if (row.historization_key.upper() == 'Y' or is_start_date ) else 0
+                        pk = 1 if (row.historization_key.upper() == 'Y' or is_start_date) else 0
                     else:
                         is_start_date = 0
                         is_end_date = 0
@@ -553,7 +553,7 @@ class SMX:
                     # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
                     # transformation_type: COPY, SQL, CONST
 
-                    tgt_col:Column
+                    tgt_col: Column
                     transformation_type = _row.transformation_type.upper()
                     if transformation_type not in ('COPY', 'SQL', 'CONST'):
                         logging.error(f"Transformation Type, should be one of the following COPY, SQL or CONST, processing row:\n{_row}")
@@ -706,7 +706,6 @@ class SMX:
                     if 'core_tables' in self.data.keys():
                         core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
 
-
                     ####################################################  End DFs  ####################################################
                     ####################################################  Begin   ####################################################
                     system_df.drop_duplicates().apply(extract_system, axis=1)
@@ -761,7 +760,7 @@ class SMX:
                     if not core_tables_df.empty:
                         core_tables_df[['table_name', 'column_name', 'data_type', 'pk'
                             , 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
-                        table :Table
+                        table: Table
                         invalid_history_tables = []
                         for table in Table.get_all_instances():
                             if table.history_table:
@@ -916,13 +915,17 @@ def generate_metadata_scripts(smx: SMX):
     for pipeline in Pipeline.get_all_instances():
         if pipeline.tgt_lyr_table:
             process_type = None
-            apply_type = None
+            apply_type = 'INSERT'
+
             if pipeline.lyr_view.layer.id == smx.txf_bkey_layer.id:
                 process_type = 'BKEY'
-                apply_type = 'INSERT'
             elif pipeline.lyr_view.layer.id == smx.txf_core_layer.id:
                 process_type = 'TXF'
-                apply_type = 'UPSERT'  # to be revisited
+                if pipeline.scd_type2_col:
+                    apply_type = 'HISTORY'
+                elif pipeline.scd_type1_col:
+                    apply_type = 'UPSERTDELETE'
+
             if process_type:
                 etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=single_quotes(smx.meta_v_schema.schema_name),
                                                                  SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
