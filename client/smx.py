@@ -264,16 +264,21 @@ class SMX:
                 _data_type = data_type_lst[0]
                 data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
                 if data_type:
-                    is_start_date = 1 if row.historization_key.upper() == 'S' else 0
-                    is_end_date = 1 if row.historization_key.upper() == 'E' else 0
-                    pk = 1 if (row.pk.upper() == 'Y' and not core_table.history_table) \
-                              or (row.historization_key.upper() == 'Y' and core_table.history_table) \
-                              or (is_start_date and core_table.history_table) else 0
+
+                    if core_table.history_table:
+                        is_start_date = 1 if row.historization_key.upper() == 'S' else 0
+                        is_end_date = 1 if row.historization_key.upper() == 'E' else 0
+                        pk = 1 if (row.historization_key.upper() == 'Y' or is_start_date ) else 0
+                    else:
+                        is_start_date = 0
+                        is_end_date = 0
+                        pk = 1 if row.pk.upper() == 'Y' else 0
+
                     mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
                     precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
 
-                    if is_start_date and not pk:
-                        logging.error(f"Start date column '{row.column_name}', should be primary key as well!, processing row:\n{row}")
+                    # if is_start_date and not pk:
+                    #     logging.error(f"Start date column '{row.column_name}', should be primary key as well!, processing row:\n{row}")
 
                     Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
                            , data_type_id=data_type.id, dt_precision=precision
@@ -624,9 +629,9 @@ class SMX:
                         core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
                         core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
 
-                        if (row.historization_algorithm.upper() == 'HISTORY' and not core_t.history_table) \
-                                or (row.historization_algorithm.upper() != 'HISTORY' and core_t.history_table):
-                            logging.error(f"Historization algorithm and core table definition are not consistent, processing row:\n{row}")
+                        # if (row.historization_algorithm.upper() == 'HISTORY' and not core_t.history_table) \
+                        #         or (row.historization_algorithm.upper() != 'HISTORY' and core_t.history_table):
+                        #     logging.error(f"Historization algorithm and core table definition are not consistent, processing row:\n{row}")
 
                         txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
                         core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
@@ -662,6 +667,7 @@ class SMX:
                 _core_tables_bkey = []
                 _core_tables_bmap = []
                 _source_names = None
+                history_tables_lst = []
                 if source_name:
                     _source_names = source_name if isinstance(source_name, list) else [source_name]
                     _source_names.extend(UNIFIED_SOURCE_SYSTEMS)
@@ -676,6 +682,10 @@ class SMX:
                     if 'table_mapping' in self.data.keys():
                         table_mapping_df = filter_dataframe(filter_dataframe(self.data['table_mapping'], 'source', _source_names), 'layer', 'CORE')
                         _core_tables = [i for i in set(table_mapping_df['target_table_name'].values.tolist()) if i]
+
+                        history_core_tables_df = filter_dataframe(table_mapping_df, 'historization_algorithm', 'HISTORY')
+                        if not history_core_tables_df.empty:
+                            history_tables_lst = history_core_tables_df['target_table_name'].drop_duplicates().tolist()
 
                     bkey_df = pd.DataFrame()
                     if 'bkey' in self.data.keys():
@@ -692,12 +702,10 @@ class SMX:
 
                     all_core_tables = list(set(_core_tables + _core_tables_bkey + _core_tables_bmap))
                     core_tables_df = pd.DataFrame()
-                    history_tables_lst = []
+
                     if 'core_tables' in self.data.keys():
                         core_tables_df = filter_dataframe(self.data['core_tables'], 'table_name', all_core_tables)
-                        history_core_tables_df = filter_dataframe(core_tables_df, 'historization_key', 'Y')
-                        if not history_core_tables_df.empty:
-                            history_tables_lst = history_core_tables_df['table_name'].drop_duplicates().tolist()
+
 
                     ####################################################  End DFs  ####################################################
                     ####################################################  Begin   ####################################################
@@ -751,7 +759,8 @@ class SMX:
                         , 'key_set_name', 'key_domain_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
                     ##########################      Start Core TXF view     #####################
                     if not core_tables_df.empty:
-                        core_tables_df[['table_name', 'column_name', 'data_type', 'pk', 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
+                        core_tables_df[['table_name', 'column_name', 'data_type', 'pk'
+                            , 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
 
                     if not table_mapping_df.empty:
                         table_mapping_df[
