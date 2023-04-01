@@ -435,6 +435,16 @@ class Table(MyID):
         return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_pk == 1]
 
     @property
+    def start_date_col(self):
+        col: Column
+        return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_start_date == 1]
+
+    @property
+    def end_date_col(self):
+        col: Column
+        return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_end_date == 1]
+
+    @property
     # @functools.cached_property
     def ddl(self) -> str:
         self._ddl = None

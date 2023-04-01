@@ -761,6 +761,15 @@ class SMX:
                     if not core_tables_df.empty:
                         core_tables_df[['table_name', 'column_name', 'data_type', 'pk'
                             , 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
+                        table :Table
+                        invalid_history_tables = []
+                        for table in Table.get_all_instances():
+                            if table.history_table:
+                                if not (table.key_col and table.start_date_col and table.end_date_col):
+                                    invalid_history_tables.append(table.table_name)
+
+                        if invalid_history_tables:
+                            logging.error(f"These are invalid history tables, {invalid_history_tables}")
 
                     if not table_mapping_df.empty:
                         table_mapping_df[
