@@ -19,7 +19,7 @@ set_defaults(
     force_parallel=True,
 )
 
-# from pandarallel import pandarallel
+from pandarallel import pandarallel
 # pandarallel.initialize(progress_bar=True)
 
 import numpy as np
