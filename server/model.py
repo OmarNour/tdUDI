@@ -372,6 +372,9 @@ class Table(MyID):
         self._ddl = None
         self.history_table = history_table
         self.transactional_data = transactional_data
+        self.is_lkp = False
+        self.is_bkey = False
+        self.is_bmap = False
 
     @property
     def data_source(self) -> DataSource:
@@ -406,30 +409,6 @@ class Table(MyID):
         for _data_set in DataSet.get_all_instances():
             if _data_set.surrogate_table.id == self.id:
                 return _data_set
-
-    @functools.cached_property
-    def is_bmap(self):
-        if self.surrogate_data_set:
-            if self.surrogate_data_set.data_set_type.name == DS_BMAP:
-                return True
-        return False
-
-    # @property
-    @functools.cached_property
-    def is_bkey(self):
-        if self.surrogate_data_set:
-            if self.surrogate_data_set.data_set_type.name == DS_BKEY:
-                return True
-        return False
-
-    @functools.cached_property
-    def is_lkp(self):
-        _data_set: DataSet
-        for _data_set in DataSet.get_all_instances():
-            if _data_set.data_set_type.name == DS_BMAP:
-                if _data_set.set_table.id == self.id:
-                    return True
-        return False
 
     @property
     def key_col(self):

@@ -307,12 +307,15 @@ class SMX:
 
             @log_error_decorator()
             def extract_bkey_datasets(row):
+                surrogate_table:Table
+                set_table:Table
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
-                if set_table:
+                if set_table and surrogate_table:
                     DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                    surrogate_table.is_bkey = True
                 else:
-                    logging.error(f"Invalid set table, processing row:\n {row}")
+                    logging.error(f"Invalid set table {row.key_set_name} or surrogate table {row.physical_table}, processing row:\n {row}")
 
             @log_error_decorator()
             def extract_bkey_domains(row):
@@ -320,7 +323,7 @@ class SMX:
                 if data_set and row.key_domain_id:
                     Domain(data_set_id=data_set.id, domain_code=row.key_domain_id, domain_name=row.key_domain_name)
                 else:
-                    logging.error(f"invalid data set or domain ID, processing row:\n{row}")
+                    logging.error(f"invalid data set {row.key_set_id} or domain ID, processing row:\n{row}")
 
             @log_error_decorator()
             def extract_bmap_tables(row):
@@ -350,10 +353,14 @@ class SMX:
 
             @log_error_decorator()
             def extract_bmap_datasets(row):
+                set_table:Table
+                surrogate_table: Table
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
                 if set_table and row.code_set_id and surrogate_table:
                     DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                    set_table.is_lkp = True
+                    surrogate_table.is_bmap = True
                 else:
                     logging.error(f"Invalid set table '{row.code_set_name}' or surrogate table '{surrogate_table}', processing row:\n{row}")
 
