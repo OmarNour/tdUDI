@@ -824,6 +824,7 @@ def layer_table_scripts(row):
         data_file.write('\n')
         data_file.close()
 
+
 @log_error_decorator()
 def generate_schemas_ddl(smx: SMX):
     db_file = WriteFile(smx.current_scripts_path, "schemas", "sql")
