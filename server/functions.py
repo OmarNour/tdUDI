@@ -19,8 +19,8 @@ set_defaults(
     force_parallel=True,
 )
 
-from pandarallel import pandarallel
-# pandarallel.initialize(progress_bar=True)
+# from pandarallel import pandarallel
+# pandarallel.initialize()
 
 import numpy as np
 import traceback
