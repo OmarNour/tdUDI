@@ -147,13 +147,15 @@ class MyID(metaclass=Meta):
         """
         key = kwargs.get('_key', '_')  # The key to identify the instance
         override = kwargs.get('_override', 0)  # Flag to indicate whether to override an existing instance or not
+        raise_if_exist = kwargs.get('_raise_if_exist', 1)  # Flag to indicate whether to raise error if instance exists or not
         instance = cls.get_instance(_key=key)  # Check if an instance with the same key already exists
         if instance:
             if override == 1:
                 cls.__del_instance(key)  # delete the existing instance if override is set to 1
             else:
-                erro_message = f'For {cls.__name__}, {key} Already Exists!'
-                raise ValueError(erro_message)
+                if raise_if_exist:
+                    error_message = f'For {cls.__name__}, {key} Already Exists!'
+                    raise ValueError(error_message)
 
         if instance is None or override == 1:
             # create a new instance of the class

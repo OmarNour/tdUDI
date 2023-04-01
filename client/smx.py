@@ -44,9 +44,9 @@ class SMX:
             layer_type = LayerType.get_instance(_key=layer_value.type)
             Layer(type_id=layer_type.id, layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
             if layer_value.t_db:
-                Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _override=1)
+                Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _raise_if_exist=0)
             if layer_value.v_db:
-                Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
+                Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _raise_if_exist=0)
 
         DataSetType(name=DS_BKEY)
         DataSetType(name=DS_BMAP)
@@ -123,7 +123,7 @@ class SMX:
             @log_error_decorator()
             def extract_data_types(row):
                 data_type_lst = row.data_type.split(sep='(')
-                DataType(db_id=self.db_engine.id, dt_name=data_type_lst[0], _override=1)
+                DataType(db_id=self.db_engine.id, dt_name=data_type_lst[0], _raise_if_exist=0)
 
             @log_error_decorator()
             def extract_stg_tables(row):
@@ -351,7 +351,7 @@ class SMX:
             @log_error_decorator()
             def extract_lookup_core_tables(row):
                 if row.code_set_name != '':
-                    table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T', _override=1)
+                    table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T', _raise_if_exist=0)
                     LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
             @log_error_decorator()
