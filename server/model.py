@@ -747,6 +747,7 @@ class Pipeline(MyID):
                  , tgt_lyr_table_id: int
                  , lyr_view_id: int | None = None
                  , src_table_alias: str = None
+                 , domain_id: int = None
                  , active: int = 1
                  , *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -757,6 +758,7 @@ class Pipeline(MyID):
         self._src_table_alias = None
         self._aliases: dict = {}
         self.all_cols_constant = True
+        self._domain_id = domain_id
 
         if self.src_lyr_table:
             self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
@@ -769,6 +771,10 @@ class Pipeline(MyID):
                 self._lyr_view_id = self.tgt_lyr_table.table.id
 
         assert self.lyr_view.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
+
+    @property
+    def domain(self) -> Domain:
+        return Domain.get_instance(_id=self._domain_id)
 
     @property
     def lyr_view(self) -> LayerTable:

@@ -414,7 +414,10 @@ class SMX:
                                 bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
                                 bkey_vl = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=bkey_v.id)
 
-                                bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=domain.data_set.surrogate_table.id, lyr_view_id=bkey_vl.id)
+                                bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id
+                                                         , tgt_lyr_table_id=domain.data_set.surrogate_table.id
+                                                         , lyr_view_id=bkey_vl.id
+                                                         , domain_id=srci_col.domain.id)
                                 if row.bkey_filter:
                                     Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
@@ -864,6 +867,7 @@ def generate_scripts(smx: SMX):
     # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
 
 
+@log_error_decorator()
 @time_elapsed_decorator
 def generate_metadata_scripts(smx: SMX):
     """
@@ -926,7 +930,7 @@ def generate_metadata_scripts(smx: SMX):
             if pipeline.lyr_view.layer.id == smx.txf_bkey_layer.id:
                 process_type = 'BKEY'
                 key_set_id = pipeline.tgt_lyr_table.table.surrogate_data_set.set_code
-                # domain_id = pipeline.src_lyr_table.table.columns[0].domain.domain_code
+                domain_id = pipeline.domain.domain_code
             elif pipeline.lyr_view.layer.id == smx.txf_core_layer.id:
                 process_type = 'TXF'
                 if pipeline.scd_type2_col:
