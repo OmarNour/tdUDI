@@ -22,6 +22,7 @@ class SMX:
                                     # ,logging.StreamHandler()
                                     ]
                         )
+
     @log_error_decorator()
     def __init__(self):
 
@@ -859,6 +860,7 @@ def generate_scripts(smx: SMX):
     # layer_tables_df.apply(layer_table_scripts, axis=1)
     layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
     # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
+
 
 @time_elapsed_decorator
 def generate_metadata_scripts(smx: SMX):
