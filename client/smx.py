@@ -547,6 +547,7 @@ class SMX:
                 def column_mapping(_row):
                     # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
                     # transformation_type: COPY, SQL, CONST
+                    tgt_col:Column
                     transformation_type = _row.transformation_type.upper()
                     if transformation_type not in ('COPY', 'SQL', 'CONST'):
                         logging.error(f"Transformation Type, should be one of the following COPY, SQL or CONST, processing row:\n{_row}")
@@ -558,7 +559,18 @@ class SMX:
                             src_col = None
                             src_table_alias = None
                             src_table: Table
-                            scd_type = 2 if _row.column_name in row.historization_columns else 1
+                            scd_type = 1
+                            if row.historization_algorithm.upper() == 'INSERT':
+                                scd_type = 0
+                            elif row.historization_algorithm.upper() in ('UPSERT', 'UPSERTDELETE'):
+                                scd_type = 1
+                            elif row.historization_algorithm.upper() == 'HISTORY':
+                                scd_type = 2 if _row.column_name in row.historization_columns else 1
+                            else:
+                                logging.error(f"Invalid historization algorithm, processing row:\n{row}")
+
+                            scd_type = 0 if tgt_col.is_pk else scd_type
+
                             if transformation_type == 'COPY':
                                 transformation_rule = None
                                 if _row.mapped_to_column:
