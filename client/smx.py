@@ -547,6 +547,7 @@ class SMX:
                 def column_mapping(_row):
                     # 'column_name', 'mapped_to_table', 'mapped_to_column', 'transformation_rule', 'transformation_type'
                     # transformation_type: COPY, SQL, CONST
+
                     tgt_col:Column
                     transformation_type = _row.transformation_type.upper()
                     if transformation_type not in ('COPY', 'SQL', 'CONST'):
@@ -622,6 +623,10 @@ class SMX:
 
                         core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
                         core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
+
+                        if (row.historization_algorithm.upper() == 'HISTORY' and not core_t.history_table) \
+                                or (row.historization_algorithm.upper() != 'HISTORY' and core_t.history_table):
+                            logging.error(f"Historization algorithm and core table definition are not consistent, processing row:\n{row}")
 
                         txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
                         core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
