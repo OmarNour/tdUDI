@@ -349,12 +349,6 @@ class SMX:
                            , is_start_date=0, is_end_date=0)
 
             @log_error_decorator()
-            def extract_lookup_core_tables(row):
-                if row.code_set_name != '':
-                    table = Table(schema_id=self.core_t_schema.id, table_name=row.code_set_name, table_kind='T', _raise_if_exist=0)
-                    LayerTable(layer_id=self.core_layer.id, table_id=table.id)
-
-            @log_error_decorator()
             def extract_bmap_datasets(row):
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
@@ -862,8 +856,8 @@ def generate_scripts(smx: SMX):
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
 
     # print('start generating scripts!')
-    # layer_tables_df.apply(layer_table_scripts, axis=1)
-    layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
+    layer_tables_df.apply(layer_table_scripts, axis=1)
+    # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
     # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
 
 
