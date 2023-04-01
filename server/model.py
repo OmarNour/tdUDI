@@ -703,7 +703,7 @@ class LayerTable(MyID):
         return [pipe for pipe in Pipeline.get_all_instances() if pipe.tgt_lyr_table.id == self.id]
 
     @property
-    def core_lookup_ds(self):
+    def core_lookup_ds(self) -> DataSet:
         if self.layer.layer_type.type_name == 'CORE':
             bmap_dst: DataSetType
             ds: DataSet
@@ -732,12 +732,6 @@ class LayerTable(MyID):
                     edw_code = dv.edw_key
                     desc = dv.description
                     dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
-
-        # else:
-        #     core_lookup_ds = self.core_lookup_ds
-        #     if core_lookup_ds:
-        #         ds_cols = list_to_string([col.column_name for col in core_lookup_ds.table.columns], ',')
-        #         dml = f"""insert into {schema_name}.{table_name}\n({columns})\nselect {ds_cols} from {core_lookup_ds.table.table_name};\n"""
         return dml
 
 

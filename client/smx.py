@@ -795,6 +795,7 @@ class SMX:
         extract_all()
 
 
+@log_error_decorator()
 def layer_table_scripts(row):
     row.layer_table: LayerTable
     ddl = row.layer_table.table.ddl
@@ -805,14 +806,25 @@ def layer_table_scripts(row):
         tables_file.write('\n')
         tables_file.close()
 
-    dml = row.layer_table.dml
+    dml = None
+    if row.layer_table.table.is_bmap:
+        dml = row.layer_table.dml
+    elif row.layer_table.table.is_lkp:
+        schema_name = row.layer_table.table.schema.schema_name
+        table_name = row.layer_table.table.table_name
+        core_lookup_ds = row.layer_table.core_lookup_ds
+        if core_lookup_ds:
+            src_schema = core_lookup_ds.surrogate_table.schema.schema_name
+            src_table = core_lookup_ds.surrogate_table.table_name
+            dml = f"""insert into {schema_name}.{table_name}\n({table_name}_CD, {table_name}_DESC)\nselect distinct EDW_CODE,DESCRIPTION\nfrom {src_schema}.{src_table};\n"""
+
     if dml:
-        # data_path = os.path.dirname(row.out_path)
         data_file = WriteFile(row.out_path, 'data', "sql", 'a')
         data_file.write(dml)
+        data_file.write('\n')
         data_file.close()
 
-
+@log_error_decorator()
 def generate_schemas_ddl(smx: SMX):
     db_file = WriteFile(smx.current_scripts_path, "schemas", "sql")
     for schema in Schema.get_all_instances():
@@ -823,6 +835,7 @@ def generate_schemas_ddl(smx: SMX):
     db_file.close()
 
 
+@log_error_decorator()
 @time_elapsed_decorator
 def generate_scripts(smx: SMX):
     source_dict: dict = {}
