@@ -6,32 +6,34 @@ from server.model import *
 
 
 class SMX:
-    run_id = str(generate_run_id())
-    path = smx_path
-    current_scripts_path = os.path.join(scripts_path, run_id)
-    metadata_scripts = os.path.join(current_scripts_path, "metadata")
-    log_error_path = current_scripts_path
-    log_file_name = f"{run_id}.log"
-    create_folder(current_scripts_path)
-    create_folder(metadata_scripts)
-    separator = "**********************************************************************************"
-    logging.basicConfig(encoding='utf-8'
-                        , level=logging.DEBUG
-                        , format=f"[%(levelname)s] %(message)s\n{separator}\n"
-                        , handlers=[logging.FileHandler(os.path.join(log_error_path, log_file_name))
-                                    # ,logging.StreamHandler()
-                                    ]
-                        )
 
-    @log_error_decorator()
     def __init__(self):
-
+        self.run_id = str(generate_run_id())
+        self.path = smx_path
+        self.current_scripts_path = os.path.join(scripts_path, self.run_id)
+        self.metadata_scripts = os.path.join(self.current_scripts_path, "metadata")
+        self.log_error_path = self.current_scripts_path
+        self.log_file_name = f"{self.run_id}.log"
+        create_folder(self.current_scripts_path)
+        create_folder(self.metadata_scripts)
+        separator = "**********************************************************************************"
+        logging.basicConfig(encoding='utf-8'
+                            , level=logging.DEBUG
+                            , format=f"[%(levelname)s] %(message)s\n{separator}\n"
+                            , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
+                                        # ,logging.StreamHandler()
+                                        ]
+                            )
         logging.info(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
 
         self.xls = None
         self._source_systems = []
         # self.reserved_words = {}
         self.data = {}
+        self.init_model()
+
+    @log_error_decorator()
+    def init_model(self):
         self.server = Server(server_name='TDVM')
         self.db_engine = DataBaseEngine(server_id=self.server.id, name=DB_NAME)
         Ip(server_id=self.server.id, ip='localhost')
