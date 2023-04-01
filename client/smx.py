@@ -814,7 +814,7 @@ def layer_table_scripts(row):
         data_file.close()
 
 
-def generate_schemas_ddl(smx):
+def generate_schemas_ddl(smx: SMX):
     db_file = WriteFile(smx.current_scripts_path, "schemas", "sql")
     for schema in Schema.get_all_instances():
         ddl = schema.ddl
@@ -857,8 +857,8 @@ def generate_scripts(smx: SMX):
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
 
     # print('start generating scripts!')
-    # layer_tables_df.apply(layer_table_scripts, axis=1)
-    layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
+    layer_tables_df.apply(layer_table_scripts, axis=1)
+    # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
     # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
 
 
@@ -919,9 +919,12 @@ def generate_metadata_scripts(smx: SMX):
         if pipeline.tgt_lyr_table:
             process_type = None
             apply_type = 'INSERT'
-
+            key_set_id = 'NULL'
+            domain_id = 'NULL'
             if pipeline.lyr_view.layer.id == smx.txf_bkey_layer.id:
                 process_type = 'BKEY'
+                key_set_id = pipeline.tgt_lyr_table.table.surrogate_data_set.set_code
+                # domain_id = pipeline.src_lyr_table.table.columns[0].domain.domain_code
             elif pipeline.lyr_view.layer.id == smx.txf_core_layer.id:
                 process_type = 'TXF'
                 if pipeline.scd_type2_col:
@@ -941,8 +944,8 @@ def generate_metadata_scripts(smx: SMX):
                                                                  TARGET_VIEW_DB='NULL',
                                                                  SRCI_TABLE_DB=single_quotes(pipeline.src_lyr_table.table.schema.schema_name),
                                                                  SRCI_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
-                                                                 KEY_SET_ID='NULL',
-                                                                 DOMAIN_ID='NULL',
+                                                                 KEY_SET_ID=key_set_id,
+                                                                 DOMAIN_ID=domain_id,
                                                                  CODE_SET_ID='NULL'
                                                                  )
                                   )
