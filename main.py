@@ -21,8 +21,9 @@ def start(source_name: str|list|None, with_scripts=True):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    # pipreqs /Users/omarnour/PycharmProjects/tdUDI --force --ignore tests
     try:
         start(source_name=['cso'], with_scripts=True)
-        # start(source_name=[], with_scripts=False)
+        # start(source_name=[], with_scripts=True)
     except KeyboardInterrupt:
         print("Ops!..")

@@ -1,4 +1,6 @@
 numpy==1.24.1
+pandarallel==1.6.4
 pandas==1.5.3
 pandasql==0.7.3
 swifter==1.3.4
+teradatasql==17.20.0.17

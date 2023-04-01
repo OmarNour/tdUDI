@@ -251,6 +251,7 @@ def insert_stmt():
 
 class XCV:
     run_id = str(generate_run_id())
+    raise_if_error = True
     def __init__(self):
         self.run_id_2 = str(generate_run_id())
 
@@ -261,6 +262,9 @@ if __name__ == '__main__':
     print(x.run_id, x.run_id_2)
     print(y.run_id, y.run_id_2)
     print(XCV.run_id)
+    print(y.raise_if_error)
+    XCV.raise_if_error = False
+    print(x.raise_if_error)
     # insert_stmt()
     # populate_table(add_new_rows=True)
     # td_test()

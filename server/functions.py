@@ -9,7 +9,6 @@ import pandas as pd
 import swifter
 import teradatasql
 from swifter import set_defaults
-
 set_defaults(
     npartitions=100,
     dask_threshold=1,
@@ -19,6 +18,10 @@ set_defaults(
     allow_dask_on_strings=True,
     force_parallel=True,
 )
+
+from pandarallel import pandarallel
+pandarallel.initialize(progress_bar=True)
+
 import numpy as np
 import traceback
 import functools

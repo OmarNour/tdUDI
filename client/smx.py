@@ -12,18 +12,19 @@ class SMX:
     metadata_scripts = os.path.join(current_scripts_path, "metadata")
     log_error_path = current_scripts_path
     log_file_name = f"{run_id}.log"
-
+    create_folder(current_scripts_path)
+    create_folder(metadata_scripts)
+    separator = "**********************************************************************************"
+    logging.basicConfig(encoding='utf-8'
+                        , level=logging.DEBUG
+                        , format=f"[%(levelname)s] %(message)s\n{separator}\n"
+                        , handlers=[logging.FileHandler(os.path.join(log_error_path, log_file_name))
+                                    # ,logging.StreamHandler()
+                                    ]
+                        )
+    @log_error_decorator()
     def __init__(self):
-        create_folder(self.current_scripts_path)
-        create_folder(self.metadata_scripts)
-        separator = "**********************************************************************************"
-        logging.basicConfig(encoding='utf-8'
-                            , level=logging.DEBUG
-                            , format=f"[%(levelname)s] %(message)s\n{separator}\n"
-                            , handlers=[logging.FileHandler(os.path.join(self.log_error_path, self.log_file_name))
-                                        # ,logging.StreamHandler()
-                                        ]
-                            )
+
         logging.info(f"Run ID {self.run_id}, started at {dt.datetime.now()}\n")
 
         self.xls = None
@@ -857,7 +858,7 @@ def generate_scripts(smx: SMX):
     # print('start generating scripts!')
     # layer_tables_df.apply(layer_table_scripts, axis=1)
     layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
-
+    # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
 
 @time_elapsed_decorator
 def generate_metadata_scripts(smx: SMX):
