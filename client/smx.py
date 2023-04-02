@@ -945,7 +945,8 @@ def generate_metadata_scripts(smx: SMX):
             gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_v_schema.schema_name,
                                                                                  OUT_DB_NAME=single_quotes(table.schema.schema_name),
                                                                                  OUT_OBJECT_NAME=single_quotes(table.table_name),
-                                                                                 KEY_COLUMN=single_quotes(pk_col.column_name)
+                                                                                 KEY_COLUMN=single_quotes(pk_col.column_name),
+                                                                                 IS_START_DATE=pk_col.is_start_date
                                                                                  )
                                         )
 
