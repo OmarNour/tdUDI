@@ -889,10 +889,11 @@ def generate_scripts(smx: SMX):
     layer_tables_df['out_path'] = layer_tables_df.apply(layer_table_out_path, axis=1)
     layer_tables_df[['out_path']].drop_duplicates().apply(lambda row: create_folder(row.out_path), axis=1)
 
-    # print('start generating scripts!')
-    layer_tables_df.apply(layer_table_scripts, axis=1)
-    # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
-    # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
+    if not layer_tables_df.empty:
+        # print('start generating scripts!')
+        layer_tables_df.apply(layer_table_scripts, axis=1)
+        # layer_tables_df.swifter.apply(layer_table_scripts, axis=1)
+        # layer_tables_df.parallel_apply(layer_table_scripts, axis=1)
 
 
 @log_error_decorator()

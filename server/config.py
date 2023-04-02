@@ -3,7 +3,7 @@ from collections import namedtuple
 smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 # smx_path = "/Users/omarnour/Downloads/[ACA] SMX_Economic_Units_03-01-2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/Wasl Schema v1.7.xlsx"
-# smx_path = "/Users/omarnour/Downloads/SALES_SMX_02APRL2023.xlsx"
+# smx_path = "/Users/omarnour/Downloads/SALES_SMX02APRL2023.xlsx"
 
 pickle_path = "pickled_objs"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
