@@ -9,6 +9,7 @@ class SMX:
 
     def __init__(self):
         self.run_id = str(generate_run_id())
+        print(f"Run started with ID: {self.run_id}")
         self.path = smx_path
         self.current_scripts_path = os.path.join(scripts_path, self.run_id)
         self.metadata_scripts = os.path.join(self.current_scripts_path, "metadata")
