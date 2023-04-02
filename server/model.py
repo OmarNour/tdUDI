@@ -418,12 +418,14 @@ class Table(MyID):
     @property
     def start_date_col(self):
         col: Column
-        return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_start_date == 1]
+        col_list = [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_start_date == 1]
+        return col_list[0] if col_list else None
 
     @property
     def end_date_col(self):
         col: Column
-        return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_end_date == 1]
+        col_list = [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_end_date == 1]
+        return col_list[0] if col_list else None
 
     @property
     # @functools.cached_property

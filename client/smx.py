@@ -915,11 +915,13 @@ def generate_metadata_scripts(smx: SMX):
     src_name_lkp = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
     src_tables_lkp = WriteFile(smx.metadata_scripts, 'source_tables_lkp', "sql")
     gcfr_transform_keycol = WriteFile(smx.metadata_scripts, 'gcfr_transform_keycol', "sql")
+    history = WriteFile(smx.metadata_scripts, 'history', 'sql')
     etl_process = WriteFile(smx.metadata_scripts, 'etl_process', "sql")
 
     source: DataSource
     table: Table
     pk_col: Column
+    hist_col_mapping : ColumnMapping
     pipeline: Pipeline
 
     for source in DataSource.get_all_instances():
@@ -967,6 +969,15 @@ def generate_metadata_scripts(smx: SMX):
                 elif pipeline.scd_type1_col:
                     apply_type = 'UPSERTDELETE'
 
+            if pipeline.tgt_lyr_table.table.history_table:
+                for hist_col_mapping in pipeline.scd_type2_col:
+                    history.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_v_schema.schema_name,
+                                                             TARGET_TABLE_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
+                                                             TABLE_NAME=single_quotes(pipeline.tgt_lyr_table.table.table_name),
+                                                             END_DATE_COLUMN =single_quotes(pipeline.tgt_lyr_table.table.end_date_col.column_name),
+                                                             HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
+                                                             )
+                                      )
             if process_type:
                 etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_v_schema.schema_name,
                                                                  SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
@@ -989,6 +1000,7 @@ def generate_metadata_scripts(smx: SMX):
     src_tables_lkp.close()
     gcfr_transform_keycol.close()
     etl_process.close()
+    history.close()
 
 
 @time_elapsed_decorator
