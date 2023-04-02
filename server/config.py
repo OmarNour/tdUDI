@@ -1,9 +1,9 @@
 from collections import namedtuple
 
-smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
+# smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 # smx_path = "/Users/omarnour/Downloads/[ACA] SMX_Economic_Units_03-01-2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/Wasl Schema v1.7.xlsx"
-# smx_path = "/Users/omarnour/Downloads/SALES_SMX.xlsx"
+smx_path = "/Users/omarnour/Downloads/SALES_SMX_02APRL2023.xlsx"
 
 pickle_path = "pickled_objs"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
@@ -146,8 +146,8 @@ INSERT INTO {meta_db}.SOURCE_TABLES_LKP (SOURCE_NAME, TABLE_NAME, active, TRANSA
 VALUES ({SOURCE_NAME}, {TABLE_NAME}, 1, {TRANSACTION_DATA});
 """
 INSERT_INTO_GCFR_TRANSFORM_KEYCOL="""
-INSERT INTO {meta_db}.GCFR_Transform_KeyCol (Out_DB_Name, Out_Object_Name, Key_Column)
-VALUES ({OUT_DB_NAME}, {OUT_OBJECT_NAME}, {KEY_COLUMN});
+INSERT INTO {meta_db}.GCFR_Transform_KeyCol (Out_DB_Name, Out_Object_Name, Key_Column, is_start_date)
+VALUES ({OUT_DB_NAME}, {OUT_OBJECT_NAME}, {KEY_COLUMN}, {IS_START_DATE});
 """
 INSERT_INTO_ETL_PROCESS = """
 INSERT INTO {meta_db}.ETL_PROCESS 
@@ -160,7 +160,7 @@ VALUES ({SOURCE_NAME}, {PROCESS_TYPE}, {PROCESS_NAME}, {BASE_TABLE}, {APPLY_TYPE
 """
 INSERT_INTO_HISTORY = """
 INSERT INTO {meta_db}.HISTORY 
-    (TARGET_TABLE_DB, TABLE_NAME, START_DATE_COLUMN, END_DATE_COLUMN, HISTORY_COLUMN) 
+    (TARGET_TABLE_DB, TABLE_NAME, END_DATE_COLUMN, HISTORY_COLUMN) 
 VALUES 
-    ({TARGET_TABLE_DB}, {TABLE_NAME}, {START_DATE_COLUMN}, {END_DATE_COLUMN}, {HISTORY_COLUMN});
+    ({TARGET_TABLE_DB}, {TABLE_NAME}, {END_DATE_COLUMN}, {HISTORY_COLUMN});
 """

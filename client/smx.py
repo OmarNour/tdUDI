@@ -149,7 +149,7 @@ class SMX:
                     srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
                     Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
                 else:
-                    logging.error(f"""{row.schema}, is not defined, please check the 'System' sheet!""")
+                    logging.error(f""" Invalid Source name, {row.schema}, processing row:\n{row}""")
 
             @log_error_decorator()
             def extract_core_tables(row):
@@ -210,7 +210,7 @@ class SMX:
                         if domain:
                             domain_id = domain.id
                         else:
-                            logging.error(domain_error_msg)
+                            logging.error(f"{domain_error_msg}, processing row:\n{row}")
 
                     if srci_table:
                         Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
@@ -436,11 +436,11 @@ class SMX:
                     if row.key_set_name != '':
                         data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
                         if not data_set:
-                            logging.error(f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!")
+                            logging.error(f"key set '{row.key_set_name}', is not defined, please check the 'BKEY' sheet!, processing row:\n{row}")
                         else:
                             domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.key_domain_name)
                             if not domain:
-                                logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!""")
+                                logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!, processing row:\n{row}""")
                             else:
                                 txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
                                                                              , src_table_name=stg_t.table_name
