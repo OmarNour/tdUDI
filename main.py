@@ -15,6 +15,7 @@ def start(source_name: str|list|None, with_scripts=True):
         generate_scripts(smx)
         generate_metadata_scripts(smx)
         deploy(scripts_path)
+        # generate_fake_data()
 
     open_folder(smx.current_scripts_path)
 
