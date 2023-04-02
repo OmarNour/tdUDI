@@ -308,8 +308,8 @@ class SMX:
 
             @log_error_decorator()
             def extract_bkey_datasets(row):
-                surrogate_table:Table
-                set_table:Table
+                surrogate_table: Table
+                set_table: Table
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
                 if set_table and surrogate_table:
@@ -354,7 +354,7 @@ class SMX:
 
             @log_error_decorator()
             def extract_bmap_datasets(row):
-                set_table:Table
+                set_table: Table
                 surrogate_table: Table
                 surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
@@ -372,7 +372,7 @@ class SMX:
 
             @log_error_decorator()
             def extract_bmap_values(row):
-                ds:DataSet
+                ds: DataSet
                 data_set_lst = [ds for ds in bmaps_data_sets if ds.set_table.table_name == row.code_set_name.upper()]
                 if len(data_set_lst) > 0:
                     data_set = data_set_lst[0]
@@ -771,7 +771,7 @@ class SMX:
                         core_tables_df[['table_name', 'column_name', 'data_type', 'pk'
                             , 'mandatory', 'historization_key']].drop_duplicates().apply(extract_core_columns, axis=1)
                         table: Table
-                        col:Column
+                        col: Column
                         invalid_history_tables = []
                         invalid_lookup_tables = []
                         for table in Table.get_all_instances():
@@ -915,6 +915,7 @@ def generate_metadata_scripts(smx: SMX):
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
     src_name_lkp = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
     src_tables_lkp = WriteFile(smx.metadata_scripts, 'source_tables_lkp', "sql")
+    core_tables_lkp = WriteFile(smx.metadata_scripts, 'core_tables_lkp', "sql")
     gcfr_transform_keycol = WriteFile(smx.metadata_scripts, 'gcfr_transform_keycol', "sql")
     history = WriteFile(smx.metadata_scripts, 'history', 'sql')
     etl_process = WriteFile(smx.metadata_scripts, 'etl_process', "sql")
@@ -922,7 +923,7 @@ def generate_metadata_scripts(smx: SMX):
     source: DataSource
     table: Table
     pk_col: Column
-    hist_col_mapping : ColumnMapping
+    hist_col_mapping: ColumnMapping
     pipeline: Pipeline
 
     for source in DataSource.get_all_instances():
@@ -948,10 +949,18 @@ def generate_metadata_scripts(smx: SMX):
             gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_v_schema.schema_name,
                                                                                  OUT_DB_NAME=single_quotes(table.schema.schema_name),
                                                                                  OUT_OBJECT_NAME=single_quotes(table.table_name),
-                                                                                 KEY_COLUMN=single_quotes(pk_col.column_name),
-                                                                                 IS_START_DATE=pk_col.is_start_date
+                                                                                 KEY_COLUMN=single_quotes(pk_col.column_name)
                                                                                  )
                                         )
+        if table.schema.id == smx.core_t_schema.id:
+            core_tables_lkp.write(INSERT_INTO_CORE_TABLES_LKP.format(meta_db=smx.meta_v_schema.schema_name,
+                                                                     TABLE_NAME=table.table_name,
+                                                                     IS_LOOKUP=1 if table.is_lkp else 0,
+                                                                     IS_HISTORY=1 if table.history_table else 0,
+                                                                     START_DATE_COLUMN=table.start_date_col.column_name if table.history_table else 'NULL',
+                                                                     END_DATE_COLUMN=table.end_date_col.column_name if table.history_table else 'NULL'
+                                                                     )
+                                  )
 
     for pipeline in Pipeline.get_all_instances():
         if pipeline.tgt_lyr_table:
@@ -973,12 +982,10 @@ def generate_metadata_scripts(smx: SMX):
             if pipeline.tgt_lyr_table.table.history_table:
                 for hist_col_mapping in pipeline.scd_type2_col:
                     history.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_v_schema.schema_name,
-                                                             TARGET_TABLE_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
-                                                             TABLE_NAME=single_quotes(pipeline.tgt_lyr_table.table.table_name),
-                                                             END_DATE_COLUMN =single_quotes(pipeline.tgt_lyr_table.table.end_date_col.column_name),
+                                                             PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
                                                              HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
                                                              )
-                                      )
+                                  )
             if process_type:
                 etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_v_schema.schema_name,
                                                                  SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
@@ -1002,6 +1009,7 @@ def generate_metadata_scripts(smx: SMX):
     gcfr_transform_keycol.close()
     etl_process.close()
     history.close()
+    core_tables_lkp.close()
 
 
 @time_elapsed_decorator
