@@ -789,7 +789,7 @@ class SMX:
                             logging.error(f"These are invalid history tables, {invalid_history_tables}")
 
                         if invalid_lookup_tables:
-                            logging.error(f"These are invalid lookup tables, {invalid_lookup_tables}")
+                            logging.error(f"These are invalid lookup tables, {invalid_lookup_tables}.\nCODE & DESC columns should follow the pattern <table_name>_CD & <table_name>_DESC")
 
                     if not table_mapping_df.empty:
                         table_mapping_df[
