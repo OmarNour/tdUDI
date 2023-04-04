@@ -257,8 +257,11 @@ class XCV:
 
 
 if __name__ == '__main__':
-    for col in CORE_TECHNICAL_COLS:
-        print(col.__repr__())
+    print(parse_data_type('varchar(10)'))
+    print(parse_data_type('INTEGER'))
+
+    # for col in CORE_TECHNICAL_COLS:
+    #     print(col.__repr__())
         # print(col.column_name, col.data_type, col.is_modification_type, col.is_created_at)
     # x = XCV()
     # y = XCV()

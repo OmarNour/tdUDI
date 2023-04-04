@@ -593,7 +593,7 @@ class Column(MyID):
                  , is_delete_flag: int = 0, is_modification_type: int = 0
                  , is_load_id: int = 0, is_batch_id: int = 0
                  , is_row_identity: int = 0
-                 , domain_id=None, data_type_id=None
+                 , domain_id: int = None, data_type_id: int = None
                  , dt_precision: int = None, unicode: int = 0
                  , case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)

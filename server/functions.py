@@ -9,6 +9,7 @@ import pandas as pd
 import swifter
 import teradatasql
 from swifter import set_defaults
+
 set_defaults(
     npartitions=100,
     dask_threshold=1,
@@ -200,6 +201,13 @@ def filter_dataframe(df: pd.DataFrame, col: str = None, filter_value=None) -> pd
             mask = df[col] == filter_value
 
         return df[mask]
+
+
+def parse_data_type(data_type_precision: str):
+    data_type_lst = data_type_precision.split(sep='(')
+    data_type = data_type_lst[0]
+    precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+    return data_type, precision
 
 
 if __name__ == '__main__':

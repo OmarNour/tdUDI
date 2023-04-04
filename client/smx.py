@@ -363,7 +363,7 @@ class SMX:
                     set_table.is_lkp = True
                     surrogate_table.is_bmap = True
                 else:
-                    logging.error(f"Invalid set table '{row.code_set_name}' or surrogate table '{surrogate_table}', processing row:\n{row}")
+                    logging.error(f"Invalid set table '{row.code_set_name}' or surrogate table '{row.physical_table}', processing row:\n{row}")
 
             @log_error_decorator()
             def extract_bmap_domains(row):
@@ -814,11 +814,70 @@ class SMX:
 
         @log_error_decorator()
         def add_technical_columns():
-            pass
+            table: Table
+            column: Column
+            technical_col: TechColumn
+            missing_tech_col: TechColumn
+            technical_column_names = [technical_col.column_name for technical_col in STG_TECHNICAL_COLS]
+            stg_tables = (table for table in Table.get_all_instances() if table.schema.id in (self.src_t_schema
+                                                                                              , self.stg_t_schema.id
+                                                                                              , self.srci_t_schema
+                                                                                              )
+                          )
+
+            for table in stg_tables:
+                table_columns = [column.column_name for column in table.columns]
+                missing_tech_cols_names = list(set(technical_column_names) - set(table_columns))
+                missing_tech_cols = [technical_col for technical_col in STG_TECHNICAL_COLS if technical_col.column_name in missing_tech_cols_names]
+                for missing_tech_col in missing_tech_cols:
+                    # print(missing_tech_col)
+                    data_type_name, precision = parse_data_type(missing_tech_col.data_type)
+                    data_type = DataType(db_id=self.db_engine.id, dt_name=data_type_name, _raise_if_exist=0)
+                    Column(table_id=table.id
+                           , column_name=missing_tech_col.column_name
+                           , data_type_id=data_type.id
+                           , dt_precision=precision
+                           , is_created_at=missing_tech_col.is_created_at
+                           , is_created_by=missing_tech_col.is_created_by
+                           , is_updated_at=missing_tech_col.is_updated_at
+                           , is_updated_by=missing_tech_col.is_updated_by
+                           , is_modification_type=missing_tech_col.is_modification_type
+                           , is_load_id=missing_tech_col.is_load_id
+                           , is_batch_id=missing_tech_col.is_batch_id
+                           , is_row_identity=missing_tech_col.is_row_identity
+                           , is_delete_flag=missing_tech_col.is_delete_flag
+                           , mandatory=missing_tech_col.mandatory
+                           )
+
+            core_tables = (table for table in Table.get_all_instances() if table.schema.id == self.core_t_schema.id)
+            technical_column_names = [technical_col.column_name for technical_col in CORE_TECHNICAL_COLS]
+            for table in core_tables:
+                table_columns = [column.column_name for column in table.columns]
+                missing_tech_cols_names = list(set(technical_column_names) - set(table_columns))
+                missing_tech_cols = [technical_col for technical_col in CORE_TECHNICAL_COLS if technical_col.column_name in missing_tech_cols_names]
+                for missing_tech_col in missing_tech_cols:
+                    # print(missing_tech_col)
+                    data_type_name, precision = parse_data_type(missing_tech_col.data_type)
+                    data_type = DataType(db_id=self.db_engine.id, dt_name=data_type_name, _raise_if_exist=0)
+                    Column(table_id=table.id
+                           , column_name=missing_tech_col.column_name
+                           , data_type_id=data_type.id
+                           , dt_precision=precision
+                           , is_created_at=missing_tech_col.is_created_at
+                           , is_created_by=missing_tech_col.is_created_by
+                           , is_updated_at=missing_tech_col.is_updated_at
+                           , is_updated_by=missing_tech_col.is_updated_by
+                           , is_modification_type=missing_tech_col.is_modification_type
+                           , is_load_id=missing_tech_col.is_load_id
+                           , is_batch_id=missing_tech_col.is_batch_id
+                           , is_row_identity=missing_tech_col.is_row_identity
+                           , is_delete_flag=missing_tech_col.is_delete_flag
+                           , mandatory=missing_tech_col.mandatory
+                           )
+                    # print(column.table.table_name, column.column_name, column.data_type.dt_name)
 
         extract_all()
         add_technical_columns()
-
 
 
 @log_error_decorator()

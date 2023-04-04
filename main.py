@@ -26,5 +26,6 @@ if __name__ == '__main__':
     try:
         start(source_name=['cso'], with_scripts=True)
         # start(source_name=[], with_scripts=False)
+        # start(source_name=[], with_scripts=True)
     except KeyboardInterrupt:
         print("Ops!..")
