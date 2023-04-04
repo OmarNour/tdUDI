@@ -37,6 +37,26 @@ cls_keys = {
     , 'JoinWith': ('pipeline_id', 'with_lyr_table_id', 'with_alias')
     , 'joinOn': 'join_with_id'
 }
+TechColumn = namedtuple("TechColumn"
+                        , "column_name data_type "
+                          "is_created_at is_created_by "
+                          "is_updated_at is_updated_by is_modification_type "
+                          "is_load_id is_batch_id is_row_identity is_delete_flag"
+                        )
+CORE_TECHNICAL_COLS = [TechColumn('PROCESS_NAME', 'VARCHAR(150)', 0, 1, 0, 0, 0, 0, 0, 0, 0),
+                       TechColumn('UPDATE_PROCESS_NAME', 'VARCHAR(150)', 0, 0, 0, 1, 0, 0, 0, 0, 0),
+                       TechColumn('START_TS', 'TIMESTAMP(6)', 1, 0, 0, 0, 0, 0, 0, 0, 0),
+                       TechColumn('UPDATE_TS', 'TIMESTAMP(6)', 0, 0, 1, 0, 0, 0, 0, 0, 0),
+                       TechColumn('END_TS', 'TIMESTAMP(6)', 0, 0, 0, 0, 0, 0, 0, 0, 1),
+                       TechColumn('BATCH_ID', 'INTEGER', 0, 0, 0, 0, 0, 0, 1, 0, 0),
+                       ]
+STG_TECHNICAL_COLS = [TechColumn('MODIFICATION_TYPE', 'CHAR(1)', 0, 0, 0, 0, 1, 0, 0, 0, 0),
+                      TechColumn('LOAD_ID', 'VARCHAR(60)', 0, 0, 0, 0, 0, 1, 0, 0, 0),
+                      TechColumn('BATCH_ID', 'INT', 0, 0, 0, 0, 0, 0, 1, 0, 0),
+                      TechColumn('REF_KEY', 'BIGINT', 0, 0, 0, 0, 0, 0, 0, 1, 0),
+                      TechColumn('INS_DTTM', 'TIMESTAMP(6)', 1, 0, 0, 0, 0, 0, 0, 0, 0),
+                      TechColumn('UPD_DTTM', 'TIMESTAMP(6)', 0, 0, 3, 0, 0, 0, 0, 0, 0),
+                      ]
 
 SHEETS = ['stg_tables', 'system', 'data_type', 'bkey', 'bmap'
     , 'bmap_values', 'core_tables', 'column_mapping', 'table_mapping'
@@ -56,7 +76,7 @@ LAYER_TYPES = ['META', 'SRC', 'STG', 'SK', 'SRCI', 'CORE']
 PREFIX = 'GDEV1'
 LAYERS = {
     'META': LayerDtl(LAYER_TYPES[0], 0, f'{PREFIX}V_GCRF', f'{PREFIX}T_GCRF')
-    ,'SRC': LayerDtl(LAYER_TYPES[1], 0, f'{PREFIX}V_STG_ONLINE', 'STG_ONLINE')
+    , 'SRC': LayerDtl(LAYER_TYPES[1], 0, f'{PREFIX}V_STG_ONLINE', 'STG_ONLINE')
     , 'STG': LayerDtl(LAYER_TYPES[2], 1, f'{PREFIX}V_STG', f'{PREFIX}T_STG')
     , 'TXF_BKEY': LayerDtl(LAYER_TYPES[2], 2, f'{PREFIX}V_INP', '')
     , 'BKEY': LayerDtl(LAYER_TYPES[3], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
@@ -150,7 +170,7 @@ INSERT_INTO_CORE_TABLES_LKP = """
 INSERT INTO {meta_db}.SOURCE_TABLES_LKP (TABLE_NAME, ACTIVE, IS_LOOKUP,IS_HISTORY ,START_DATE_COLUMN, END_DATE_COLUMN)
 VALUES ({TABLE_NAME}, 1, {IS_LOOKUP}, {IS_HISTORY}, {START_DATE_COLUMN}, {END_DATE_COLUMN});
 """
-INSERT_INTO_GCFR_TRANSFORM_KEYCOL="""
+INSERT_INTO_GCFR_TRANSFORM_KEYCOL = """
 INSERT INTO {meta_db}.GCFR_Transform_KeyCol (Out_DB_Name, Out_Object_Name, Key_Column)
 VALUES ({OUT_DB_NAME}, {OUT_OBJECT_NAME}, {KEY_COLUMN});
 """

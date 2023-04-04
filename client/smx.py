@@ -812,7 +812,13 @@ class SMX:
 
                     # MyID.serialize_all()
 
+        @log_error_decorator()
+        def add_technical_columns():
+            pass
+
         extract_all()
+        add_technical_columns()
+
 
 
 @log_error_decorator()

@@ -1,5 +1,6 @@
 """
 TODO:
+    USE CONFIG FILE
     handle unified data
     DONE Populate lookup core tables, by creating BAMP TXF
     DONE Validate columns' names for lookup core tables, are <table_name>_CD, <table_name>_DESC

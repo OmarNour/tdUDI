@@ -257,14 +257,17 @@ class XCV:
 
 
 if __name__ == '__main__':
-    x = XCV()
-    y = XCV()
-    print(x.run_id, x.run_id_2)
-    print(y.run_id, y.run_id_2)
-    print(XCV.run_id)
-    print(y.raise_if_error)
-    XCV.raise_if_error = False
-    print(x.raise_if_error)
+    for col in CORE_TECHNICAL_COLS:
+        print(col.__repr__())
+        # print(col.column_name, col.data_type, col.is_modification_type, col.is_created_at)
+    # x = XCV()
+    # y = XCV()
+    # print(x.run_id, x.run_id_2)
+    # print(y.run_id, y.run_id_2)
+    # print(XCV.run_id)
+    # print(y.raise_if_error)
+    # XCV.raise_if_error = False
+    # print(x.raise_if_error)
     # insert_stmt()
     # populate_table(add_new_rows=True)
     # td_test()

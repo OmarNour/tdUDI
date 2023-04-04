@@ -585,13 +585,17 @@ class DomainValue(MyID):
 
 
 class Column(MyID):
-    def __init__(self, table_id: int, column_name: str, is_pk: int = 0, mandatory: int = 0
+    def __init__(self, table_id: int, column_name: str
+                 , is_pk: int = 0, mandatory: int = 0
                  , is_start_date: int = 0, is_end_date: int = 0
-                 , is_created_at: int = 0, is_updated_at: int = 0, is_created_by: int = 0, is_updated_by: int = 0
+                 , is_created_at: int = 0, is_updated_at: int = 0
+                 , is_created_by: int = 0, is_updated_by: int = 0
                  , is_delete_flag: int = 0, is_modification_type: int = 0
-                 , is_load_id: int = 0, is_batch_id: int = 0, is_row_identity: int = 0
+                 , is_load_id: int = 0, is_batch_id: int = 0
+                 , is_row_identity: int = 0
                  , domain_id=None, data_type_id=None
-                 , dt_precision: int = None, unicode: int = 0, case_sensitive: int = 0, active: int = 1, *args, **kwargs):
+                 , dt_precision: int = None, unicode: int = 0
+                 , case_sensitive: int = 0, active: int = 1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._table_id = table_id
         self._domain_id = domain_id
