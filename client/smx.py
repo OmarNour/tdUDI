@@ -819,9 +819,9 @@ class SMX:
             technical_col: TechColumn
             missing_tech_col: TechColumn
             technical_column_names = [technical_col.column_name for technical_col in STG_TECHNICAL_COLS]
-            stg_tables = (table for table in Table.get_all_instances() if table.schema.id in (self.src_t_schema
+            stg_tables = (table for table in Table.get_all_instances() if table.schema.id in (self.src_t_schema.id
                                                                                               , self.stg_t_schema.id
-                                                                                              , self.srci_t_schema
+                                                                                              , self.srci_t_schema.id
                                                                                               )
                           )
 
@@ -847,6 +847,7 @@ class SMX:
                            , is_row_identity=missing_tech_col.is_row_identity
                            , is_delete_flag=missing_tech_col.is_delete_flag
                            , mandatory=missing_tech_col.mandatory
+                           , _raise_if_exist=0
                            )
 
             core_tables = (table for table in Table.get_all_instances() if table.schema.id == self.core_t_schema.id)
@@ -873,6 +874,7 @@ class SMX:
                            , is_row_identity=missing_tech_col.is_row_identity
                            , is_delete_flag=missing_tech_col.is_delete_flag
                            , mandatory=missing_tech_col.mandatory
+                           , _raise_if_exist=0
                            )
                     # print(column.table.table_name, column.column_name, column.data_type.dt_name)
 
