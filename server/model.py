@@ -750,6 +750,7 @@ class Pipeline(MyID):
                 self._lyr_view_id = self.tgt_lyr_table.table.id
 
         assert self.lyr_view.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
+        assert self._src_lyr_table_id, "Source Table is missing!"
 
     @property
     def domain(self) -> Domain:
