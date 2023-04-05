@@ -9,6 +9,7 @@ import pandas as pd
 import swifter
 import teradatasql
 from swifter import set_defaults
+import itertools
 
 set_defaults(
     npartitions=100,

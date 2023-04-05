@@ -319,11 +319,17 @@ class Schema(MyID):
 
     @property
     def tables(self) -> []:
+        table: Table
         return [table for table in Table.get_all_instances() if self.id == table.schema.id]
 
     @property
     def ddl(self) -> str:
         return DATABASE_TEMPLATE.format(db_name=self.schema_name)
+
+    @property
+    def layers(self) -> []:
+        table: Table
+        return list(set(itertools.chain.from_iterable([table.layers for table in self.tables])))
 
 
 class DataType(MyID):
@@ -477,6 +483,11 @@ class Table(MyID):
     # @ddl.setter
     # def ddl(self, view_ddl):
     #     self._ddl = view_ddl
+
+    @property
+    def layers(self) -> []:
+        lt:LayerTable
+        return [lt.layer for lt in LayerTable.get_all_instances() if lt.table.id==self.id]
 
     @property
     def pipeline(self):

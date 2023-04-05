@@ -1081,4 +1081,10 @@ def generate_metadata_scripts(smx: SMX):
 
 @time_elapsed_decorator
 def deploy(scripts_path):
-    pass
+    schema:Schema
+    layer: Layer
+    for schema in Schema.get_all_instances():
+        print(schema.schema_name)
+        for layer in schema.layers:
+            print("\t",layer.layer_name)
+
