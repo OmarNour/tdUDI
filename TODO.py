@@ -1,10 +1,10 @@
 """
 TODO:
-    USE CONFIG FILE
+    USE CONFIG FILE, one for server and another for client
     handle unified data
     DONE Populate lookup core tables, by creating BAMP TXF
     DONE Validate columns' names for lookup core tables, are <table_name>_CD, <table_name>_DESC
-    finish generate_metadata_scripts
+    DONE finish generate_metadata_scripts
     generate grant access, script.
     DONE add technical columns for all tables (src, stg, srci & core), if not exists in the SMX
     DONE SRCI view, to cast the data type when joining with the utlfw table
