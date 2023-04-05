@@ -1089,9 +1089,6 @@ def deploy():
         for schema in db.schemas:
             db.execute(schema.ddl)
 
-        # if db.conn:
-        #     db.conn.close()
-
     for db in DataBaseEngine.get_all_instances():
 
         for schema in db.schemas:
@@ -1102,5 +1099,5 @@ def deploy():
             for table in schema.kind_V_tables:
                 db.execute(table.ddl)
 
-        # if db.conn:
-        #     db.conn.close()
+        if db.conn:
+            db.conn.close()
