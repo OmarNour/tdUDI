@@ -1,3 +1,5 @@
+import logging
+
 from server.functions import *
 
 
@@ -218,6 +220,7 @@ class Ip(MyID):
 class DataBaseEngine(MyID):
     def __init__(self, server_id: int, name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.conn = None
         self._server_id = server_id
         self._name = name
         self._reserved_words = None
@@ -249,6 +252,51 @@ class DataBaseEngine(MyID):
     @property
     def server(self) -> Server:
         return Server.get_instance(_id=self._server_id)
+
+    @property
+    def credentials(self) -> []:
+        crd: Credential
+        return [crd for crd in Credential.get_all_instances() if crd.db_engine.id == self.id]
+
+    def get_connection(self, ip_idx=0):
+        crd: Credential
+        self.__ip_idx = ip_idx
+        crd_lst = self.credentials
+        if crd_lst:
+            crd = crd_lst[0]
+            try:
+                ip = self.server.ips[self.__ip_idx]
+                return teradatasql.connect(host=ip.ip, user=crd.user_name, password=crd.password)
+            except IndexError:
+                return None
+            except:
+                return self.get_connection(self.__ip_idx + 1)
+
+    @log_error_decorator()
+    def execute(self, stmt: str):
+        try:
+            if not self.conn:
+                self.conn = self.get_connection()
+
+            if self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute(stmt)
+        except teradatasql.OperationalError as e:
+            error_msg = e.__str__()
+            if "[Error 5612]" in error_msg:
+                tailored_msg = f"A user, database, role, or zone with the specified name already exists.\nStatment:\n{stmt}"
+                logging.warning(tailored_msg)
+            elif "[Error 3803]" in error_msg:
+                tailored_msg = f"Table already exists.\nStatment:\n{stmt}"
+                logging.warning(tailored_msg)
+            elif "[Error 3804]" in error_msg:
+                tailored_msg = f"View already exists.\nStatment:\n{stmt}"
+                logging.warning(tailored_msg)
+            elif "[Error 3706]" in error_msg:
+                tailored_msg = f"Syntax error.\nStatment:\n{stmt}"
+                logging.error(tailored_msg)
+            else:
+                logging.error(e.__str__())
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
         data_type: DataType
@@ -290,16 +338,6 @@ class Credential(MyID):
     def db_engine(self) -> DataBaseEngine:
         return DataBaseEngine.get_instance(_id=self._db_engine_id)
 
-    def get_connection(self, ip_idx=0):
-        self.__ip_idx = ip_idx
-        try:
-            ip = self.db_engine.server.ips[self.__ip_idx]
-            return teradatasql.connect(host=ip.ip, user=self.user_name, password=self.password)
-        except IndexError:
-            return None
-        except:
-            return self.get_connection(self.__ip_idx + 1)
-
 
 class Schema(MyID):
     def __init__(self, db_id, schema_name: str, is_tmp: int = 0, notes: str = None, **kwargs):
@@ -321,6 +359,15 @@ class Schema(MyID):
     def tables(self) -> []:
         table: Table
         return [table for table in Table.get_all_instances() if self.id == table.schema.id]
+
+    @property
+    def kind_T_tables(self) -> []:
+        table: Table
+        return [table for table in Table.get_all_instances() if self.id == table.schema.id and table.table_kind == 'T']
+
+    @property
+    def kind_V_tables(self) -> []:
+        return [table for table in Table.get_all_instances() if self.id == table.schema.id and table.table_kind == 'V']
 
     @property
     def ddl(self) -> str:
@@ -486,8 +533,8 @@ class Table(MyID):
 
     @property
     def layers(self) -> []:
-        lt:LayerTable
-        return [lt.layer for lt in LayerTable.get_all_instances() if lt.table.id==self.id]
+        lt: LayerTable
+        return [lt.layer for lt in LayerTable.get_all_instances() if lt.table.id == self.id]
 
     @property
     def pipeline(self):

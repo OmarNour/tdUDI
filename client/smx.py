@@ -38,7 +38,7 @@ class SMX:
         self.server = Server(server_name='TDVM')
         self.db_engine = DataBaseEngine(server_id=self.server.id, name=DB_NAME)
         Ip(server_id=self.server.id, ip='localhost')
-        self.conn = Credential(db_engine_id=self.db_engine.id, user_name=USER, password=PASSWORD).get_connection()
+        Credential(db_engine_id=self.db_engine.id, user_name=USER, password=PASSWORD)
         # print(self.conn)
         [LayerType(type_name=lt) for lt in LAYER_TYPES]
         for layer_key, layer_value in LAYERS.items():
@@ -1080,11 +1080,27 @@ def generate_metadata_scripts(smx: SMX):
 
 
 @time_elapsed_decorator
-def deploy(scripts_path):
-    schema:Schema
-    layer: Layer
-    for schema in Schema.get_all_instances():
-        print(schema.schema_name)
-        for layer in schema.layers:
-            print("\t",layer.layer_name)
+def deploy():
+    db: DataBaseEngine
+    schema: Schema
+    table: Table
+    for db in DataBaseEngine.get_all_instances():
 
+        for schema in db.schemas:
+            db.execute(schema.ddl)
+
+        # if db.conn:
+        #     db.conn.close()
+
+    for db in DataBaseEngine.get_all_instances():
+
+        for schema in db.schemas:
+            for table in schema.kind_T_tables:
+                db.execute(table.ddl)
+
+        for schema in db.schemas:
+            for table in schema.kind_V_tables:
+                db.execute(table.ddl)
+
+        # if db.conn:
+        #     db.conn.close()
