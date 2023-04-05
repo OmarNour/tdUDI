@@ -1,5 +1,6 @@
 """
 TODO:
+    generate fake data
     USE CONFIG FILE, one for server and another for client
     handle unified data
     DONE Populate lookup core tables, by creating BAMP TXF
