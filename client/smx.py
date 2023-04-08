@@ -144,7 +144,7 @@ class SMX:
                     #############################################################
                     stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                     stg_lv = LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
-                    Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=stg_lv.id)
+                    Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=None, lyr_view_id=stg_lv.id, select_asterisk=True)
                     #############################################################
                     srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
                     srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
@@ -240,26 +240,26 @@ class SMX:
                     else:
                         logging.error(f"Invalid column '{row.column_name}', processing row:\n{row}")
 
-            @log_error_decorator()
-            def extract_stg_view_columns(row):
-                if row.natural_key == '':
-                    stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                    stg_col = Column.get_instance(_key=(stg_t.id, row.column_name))
-
-                    stg_v = Table.get_instance(_key=(self.stg_v_schema.id, row.table_name))
-                    stg_lv = LayerTable.get_instance(_key=(self.stg_layer.id, stg_v.id))
-
-                    pipeline = Pipeline.get_instance(_key=stg_lv.id)
-
-                    if stg_col:
-                        ColumnMapping(pipeline_id=pipeline.id
-                                      , col_seq=0
-                                      , src_col_id=stg_col.id
-                                      , tgt_col_id=stg_col.id
-                                      , src_col_trx=None
-                                      )
-                    else:
-                        logging.error(f"Invalid column '{row.column_name}', processing row:\n{row}")
+            # @log_error_decorator()
+            # def extract_stg_view_columns(row):
+            #     if row.natural_key == '':
+            #         stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+            #         stg_col = Column.get_instance(_key=(stg_t.id, row.column_name))
+            #
+            #         stg_v = Table.get_instance(_key=(self.stg_v_schema.id, row.table_name))
+            #         stg_lv = LayerTable.get_instance(_key=(self.stg_layer.id, stg_v.id))
+            #
+            #         pipeline = Pipeline.get_instance(_key=stg_lv.id)
+            #
+            #         if stg_col:
+            #             ColumnMapping(pipeline_id=pipeline.id
+            #                           , col_seq=0
+            #                           , src_col_id=stg_col.id
+            #                           , tgt_col_id=stg_col.id
+            #                           , src_col_trx=None
+            #                           )
+            #         else:
+            #             logging.error(f"Invalid column '{row.column_name}', processing row:\n{row}")
 
             @log_error_decorator()
             def extract_core_columns(row):
@@ -757,7 +757,7 @@ class SMX:
                                    'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_stg_srci_table_columns, axis=1)
 
                     stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
-                    stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
+                    # stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
                     ##########################  Start bkey TXF view  #####################
                     stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name'

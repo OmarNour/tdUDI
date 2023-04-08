@@ -781,8 +781,9 @@ class LayerTable(MyID):
 class Pipeline(MyID):
     def __init__(self
                  , src_lyr_table_id: int
-                 , tgt_lyr_table_id: int
+                 , tgt_lyr_table_id: int | None
                  , lyr_view_id: int | None = None
+                 , select_asterisk: bool = False
                  , src_table_alias: str = None
                  , domain_id: int = None
                  , active: int = 1
@@ -794,8 +795,9 @@ class Pipeline(MyID):
         self._alphabets = ALPHABETS.copy()
         self._src_table_alias = None
         self._aliases: dict = {}
-        self.all_cols_constant = True
+        self.all_cols_constant = True if not select_asterisk else False
         self._domain_id = domain_id
+        self.select_asterisk = select_asterisk
 
         if self.src_lyr_table:
             self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
@@ -954,24 +956,28 @@ class Pipeline(MyID):
         tgt_col: Column
         src_cols: list
         src_col: Column
-        for index, dic_items in enumerate(self._tgt_col_dic().items()):
-            tgt_col, _src_cols = dic_items
-            src_cols = list_to_string(_src_cols, '||')
-            comma = '\n,' if index > 0 else ' '
-            precise = ''
-            cast_dtype = ''
-            alias = tgt_col.column_name
-            if tgt_col.table.table_kind == 'T':
-                dtype_name = tgt_col.data_type.dt_name
-                if tgt_col.dt_precision:
-                    precise = '(' + str(tgt_col.dt_precision) + ')'
-                cast_dtype = CAST_DTYPE_TEMPLATE.format(dtype_name=dtype_name, precise=precise)
+        if not self.select_asterisk:
+            for index, dic_items in enumerate(self._tgt_col_dic().items()):
+                tgt_col, _src_cols = dic_items
+                src_cols = list_to_string(_src_cols, '||')
+                comma = '\n,' if index > 0 else ' '
+                precise = ''
+                cast_dtype = ''
+                alias = tgt_col.column_name
+                if tgt_col.table.table_kind == 'T':
+                    dtype_name = tgt_col.data_type.dt_name
+                    if tgt_col.dt_precision:
+                        precise = '(' + str(tgt_col.dt_precision) + ')'
+                    cast_dtype = CAST_DTYPE_TEMPLATE.format(dtype_name=dtype_name, precise=precise)
 
-            col_mapping += COL_MAPPING_TEMPLATE.format(comma=comma
-                                                       , col_name=src_cols
-                                                       , cast_dtype=cast_dtype
-                                                       , alias=alias
-                                                       )
+                col_mapping += COL_MAPPING_TEMPLATE.format(comma=comma
+                                                           , col_name=src_cols
+                                                           , cast_dtype=cast_dtype
+                                                           , alias=alias
+                                                           )
+        else:
+            col_mapping = " * "
+
         query = QUERY_TEMPLATE.format(with_clause=with_clause
                                       , distinct=distinct
                                       , col_mapping=col_mapping
