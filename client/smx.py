@@ -45,9 +45,9 @@ class SMX:
             layer_type = LayerType.get_instance(_key=layer_value.type)
             Layer(type_id=layer_type.id, layer_name=layer_key, abbrev=layer_key, layer_level=layer_value.level)
             if layer_value.t_db:
-                Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _raise_if_exist=0)
+                Schema(db_id=self.db_engine.id, schema_name=layer_value.t_db, _override=1)
             if layer_value.v_db:
-                Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _raise_if_exist=0)
+                Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
 
         DataSetType(name=DS_BKEY)
         DataSetType(name=DS_BMAP)
@@ -124,7 +124,7 @@ class SMX:
             @log_error_decorator()
             def extract_data_types(row):
                 data_type_lst = row.data_type.split(sep='(')
-                DataType(db_id=self.db_engine.id, dt_name=data_type_lst[0], _raise_if_exist=0)
+                DataType(db_id=self.db_engine.id, dt_name=data_type_lst[0], _override=1)
 
             @log_error_decorator()
             def extract_stg_tables(row):
@@ -827,7 +827,7 @@ class SMX:
                 for missing_tech_col in missing_tech_cols:
                     # print(missing_tech_col)
                     data_type_name, precision = parse_data_type(missing_tech_col.data_type)
-                    data_type = DataType(db_id=self.db_engine.id, dt_name=data_type_name, _raise_if_exist=0)
+                    data_type = DataType(db_id=self.db_engine.id, dt_name=data_type_name, _override=1)
                     Column(table_id=table.id
                            , column_name=missing_tech_col.column_name
                            , data_type_id=data_type.id
@@ -842,12 +842,29 @@ class SMX:
                            , is_row_identity=missing_tech_col.is_row_identity
                            , is_delete_flag=missing_tech_col.is_delete_flag
                            , mandatory=missing_tech_col.mandatory
-                           , _raise_if_exist=0
+                           , _override=1
                            )
 
         @log_error_decorator()
-        def map_technical_columns():
-            pass
+        def map_technical_columns(src_tables):
+            src_table: Table
+            tgt_table: Table
+            pipeline: Pipeline
+            src_col: Column
+            tgt_col: Column
+
+            for src_table in src_tables:
+                src_cols = src_table.columns
+                pipelines = [pipeline for pipeline in Pipeline.get_all_instances() if pipeline.src_lyr_table if pipeline.src_lyr_table.table.id == src_table.id
+                             and not pipeline.select_asterisk and pipeline.tgt_lyr_table]
+                for pipeline in pipelines:
+                    tgt_cols = pipeline.tgt_lyr_table.table.columns
+                    for src_col in src_cols:
+                        for tgt_col in tgt_cols:
+                            if src_col.column_name == tgt_col.column_name:
+                                ColumnMapping(pipeline_id=pipeline.id,
+                                              tgt_col_id=tgt_col.id,
+                                              src_col_id=src_col.id)
 
         extract_all()
         stg_tables = (table for table in Table.get_all_instances() if table.schema.id in (self.src_t_schema.id
@@ -859,7 +876,8 @@ class SMX:
 
         add_technical_columns(stg_tables, STG_TECHNICAL_COLS)
         add_technical_columns(core_tables, CORE_TECHNICAL_COLS)
-        map_technical_columns()
+        # map_technical_columns(stg_tables)
+        # map_technical_columns(core_tables)
 
 
 @log_error_decorator()

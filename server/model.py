@@ -66,8 +66,15 @@ class MyID(metaclass=Meta):
         """
         This method assigns a unique ID to the instance and stores the key passed in the kwargs dictionary.
         """
-        self.id = self.__generate_unique_id()
-        self.__ids[self.__class__.__name__][self.id] = kwargs.get('_key', '_')
+        override = kwargs.get('_override', 0)
+        key = kwargs.get('_key', '_')
+
+        try:
+            self.id = self.get_instance(_key=key).id if override else self.__generate_unique_id()
+        except:
+            self.id = self.__generate_unique_id()
+
+        self.__ids[self.__class__.__name__][self.id] = key
 
     @classmethod
     def __generate_unique_id(cls):
@@ -149,18 +156,20 @@ class MyID(metaclass=Meta):
         """
         key = kwargs.get('_key', '_')  # The key to identify the instance
         override = kwargs.get('_override', 0)  # Flag to indicate whether to override an existing instance or not
-        raise_if_exist = kwargs.get('_raise_if_exist', 1)  # Flag to indicate whether to raise error if instance exists or not
+        # raise_if_exist = kwargs.get('_raise_if_exist', 1)  # Flag to indicate whether to raise error if instance exists or not
         instance = cls.get_instance(_key=key)  # Check if an instance with the same key already exists
         if instance:
             if override == 1:
-                cls.__del_instance(key)  # delete the existing instance if override is set to 1
+                # cls.__del_instance(key)  # delete the existing instance if override is set to 1
+                cls.__set_instance(key, instance)
             else:
-                if raise_if_exist:
-                    error_message = f'For {cls.__name__}, {key} Already Exists!'
-                    raise ValueError(error_message)
+                # if raise_if_exist:
+                error_message = f'For {cls.__name__}, {key} Already Exists!'
+                raise ValueError(error_message)
 
-        if instance is None or override == 1:
+        else:
             # create a new instance of the class
+            # print(f"create a new instance of the class {cls.__name__}")
             instance = super().__new__(cls)
             cls.__set_instance(key, instance)
 
@@ -679,6 +688,10 @@ class Column(MyID):
         self.is_batch_id = is_batch_id
         self.is_row_identity = is_row_identity
 
+        self.is_technical_col = True if (self.is_pk or self.is_batch_id or self.is_row_identity or self.is_load_id or self.is_modification_type
+                                         or self.is_start_date or self.is_end_date or self.is_created_at or self.is_created_by
+                                         or self.is_updated_at or self.is_updated_by) else False
+
     @property
     def data_type(self) -> DataType:
         return DataType.get_instance(_id=self._data_type_id)
@@ -883,7 +896,7 @@ class Pipeline(MyID):
         j: JoinWith
         return [j for j in JoinWith.get_all_instances() if j.pipeline.id == self.id]
 
-    # @functools.cached_property
+    # @property
     # def all_source_tables(self) -> []:
     #     j: JoinWith
     #     _tables = [self.src_lyr_table.table]
@@ -892,6 +905,12 @@ class Pipeline(MyID):
     #         _tables.append(j.with_lyr_table.table)
     #
     #     return list(set(_tables))
+
+    @property
+    def technical_cols(self) -> []:
+        col: Column
+        if self.src_lyr_table:
+            return [col for col in self.src_lyr_table.table.columns if col.is_technical_col]
 
     # @property
     # def all_source_aliases(self) -> []:
@@ -975,6 +994,7 @@ class Pipeline(MyID):
                                                            , cast_dtype=cast_dtype
                                                            , alias=alias
                                                            )
+            # self.unmapped_technical_cols
         else:
             col_mapping = " * "
 
@@ -1281,9 +1301,16 @@ class GroupBy(MyID):
 
 
 if __name__ == '__main__':
-    DataSetType(name='xxxX')
-    # x = DataSetType.get_instance(_id=None)
-    x = DataSetType.get_instance(_key='xXxx')
-    print(x)
-    # for i in x:
-    #     print(i.name)
+    x = DataSetType(name='xxxX')
+    y = DataSet(set_type_id=x.id, set_code="ztztztz", set_table_id=11, surrogate_table_id=99)
+
+    print(y.id, y._set_table_id)
+
+    y = DataSet(set_type_id=x.id, set_code="ztztztz", set_table_id=33, surrogate_table_id=99, _override=1)
+    print(y.id, y._set_table_id)
+
+    y = DataSet(set_type_id=x.id, set_code="qaqaqaqa", set_table_id=66, surrogate_table_id=99, _override=1)
+    print(y.id, y._set_table_id)
+
+    z= DataSet.get_instance(_key=(x.id, "ztztztz"))
+    print(z.id, z._set_table_id)
