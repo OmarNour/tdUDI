@@ -878,8 +878,13 @@ class SMX:
                            )
                     # print(column.table.table_name, column.column_name, column.data_type.dt_name)
 
+        @log_error_decorator()
+        def map_technical_columns():
+            pass
+
         extract_all()
         add_technical_columns()
+        map_technical_columns()
 
 
 @log_error_decorator()
