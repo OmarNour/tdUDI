@@ -407,10 +407,9 @@ class SMX:
                                 srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
                                 srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
 
-                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
+                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(set_id=data_set.set_code
                                                                              , src_table_name=stg_t.table_name
                                                                              , column_name=srci_col.column_name
-                                                                             , tgt_lvl=self.txf_bkey_layer.layer_level
                                                                              , domain_id=srci_col.domain.domain_code
                                                                              )
 
@@ -443,10 +442,9 @@ class SMX:
                             if not domain:
                                 logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!, processing row:\n{row}""")
                             else:
-                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(src_lvl=stg_lt.layer.layer_level
+                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(set_id=data_set.set_code
                                                                              , src_table_name=stg_t.table_name
                                                                              , column_name=srci_t_col.column_name
-                                                                             , tgt_lvl=self.txf_bkey_layer.layer_level
                                                                              , domain_id=srci_t_col.domain.domain_code
                                                                              )
                                 # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
