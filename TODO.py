@@ -1,6 +1,6 @@
 """
 TODO:
-    handle "select *", in pipelines
+    DONE handle "select *", in pipelines
     generate fake data
     USE CONFIG FILE, one for server and another for client
     handle unified data
