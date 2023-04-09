@@ -1083,21 +1083,23 @@ def deploy():
     schema: Schema
     table: Table
     for db in DataBaseEngine.get_all_instances():
-
-        for schema in db.schemas:
-            db.execute(schema.ddl)
-
-    for db in DataBaseEngine.get_all_instances():
-
-        for schema in db.schemas:
-            for table in schema.kind_T_tables:
-                db.execute(table.ddl)
-
-        for schema in db.schemas:
-            for table in schema.kind_V_tables:
-                db.execute(table.ddl)
+        db.conn = db.get_connection()
 
         if db.conn:
-            db.conn.close()
+            for schema in db.schemas:
+                db.execute(schema.ddl)
+
+        # for db in DataBaseEngine.get_all_instances():
+
+            for schema in db.schemas:
+                for table in schema.kind_T_tables:
+                    db.execute(table.ddl)
+
+            for schema in db.schemas:
+                for table in schema.kind_V_tables:
+                    db.execute(table.ddl)
+
+            if db.conn:
+                db.conn.close()
         else:
             logging.warning("Unable to deploy scripts, failed to connect!")
