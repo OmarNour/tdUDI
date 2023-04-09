@@ -990,7 +990,7 @@ def generate_metadata_scripts(smx: SMX):
     pipeline: Pipeline
 
     for source in DataSource.get_all_instances():
-        src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_v_schema.schema_name,
+        src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_t_schema.schema_name,
                                                               SOURCE_NAME=single_quotes(source.source_name),
                                                               rejection_table_name='NULL',
                                                               business_rules_table_name='NULL',
@@ -1001,7 +1001,7 @@ def generate_metadata_scripts(smx: SMX):
                            )
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
-                src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=smx.meta_v_schema.schema_name,
+                src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=smx.meta_t_schema.schema_name,
                                                                           SOURCE_NAME=single_quotes(source.source_name),
                                                                           TABLE_NAME=single_quotes(table.table_name),
                                                                           TRANSACTION_DATA=1 if table.transactional_data else 0
@@ -1009,15 +1009,15 @@ def generate_metadata_scripts(smx: SMX):
                                      )
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
-            gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_v_schema.schema_name,
+            gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
                                                                                  OUT_DB_NAME=single_quotes(table.schema.schema_name),
                                                                                  OUT_OBJECT_NAME=single_quotes(table.table_name),
                                                                                  KEY_COLUMN=single_quotes(pk_col.column_name)
                                                                                  )
                                         )
         if table.schema.id == smx.core_t_schema.id:
-            core_tables_lkp.write(INSERT_INTO_CORE_TABLES_LKP.format(meta_db=smx.meta_v_schema.schema_name,
-                                                                     TABLE_NAME=table.table_name,
+            core_tables_lkp.write(INSERT_INTO_CORE_TABLES_LKP.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                     TABLE_NAME=single_quotes(table.table_name),
                                                                      IS_LOOKUP=1 if table.is_lkp else 0,
                                                                      IS_HISTORY=1 if table.history_table else 0,
                                                                      START_DATE_COLUMN=table.start_date_col.column_name if table.history_table else 'NULL',
@@ -1044,13 +1044,13 @@ def generate_metadata_scripts(smx: SMX):
 
             if pipeline.tgt_lyr_table.table.history_table:
                 for hist_col_mapping in pipeline.scd_type2_col:
-                    history.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_v_schema.schema_name,
+                    history.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_t_schema.schema_name,
                                                              PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
                                                              HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
                                                              )
                                   )
             if process_type:
-                etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_v_schema.schema_name,
+                etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
                                                                  SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
                                                                  PROCESS_TYPE=single_quotes(process_type),
                                                                  PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
