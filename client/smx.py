@@ -1099,3 +1099,5 @@ def deploy():
 
         if db.conn:
             db.conn.close()
+        else:
+            logging.warning("Unable to deploy scripts, failed to connect!")
