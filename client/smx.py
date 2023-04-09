@@ -820,11 +820,11 @@ class SMX:
             missing_tech_col: TechColumn
 
             for table in tables:
-                table_columns = [column.column_name for column in table.columns]
-                technical_column_names = [technical_col.column_name for technical_col in technical_column_objs]
-                missing_tech_cols_names = list(set(technical_column_names) - set(table_columns))
-                missing_tech_cols = [technical_col for technical_col in technical_column_objs if technical_col.column_name in missing_tech_cols_names]
-                for missing_tech_col in missing_tech_cols:
+                # table_columns = [column.column_name for column in table.columns]
+                # technical_column_names = [technical_col.column_name for technical_col in technical_column_objs]
+                # missing_tech_cols_names = list(set(technical_column_names) - set(table_columns))
+                # missing_tech_cols = [technical_col for technical_col in technical_column_objs if technical_col.column_name in missing_tech_cols_names]
+                for missing_tech_col in technical_column_objs:
                     # print(missing_tech_col)
                     data_type_name, precision = parse_data_type(missing_tech_col.data_type)
                     data_type = DataType(db_id=self.db_engine.id, dt_name=data_type_name, _override=1)

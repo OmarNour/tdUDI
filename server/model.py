@@ -688,9 +688,9 @@ class Column(MyID):
         self.is_batch_id = is_batch_id
         self.is_row_identity = is_row_identity
 
-        self.is_technical_col = True if (self.is_pk or self.is_batch_id or self.is_row_identity or self.is_load_id or self.is_modification_type
-                                         or self.is_start_date or self.is_end_date or self.is_created_at or self.is_created_by
-                                         or self.is_updated_at or self.is_updated_by) else False
+        self.is_technical_col = True if (self.is_batch_id or self.is_row_identity or self.is_load_id or self.is_modification_type
+                                         or self.is_created_at or self.is_created_by
+                                         or self.is_updated_at or self.is_updated_by or self.is_delete_flag) else False
 
     @property
     def data_type(self) -> DataType:
@@ -881,9 +881,11 @@ class Pipeline(MyID):
         col_m: ColumnMapping
         _dic = {}
         for col_m in self.column_mapping:
-            if col_m.tgt_col not in _dic.keys():
-                _dic[col_m.tgt_col] = []
-            _dic[col_m.tgt_col].append(col_m.src_col_trx)
+            if not col_m.tgt_col.is_technical_col:
+                if col_m.tgt_col not in _dic.keys():
+                    _dic[col_m.tgt_col] = []
+                _dic[col_m.tgt_col].append(col_m.src_col_trx)
+
         return _dic
 
     @property
@@ -973,8 +975,9 @@ class Pipeline(MyID):
 
         #############
         tgt_col: Column
-        src_cols: list
+        src_cols: str
         src_col: Column
+        technical_cols: Column
         if not self.select_asterisk:
             for index, dic_items in enumerate(self._tgt_col_dic().items()):
                 tgt_col, _src_cols = dic_items
@@ -994,7 +997,18 @@ class Pipeline(MyID):
                                                            , cast_dtype=cast_dtype
                                                            , alias=alias
                                                            )
-            # self.unmapped_technical_cols
+            if col_mapping:
+                for technical_cols in self.technical_cols:
+                    comma = '\n,'
+                    src_cols = f"{self.src_table_alias}.{technical_cols.column_name}"
+                    cast_dtype = ""
+                    alias = ""
+                    col_mapping += COL_MAPPING_TEMPLATE.format(comma=comma
+                                                               , col_name=src_cols
+                                                               , cast_dtype=cast_dtype
+                                                               , alias=alias
+                                                               )
+
         else:
             col_mapping = " * "
 
