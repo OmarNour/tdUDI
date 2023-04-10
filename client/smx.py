@@ -976,12 +976,12 @@ def generate_metadata_scripts(smx: SMX):
     :return:
     """
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
-    src_name_lkp = WriteFile(smx.metadata_scripts, 'source_name_lkp', "sql")
-    src_tables_lkp = WriteFile(smx.metadata_scripts, 'source_tables_lkp', "sql")
-    core_tables_lkp = WriteFile(smx.metadata_scripts, 'core_tables_lkp', "sql")
-    gcfr_transform_keycol = WriteFile(smx.metadata_scripts, 'gcfr_transform_keycol', "sql")
-    history = WriteFile(smx.metadata_scripts, 'history', 'sql')
-    etl_process = WriteFile(smx.metadata_scripts, 'etl_process', "sql")
+    source_sytems_file = WriteFile(smx.metadata_scripts, 'SOURCE_SYSTEMS', "sql")
+    stg_tables_file = WriteFile(smx.metadata_scripts, 'STG_TABLES', "sql")
+    core_tables_file = WriteFile(smx.metadata_scripts, 'CORE_TABLES', "sql")
+    transform_keycol_file = WriteFile(smx.metadata_scripts, 'TRANSFORM_KEYCOL', "sql")
+    history_file = WriteFile(smx.metadata_scripts, 'HISTORY', 'sql')
+    process_file = WriteFile(smx.metadata_scripts, 'PROCESS', "sql")
 
     source: DataSource
     table: Table
@@ -990,7 +990,7 @@ def generate_metadata_scripts(smx: SMX):
     pipeline: Pipeline
 
     for source in DataSource.get_all_instances():
-        src_name_lkp.write(INSERT_INTO_SOURCE_SYSTEMS.format(meta_db=smx.meta_t_schema.schema_name,
+        source_sytems_file.write(INSERT_INTO_SOURCE_SYSTEMS.format(meta_db=smx.meta_t_schema.schema_name,
                                                              SOURCE_NAME=single_quotes(source.source_name),
                                                              REJECTION_TABLE_NAME='NULL',
                                                              BUSINESS_RULES_TABLE_NAME='NULL',
@@ -1001,7 +1001,7 @@ def generate_metadata_scripts(smx: SMX):
                            )
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
-                src_tables_lkp.write(INSERT_INTO_STG_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
+                stg_tables_file.write(INSERT_INTO_STG_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
                                                                    SOURCE_NAME=single_quotes(source.source_name),
                                                                    TABLE_NAME=single_quotes(table.table_name),
                                                                    IS_TARANSACTIOANL=1 if table.transactional_data else 0
@@ -1009,19 +1009,19 @@ def generate_metadata_scripts(smx: SMX):
                                      )
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
-            gcfr_transform_keycol.write(INSERT_INTO_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
+            transform_keycol_file.write(INSERT_INTO_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
                                                                             DB_NAME=single_quotes(table.schema.schema_name),
                                                                             TABLE_NAME=single_quotes(table.table_name),
                                                                             KEY_COLUMN=single_quotes(pk_col.column_name)
                                                                             )
                                         )
         if table.schema.id == smx.core_t_schema.id:
-            core_tables_lkp.write(INSERT_INTO_CORE_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
+            core_tables_file.write(INSERT_INTO_CORE_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
                                                                  TABLE_NAME=single_quotes(table.table_name),
                                                                  IS_LOOKUP=1 if table.is_lkp else 0,
                                                                  IS_HISTORY=1 if table.history_table else 0,
-                                                                 START_DATE_COLUMN=table.start_date_col.column_name if table.history_table else 'NULL',
-                                                                 END_DATE_COLUMN=table.end_date_col.column_name if table.history_table else 'NULL'
+                                                                 START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
+                                                                 END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
                                                                  )
                                   )
 
@@ -1044,13 +1044,13 @@ def generate_metadata_scripts(smx: SMX):
 
             if pipeline.tgt_lyr_table.table.history_table:
                 for hist_col_mapping in pipeline.scd_type2_col:
-                    history.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_t_schema.schema_name,
+                    history_file.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_t_schema.schema_name,
                                                              PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
                                                              HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
                                                              )
                                   )
             if process_type:
-                etl_process.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
+                process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
                                                              PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
                                                              SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
                                                              PROCESS_TYPE=single_quotes(process_type),
@@ -1065,12 +1065,12 @@ def generate_metadata_scripts(smx: SMX):
                                                              )
                                   )
 
-    src_name_lkp.close()
-    src_tables_lkp.close()
-    gcfr_transform_keycol.close()
-    etl_process.close()
-    history.close()
-    core_tables_lkp.close()
+    source_sytems_file.close()
+    stg_tables_file.close()
+    transform_keycol_file.close()
+    process_file.close()
+    history_file.close()
+    core_tables_file.close()
 
 
 @time_elapsed_decorator
