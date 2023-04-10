@@ -918,6 +918,10 @@ def generate_schemas_ddl(smx: SMX):
             db_file.write("\n")
     db_file.close()
 
+    grants_file = WriteFile(smx.current_scripts_path, "grants", "sql")
+    grants_file.write(GRANTS)
+    grants_file.close()
+
 
 @log_error_decorator()
 @time_elapsed_decorator
