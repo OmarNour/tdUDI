@@ -13,11 +13,11 @@ CREATE MULTISET TABLE GDEV1T_GCRF.SOURCE_SYSTEMS
     ,DEFAULT MERGEBLOCKRATIO
 (
       SOURCE_NAME                   VARCHAR(50)     CHARACTER SET latin not CASESPECIFIC not null
-    , LOADING_TYPE                  VARCHAR(20)     CHARACTER SET latin not CASESPECIFIC not null -- online or offline
+    , SOURCE_MODE                   VARCHAR(20)     CHARACTER SET latin not CASESPECIFIC not null -- online or offline
     , REJECTION_TABLE_NAME          VARCHAR(150)    CHARACTER SET latin not CASESPECIFIC null
     , BUSINESS_RULES_TABLE_NAME     VARCHAR(150)    CHARACTER SET latin not CASESPECIFIC null
- 	, STG_LAYER                     INTEGER   not null
-    , BASE_LAYER                    INTEGER   not null
+ 	, STG_ACTIVE                    INTEGER   not null
+    , BASE_ACTIVE                   INTEGER   not null
     , IS_SCHEDULED                  INTEGER   not null
     , SOURCE_DB                     INTEGER   not null
     , DATA_SRC_CD                   INTEGER   not null

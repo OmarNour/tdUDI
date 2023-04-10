@@ -990,22 +990,22 @@ def generate_metadata_scripts(smx: SMX):
     pipeline: Pipeline
 
     for source in DataSource.get_all_instances():
-        src_name_lkp.write(INSERT_INTO_SOURCE_NAME_LKP.format(meta_db=smx.meta_t_schema.schema_name,
-                                                              SOURCE_NAME=single_quotes(source.source_name),
-                                                              rejection_table_name='NULL',
-                                                              business_rules_table_name='NULL',
-                                                              LOADING_TYPE=single_quotes('ONLINE'),
-                                                              SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
-                                                              DATA_SRC_CD='NULL'
-                                                              )
+        src_name_lkp.write(INSERT_INTO_SOURCE_SYSTEMS.format(meta_db=smx.meta_t_schema.schema_name,
+                                                             SOURCE_NAME=single_quotes(source.source_name),
+                                                             REJECTION_TABLE_NAME='NULL',
+                                                             BUSINESS_RULES_TABLE_NAME='NULL',
+                                                             SOURCE_MODE=single_quotes('ONLINE'),
+                                                             SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
+                                                             DATA_SRC_CD='NULL'
+                                                             )
                            )
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
-                src_tables_lkp.write(INSERT_INTO_SOURCE_TABLES_LKP.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                          SOURCE_NAME=single_quotes(source.source_name),
-                                                                          TABLE_NAME=single_quotes(table.table_name),
-                                                                          TRANSACTION_DATA=1 if table.transactional_data else 0
-                                                                          )
+                src_tables_lkp.write(INSERT_INTO_STG_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                   SOURCE_NAME=single_quotes(source.source_name),
+                                                                   TABLE_NAME=single_quotes(table.table_name),
+                                                                   IS_TARANSACTIOANL=1 if table.transactional_data else 0
+                                                                   )
                                      )
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
@@ -1087,7 +1087,7 @@ def deploy():
             for schema in db.schemas:
                 db.execute(schema.ddl)
 
-        # for db in DataBaseEngine.get_all_instances():
+            # for db in DataBaseEngine.get_all_instances():
 
             for schema in db.schemas:
                 for table in schema.kind_T_tables:
