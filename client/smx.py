@@ -916,6 +916,11 @@ def generate_schemas_ddl(smx: SMX):
         if ddl:
             db_file.write(ddl)
             db_file.write("\n")
+
+    for schema_ddl in OTHER_SCHEMAS:
+        db_file.write(schema_ddl)
+        db_file.write("\n")
+
     db_file.close()
 
     grants_file = WriteFile(smx.current_scripts_path, "grants", "sql")
@@ -995,22 +1000,22 @@ def generate_metadata_scripts(smx: SMX):
 
     for source in DataSource.get_all_instances():
         source_sytems_file.write(INSERT_INTO_SOURCE_SYSTEMS.format(meta_db=smx.meta_t_schema.schema_name,
-                                                             SOURCE_NAME=single_quotes(source.source_name),
-                                                             REJECTION_TABLE_NAME='NULL',
-                                                             BUSINESS_RULES_TABLE_NAME='NULL',
-                                                             SOURCE_MODE=single_quotes('ONLINE'),
-                                                             SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
-                                                             DATA_SRC_CD='NULL'
-                                                             )
-                           )
+                                                                   SOURCE_NAME=single_quotes(source.source_name),
+                                                                   REJECTION_TABLE_NAME='NULL',
+                                                                   BUSINESS_RULES_TABLE_NAME='NULL',
+                                                                   SOURCE_MODE=single_quotes('ONLINE'),
+                                                                   SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
+                                                                   DATA_SRC_CD='NULL'
+                                                                   )
+                                 )
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
                 stg_tables_file.write(INSERT_INTO_STG_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                   SOURCE_NAME=single_quotes(source.source_name),
-                                                                   TABLE_NAME=single_quotes(table.table_name),
-                                                                   IS_TARANSACTIOANL=1 if table.transactional_data else 0
-                                                                   )
-                                     )
+                                                                    SOURCE_NAME=single_quotes(source.source_name),
+                                                                    TABLE_NAME=single_quotes(table.table_name),
+                                                                    IS_TARANSACTIOANL=1 if table.transactional_data else 0
+                                                                    )
+                                      )
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
             transform_keycol_file.write(INSERT_INTO_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
@@ -1021,13 +1026,13 @@ def generate_metadata_scripts(smx: SMX):
                                         )
         if table.schema.id == smx.core_t_schema.id:
             core_tables_file.write(INSERT_INTO_CORE_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                 TABLE_NAME=single_quotes(table.table_name),
-                                                                 IS_LOOKUP=1 if table.is_lkp else 0,
-                                                                 IS_HISTORY=1 if table.history_table else 0,
-                                                                 START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
-                                                                 END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
-                                                                 )
-                                  )
+                                                                  TABLE_NAME=single_quotes(table.table_name),
+                                                                  IS_LOOKUP=1 if table.is_lkp else 0,
+                                                                  IS_HISTORY=1 if table.history_table else 0,
+                                                                  START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
+                                                                  END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
+                                                                  )
+                                   )
 
     for pipeline in Pipeline.get_all_instances():
         if pipeline.tgt_lyr_table:
@@ -1049,25 +1054,25 @@ def generate_metadata_scripts(smx: SMX):
             if pipeline.tgt_lyr_table.table.history_table:
                 for hist_col_mapping in pipeline.scd_type2_col:
                     history_file.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_t_schema.schema_name,
-                                                             PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
-                                                             HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
-                                                             )
-                                  )
+                                                                  PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
+                                                                  HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
+                                                                  )
+                                       )
             if process_type:
                 process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
-                                                             PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
-                                                             SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
-                                                             PROCESS_TYPE=single_quotes(process_type),
-                                                             SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
-                                                             SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
-                                                             TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
-                                                             TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
-                                                             APPLY_TYPE=single_quotes(apply_type),
-                                                             KEY_SET_ID=key_set_id,
-                                                             DOMAIN_ID=domain_id,
-                                                             CODE_SET_ID='NULL'
-                                                             )
-                                  )
+                                                              PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
+                                                              SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
+                                                              PROCESS_TYPE=single_quotes(process_type),
+                                                              SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
+                                                              SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
+                                                              TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
+                                                              TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
+                                                              APPLY_TYPE=single_quotes(apply_type),
+                                                              KEY_SET_ID=key_set_id,
+                                                              DOMAIN_ID=domain_id,
+                                                              CODE_SET_ID='NULL'
+                                                              )
+                                   )
 
     source_sytems_file.close()
     stg_tables_file.close()
