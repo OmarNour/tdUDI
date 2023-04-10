@@ -1009,20 +1009,20 @@ def generate_metadata_scripts(smx: SMX):
                                      )
     for table in Table.get_all_instances():
         for pk_col in table.key_col:
-            gcfr_transform_keycol.write(INSERT_INTO_GCFR_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                                 OUT_DB_NAME=single_quotes(table.schema.schema_name),
-                                                                                 OUT_OBJECT_NAME=single_quotes(table.table_name),
-                                                                                 KEY_COLUMN=single_quotes(pk_col.column_name)
-                                                                                 )
+            gcfr_transform_keycol.write(INSERT_INTO_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                            DB_NAME=single_quotes(table.schema.schema_name),
+                                                                            TABLE_NAME=single_quotes(table.table_name),
+                                                                            KEY_COLUMN=single_quotes(pk_col.column_name)
+                                                                            )
                                         )
         if table.schema.id == smx.core_t_schema.id:
-            core_tables_lkp.write(INSERT_INTO_CORE_TABLES_LKP.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                     TABLE_NAME=single_quotes(table.table_name),
-                                                                     IS_LOOKUP=1 if table.is_lkp else 0,
-                                                                     IS_HISTORY=1 if table.history_table else 0,
-                                                                     START_DATE_COLUMN=table.start_date_col.column_name if table.history_table else 'NULL',
-                                                                     END_DATE_COLUMN=table.end_date_col.column_name if table.history_table else 'NULL'
-                                                                     )
+            core_tables_lkp.write(INSERT_INTO_CORE_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                 TABLE_NAME=single_quotes(table.table_name),
+                                                                 IS_LOOKUP=1 if table.is_lkp else 0,
+                                                                 IS_HISTORY=1 if table.history_table else 0,
+                                                                 START_DATE_COLUMN=table.start_date_col.column_name if table.history_table else 'NULL',
+                                                                 END_DATE_COLUMN=table.end_date_col.column_name if table.history_table else 'NULL'
+                                                                 )
                                   )
 
     for pipeline in Pipeline.get_all_instances():
@@ -1050,21 +1050,19 @@ def generate_metadata_scripts(smx: SMX):
                                                              )
                                   )
             if process_type:
-                etl_process.write(INSERT_INTO_ETL_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                 SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
-                                                                 PROCESS_TYPE=single_quotes(process_type),
-                                                                 PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
-                                                                 BASE_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
-                                                                 APPLY_TYPE=single_quotes(apply_type),
-                                                                 INPUT_VIEW_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
-                                                                 TARGET_TABLE_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
-                                                                 TARGET_VIEW_DB='NULL',
-                                                                 SRCI_TABLE_DB=single_quotes(pipeline.src_lyr_table.table.schema.schema_name),
-                                                                 SRCI_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
-                                                                 KEY_SET_ID=key_set_id,
-                                                                 DOMAIN_ID=domain_id,
-                                                                 CODE_SET_ID='NULL'
-                                                                 )
+                etl_process.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
+                                                             PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
+                                                             SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
+                                                             PROCESS_TYPE=single_quotes(process_type),
+                                                             SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
+                                                             SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
+                                                             TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
+                                                             TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
+                                                             APPLY_TYPE=single_quotes(apply_type),
+                                                             KEY_SET_ID=key_set_id,
+                                                             DOMAIN_ID=domain_id,
+                                                             CODE_SET_ID='NULL'
+                                                             )
                                   )
 
     src_name_lkp.close()
