@@ -122,10 +122,17 @@ QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\n{from_clau
 JOIN_CLAUSE_TEMPLATE = "\n\t{join_type} {with_table} {with_alias}\n\ton {on_clause}"
 SRCI_V_BKEY_TEMPLATE_QUERY = """(select EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key} {cast}\n and DOMAIN_ID={domain_id})"""
 SRCI_V_BMAP_TEMPLATE_QUERY = """(select EDW_Code\n from {bmap_db}.{bmap_table_name}\n where SOURCE_CODE = {source_code} {cast}\n and CODE_SET_ID = {code_set_id}\n and DOMAIN_ID={domain_id})"""
-BK_VIEW_NAME_TEMPLATE = "BK_{set_id}_{src_table_name}_{column_name}_{domain_id}"
-CORE_VIEW_NAME_TEMPLATE = "TXF_CORE_{mapping_name}"
+BK_VIEW_NAME_TEMPLATE = "BK_{set_id}_{src_table_name}_{column_name}_{domain_id}_IN"
+CORE_VIEW_NAME_TEMPLATE = "TXF_CORE_{mapping_name}_IN"
+
+MAIN_DATABASE_TEMPLATE = """
+CREATE DATABASE EDW
+AS PERMANENT = 60e6, -- 60MB
+    SPOOL = 120e6; -- 120MB
+"""
+
 DATABASE_TEMPLATE = """
-CREATE DATABASE {db_name}
+CREATE DATABASE {db_name} from EDW
 AS PERMANENT = 60e6, -- 60MB
     SPOOL = 120e6; -- 120MB
 """
