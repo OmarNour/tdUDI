@@ -391,8 +391,12 @@ class Schema(MyID):
 class DataType(MyID):
     def __init__(self, db_id, dt_name: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.dt_name = dt_name
+        self._dt_name = dt_name
         self._db_id = db_id
+
+    @property
+    def dt_name(self):
+        return self._dt_name.upper()
 
     @property
     def db_engine(self) -> DataBaseEngine:
