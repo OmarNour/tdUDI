@@ -1,5 +1,6 @@
 """
 TODO:
+    add main_stg_table column to process table
     In Deploy() select top 1 from each view
     DONE handle "select *", in pipelines
     generate fake data
