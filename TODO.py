@@ -1,5 +1,6 @@
 """
 TODO:
+    add _IN to end of all input views
     add main_stg_table column to process table
     In Deploy() select top 1 from each view
     DONE handle "select *", in pipelines
