@@ -305,6 +305,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			SET '||V_END_DATE_COLUMN||' = X.'||V_END_DATE_COLUMN||'
 				'||V_SET_HISTORY_COLUMNS||'
 				'||V_SET_NORMAL_COMMON_COLUMNS||'
+				,START_TS = CURRENT_TIMESTAMP				
 				,END_TS = 	CASE 
 								WHEN INPV_DELETE_FLAG = 1 
 								THEN 
@@ -316,11 +317,27 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 								ELSE NULL 
 							END 
 				, batch_id = x.batch_id
+				,UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
 			where ' || V_FULL_KEY_JOIN || ' 						
 			AND X.FROM_INPV = 1
 			AND X.IN_MODEL = 1;'
 			into V_UPDATE_MODEL_DATA_FROM_INPV
 			WHERE V_APPLY_TYPE = V_HISTORY_TYPE;
+			
+			select
+			'UPDATE Y
+			FROM '||V_TGT_DB||'.'||V_TGT_TABLE||' Y
+			-- SELECT * FROM '||V_TGT_DB||'.'||V_TGT_TABLE||' Y
+			, INPUT_VIEW_'||V_TGT_TABLE||' X		
+			SET UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
+				, batch_id = x.batch_id
+				'||V_SET_NORMAL_COMMON_COLUMNS||'	
+				'||V_SET_HISTORY_COLUMNS||'		
+				,START_TS = CURRENT_TIMESTAMP
+				,END_TS = NULL
+			WHERE ' || V_FULL_KEY_JOIN || ' ;' 
+			into V_UPDATE_MODEL_DATA_FROM_INPV
+			WHERE V_APPLY_TYPE in( V_UPSERT_TYPE, V_UPSERTDELETE_TYPE );
 			--------------------------------------------------------------------------------------------------------------------------------
 			--------------------------------------------------------------------------------------------------------------------------------
 			--------------------------------------------------------------------------------------------------------------------------------
@@ -403,7 +420,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				--if V_ROWS_IN_BASE > 0 or 1=1
 				--then
 					
-					
+				IF CAST(V_VT_ALL_KEYS AS CHAR(10)) <> ''
+				THEN
+					SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+					CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(V_VT_ALL_KEYS,V_SQL_SCRIPT_ID,I_RUN_ID,V_SOURCE_NAME,I_PROCESSNAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+					IF V_DBC_RETURN_CODE <> 0 THEN
+						SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+						SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+						LEAVE MainBlock;
+					END IF;
+				END IF;
+				
 				IF CAST(V_VT_NEW_MODEL_END_DATE AS CHAR(10)) <> ''
 				THEN
 					SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
