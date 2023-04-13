@@ -49,7 +49,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
         DECLARE 	V_START_DATE_COLUMN_JOIN	VARCHAR(2000)	DEFAULT '';
         DECLARE		V_BASE_VT_NAME, V_DELTA_INPUT_VIEW_NAME		VARCHAR(150)	DEFAULT '';
         
-     	DECLARE 	V_UPDATE_MODEL_DATA_FROM_INPV, V_DEL_FROM_MODEL_SAME_HC, V_VT_UPSERT_MODEL, V_VT_NEW_MODEL_END_DATE
+     	DECLARE 	V_UPDATE_END_DATE_COLUMN, V_UPDATE_MODEL_DATA_FROM_INPV, V_DEL_FROM_MODEL_SAME_HC, V_VT_UPSERT_MODEL, V_VT_NEW_MODEL_END_DATE
      				, V_VT_ALL_KEYS, V_VT_BASE_TABLE, V_VT_INPUT_VIEW, V_VT_DELTA_INPUT_VIEW, V_TMP_INPUT_VIEW		clob character set unicode;
      	DECLARE 	V_DROP_UPSERT_MODEL, V_DROP_NEW_MODEL_END_DATE, V_DROP_ALL_KEYS, V_DROP_BASE_TABLE
      				, V_DROP_INPUT_VIEW, V_DROP_DELTA_INPUT_VIEW, V_DROP_TMP_INPUT_VIEW								VARCHAR(2000);
@@ -305,7 +305,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			SET '||V_END_DATE_COLUMN||' = X.'||V_END_DATE_COLUMN||'
 				'||V_SET_HISTORY_COLUMNS||'
 				'||V_SET_NORMAL_COMMON_COLUMNS||'
-				,START_TS = CURRENT_TIMESTAMP				
+				,UPDATE_TS = CURRENT_TIMESTAMP				
 				,END_TS = 	CASE 
 								WHEN INPV_DELETE_FLAG = 1 
 								THEN 
@@ -333,12 +333,34 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				, batch_id = x.batch_id
 				'||V_SET_NORMAL_COMMON_COLUMNS||'	
 				'||V_SET_HISTORY_COLUMNS||'		
-				,START_TS = CURRENT_TIMESTAMP
-				,END_TS = NULL
+				,UPDATE_TS = CURRENT_TIMESTAMP
+				,END_TS = 	CASE 
+								WHEN INPV_DELETE_FLAG = 1 
+								THEN 
+									CASE 
+										WHEN Y.END_TS IS NULL 
+										THEN CURRENT_TIMESTAMP 
+										ELSE Y.END_TS 
+									END 
+								ELSE NULL 
+							END 
 			WHERE ' || V_FULL_KEY_JOIN || ' ;' 
 			into V_UPDATE_MODEL_DATA_FROM_INPV
 			WHERE V_APPLY_TYPE in( V_UPSERT_TYPE, V_UPSERTDELETE_TYPE );
 			--------------------------------------------------------------------------------------------------------------------------------
+			select
+			'UPDATE Y 
+			FROM '||V_TGT_DB||'.'||V_TGT_TABLE||' Y
+			-- SELECT * FROM '||V_TGT_DB||'.'||V_TGT_TABLE||' Y
+				, UPSERT_MODEL_'||V_TGT_TABLE||' X				
+			SET '||V_END_DATE_COLUMN||' = X.'||V_END_DATE_COLUMN||'
+				,UPDATE_TS = CURRENT_TIMESTAMP
+				,UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
+				,batch_id = x.batch_id
+			where ' || V_FULL_KEY_JOIN || ' 						
+			AND X.FROM_INPV = 0;'
+			into V_UPDATE_END_DATE_COLUMN
+			WHERE V_APPLY_TYPE = V_HISTORY_TYPE;
 			--------------------------------------------------------------------------------------------------------------------------------
 			--------------------------------------------------------------------------------------------------------------------------------
 			--------------------------------------------------------------------------------------------------------------------------------
@@ -478,6 +500,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				THEN
 					SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
 					CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(V_UPDATE_MODEL_DATA_FROM_INPV,V_SQL_SCRIPT_ID,I_RUN_ID,V_SOURCE_NAME,I_PROCESSNAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+					IF V_DBC_RETURN_CODE <> 0 THEN
+						SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+						SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+						LEAVE MainBlock;
+					END IF;
+				END IF;
+				
+				IF CAST(V_UPDATE_END_DATE_COLUMN AS CHAR(10)) <> ''
+				THEN
+					SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+					CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(V_UPDATE_END_DATE_COLUMN,V_SQL_SCRIPT_ID,I_RUN_ID,V_SOURCE_NAME,I_PROCESSNAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
 					IF V_DBC_RETURN_CODE <> 0 THEN
 						SET V_RETURN_CODE = V_DBC_RETURN_CODE;
 						SET V_RETURN_MSG = V_DBC_RETURN_MSG;
