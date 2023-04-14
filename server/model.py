@@ -1001,17 +1001,18 @@ class Pipeline(MyID):
                                                            , cast_dtype=cast_dtype
                                                            , alias=alias
                                                            )
-            if col_mapping:
-                for technical_cols in self.technical_cols:
-                    comma = '\n,'
-                    src_cols = f"{self.src_table_alias}.{technical_cols.column_name}"
-                    cast_dtype = ""
-                    alias = ""
-                    col_mapping += COL_MAPPING_TEMPLATE.format(comma=comma
-                                                               , col_name=src_cols
-                                                               , cast_dtype=cast_dtype
-                                                               , alias=alias
-                                                               )
+            if self.lyr_view.layer.layer_type.id != 3:  # avoid adding technical columns for BKEY input views
+                if col_mapping:
+                    for technical_cols in self.technical_cols:
+                        comma = '\n,'
+                        src_cols = f"{self.src_table_alias}.{technical_cols.column_name}"
+                        cast_dtype = ""
+                        alias = ""
+                        col_mapping += COL_MAPPING_TEMPLATE.format(comma=comma
+                                                                   , col_name=src_cols
+                                                                   , cast_dtype=cast_dtype
+                                                                   , alias=alias
+                                                                   )
 
         else:
             col_mapping = " * "
@@ -1330,5 +1331,5 @@ if __name__ == '__main__':
     y = DataSet(set_type_id=x.id, set_code="qaqaqaqa", set_table_id=66, surrogate_table_id=99, _override=1)
     print(y.id, y._set_table_id)
 
-    z= DataSet.get_instance(_key=(x.id, "ztztztz"))
+    z = DataSet.get_instance(_key=(x.id, "ztztztz"))
     print(z.id, z._set_table_id)
