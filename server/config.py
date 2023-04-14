@@ -73,7 +73,7 @@ LayerDtl = namedtuple("LayerDetail", "type level v_db t_db")
 JoinTypes = namedtuple("JoinTypes", "code name")
 JOIN_TYPES = [JoinTypes(code='ij', name='inner join'), JoinTypes(code='lj', name='left join'),
               JoinTypes(code='rj', name='right join'), JoinTypes(code='fj', name='full outer join')]
-LAYER_TYPES = ['META', 'SRC', 'STG', 'SK', 'SRCI', 'CORE']
+LAYER_TYPES = ['META', 'SRC', 'STG', 'SK', 'SRCI', 'CORE']  # Important: DO NOT CHANGE THE ORDER OF THIS LIST!
 PREFIX = 'GDEV1'
 LAYERS = {
     'META': LayerDtl(LAYER_TYPES[0], 0, f'{PREFIX}V_GCFR', f'{PREFIX}T_GCFR')
