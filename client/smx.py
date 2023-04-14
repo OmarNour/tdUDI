@@ -306,6 +306,18 @@ class SMX:
                        , data_type_id=int_data_type.id, dt_precision=None
                        , is_start_date=0, is_end_date=0)
 
+                Column(table_id=table.id, column_name='KEY_SET_ID', is_pk=0, mandatory=1
+                       , data_type_id=int_data_type.id, dt_precision=None
+                       , is_start_date=0, is_end_date=0)
+
+                Column(table_id=table.id, column_name='START_DATE', is_pk=0, mandatory=1
+                       , data_type_id=timestamp_data_type.id, dt_precision=None
+                       , is_start_date=1, is_end_date=0)
+
+                Column(table_id=table.id, column_name='PROCESS_NAME', is_pk=0, mandatory=1
+                       , data_type_id=vchar_data_type.id, dt_precision=200
+                       , is_start_date=0, is_end_date=0)
+
             @log_error_decorator()
             def extract_bkey_datasets(row):
                 surrogate_table: Table
@@ -723,6 +735,7 @@ class SMX:
 
                     int_data_type = DataType.get_instance(_key=(self.db_engine.id, 'INTEGER'))
                     vchar_data_type = DataType.get_instance(_key=(self.db_engine.id, 'VARCHAR'))
+                    timestamp_data_type = DataType.get_instance(_key=(self.db_engine.id, 'TIMESTAMP'))
 
                     if not core_tables_df.empty:
                         core_tables_df[['table_name']].drop_duplicates().apply(extract_core_tables, axis=1)
