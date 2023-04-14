@@ -99,7 +99,7 @@ BEGIN
 			CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(v_statment,1,I_RUN_ID,V_SOURCE_NAME,i_PROCESS_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
 		else
 			set V_DBC_RETURN_CODE = -1;
-			set V_DBC_RETURN_MSG = 'BKEY is not registered in GPROD1V_GCFR.GCFR_PROCESS table';
+			set V_DBC_RETURN_MSG = 'BKEY is not registered in PROCESS table';
 		end if;
 	end;
 	
