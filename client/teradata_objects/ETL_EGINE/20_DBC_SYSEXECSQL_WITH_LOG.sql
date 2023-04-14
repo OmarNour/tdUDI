@@ -54,7 +54,6 @@ BEGIN
 	
 	if i_log = 1 then
 		IF i_run_id IS NULL THEN 
-			--select cast(oreplace(oreplace(oreplace(oreplace(oreplace( cast(CURRENT_TIMESTAMP as varchar(38)),'-',''),' ',''),':',''),'.',''),'+','')as decimal(38))
 			select GDEV1P_FF.generate_run_id()
 			into v_run_id;
 		ELSE 	
