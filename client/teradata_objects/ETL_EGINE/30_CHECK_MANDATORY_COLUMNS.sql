@@ -1,4 +1,4 @@
-REPLACE PROCEDURE  /*VER.5*/ GDEV1P_PP.CHECK_TABLE_MANDATORY_COLUMNS
+REPLACE PROCEDURE  /*VER.5*/ GDEV1P_PP.CHECK_MANDATORY_COLUMNS
 /*
 ###################################################################################################################################################################
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -12,14 +12,14 @@ REPLACE PROCEDURE  /*VER.5*/ GDEV1P_PP.CHECK_TABLE_MANDATORY_COLUMNS
 #	5.0				| 27 Feb, 2023 	| ASHRAF ELHAWARY			| Check for CLOUMNS from DBC.COLUMNSV
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #  Examples:
-CALL GDEV1P_PP.PROCESS_KEY_COLUMN_IS_NULL('I_PROCESS_NAME', 'GDEV1V_base', 'PRTY', I_COLUMN,O_NULLABLE_COLUMN, O_RETURN_CODE, O_RETURN_MSG);
+CALL GDEV1P_PP.CHECK_MANDATORY_COLUMNS('GDEV1V_base', 'PRTY', I_MORE_COLUMNS,O_NULLABLE_COLUMN, O_RETURN_CODE, O_RETURN_MSG);
 ###################################################################################################################################################################
 */
 
 (	
 	IN	I_DATABASE_NAME		VARCHAR(300) ,
 	IN	I_TABLE_NAME		VARCHAR(300) ,
-	IN 	I_COLUMNS			VARCHAR(1000),
+	IN 	I_MORE_COLUMNS		VARCHAR(1000),
 	
 	OUT	O_NULLABLE_COLUMN	VARCHAR(300) ,
 	OUT O_RETURN_CODE		INTEGER,
@@ -68,12 +68,12 @@ BEGIN
 				FROM table (
 				STRTOK_SPLIT_TO_TABLE (	1, 
 										(
-											SEL  I_COLUMNS  COL
+											SEL  I_MORE_COLUMNS  COL
 									),	
 									',')
 							RETURNS (OUTKEY INTEGER,  TOKEN_NUM INTEGER, COL VARCHAR(300))
 							) AS X 
-				WHERE I_COLUMNS IS not NULL
+				WHERE I_MORE_COLUMNS IS not NULL
 				
 				UNION 
 				
@@ -105,7 +105,7 @@ BEGIN
 		SET O_RETURN_CODE = -1;
 		
 		IF V_RETURN_CODE = 0 THEN
-			SET O_RETURN_MSG =  'Key Column '||V_NULLABLE_COLUMN||' Cannot Accept Null!';
+			SET O_RETURN_MSG =  'Column '||V_NULLABLE_COLUMN||' Cannot Accept Null!';
 		ELSE
 			SET O_RETURN_MSG =  V_RETURN_MSG;
 		END IF;
