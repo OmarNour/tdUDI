@@ -15,7 +15,7 @@ CREATE MULTISET TABLE SOURCE_SYSTEMS
     ,DEFAULT MERGEBLOCKRATIO
 (
       SOURCE_NAME                   VARCHAR(50)     CHARACTER SET latin not CASESPECIFIC not null
-    , SOURCE_MODE                   VARCHAR(20)     CHARACTER SET latin not CASESPECIFIC not null -- online or offline
+    , LOADING_MODE                   VARCHAR(20)     CHARACTER SET latin not CASESPECIFIC not null -- online or offline
     , REJECTION_TABLE_NAME          VARCHAR(150)    CHARACTER SET latin not CASESPECIFIC
     , BUSINESS_RULES_TABLE_NAME     VARCHAR(150)    CHARACTER SET latin not CASESPECIFIC
  	, STG_ACTIVE                    INTEGER         not null

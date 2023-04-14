@@ -231,6 +231,15 @@ def populate_table(add_new_rows: bool):
     # Disconnect from the database
     dbc.close()
 
+# def get_database_connection():
+
+def read_df_previous_row():
+    import pandas as pd
+    df = pd.read_csv('data.csv')
+    df['previous_row'] = df.groupby('id')['value'].shift(1)
+    df['diff'] = df['value'] - df['previous_row']
+    print(df)
+
 
 def insert_stmt():
     x = """INSERT INTO GDEV1T_GCFR.ETL_PROCESS 
@@ -252,6 +261,7 @@ def insert_stmt():
 class XCV:
     run_id = str(generate_run_id())
     raise_if_error = True
+
     def __init__(self):
         self.run_id_2 = str(generate_run_id())
 
@@ -262,7 +272,7 @@ if __name__ == '__main__':
 
     # for col in CORE_TECHNICAL_COLS:
     #     print(col.__repr__())
-        # print(col.column_name, col.data_type, col.is_modification_type, col.is_created_at)
+    # print(col.column_name, col.data_type, col.is_modification_type, col.is_created_at)
     # x = XCV()
     # y = XCV()
     # print(x.run_id, x.run_id_2)
