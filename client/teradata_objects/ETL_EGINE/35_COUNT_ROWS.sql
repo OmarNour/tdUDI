@@ -2,6 +2,7 @@ REPLACE PROCEDURE /*VER.1*/ GDEV1P_PP.COUNT_ROWS
 (
 	in I_DB 			VARCHAR (200),
 	in I_TBL 			VARCHAR (200),
+	in I_QUERY 			VARCHAR (5000),
 	out O_CNT 			FLOAT,
 	out O_RETURN_CODE 	INTEGER,
 	out O_RETURN_MSG 	VARCHAR (5000)
@@ -10,9 +11,9 @@ BEGIN
 	
 	DECLARE C1 CURSOR FOR S1;
 	BEGIN
-		DECLARE V_TABLE_NAME 	VARCHAR(1000) DEFAULT '';
-		DECLARE v_cnt_query 	VARCHAR(1000);
-		DECLARE v_cnt_result 	FLOAT DEFAULT 0;
+		DECLARE V_TABLE_NAME 	VARCHAR(500) DEFAULT '';
+		DECLARE v_cnt_query_stmt, v_cnt_tbl_stmt 	VARCHAR(5000);
+		DECLARE v_cnt_qry, v_cnt_tbl 	FLOAT DEFAULT 0;
 		
 		DECLARE EXIT HANDLER FOR SQLEXCEPTION
 		BEGIN
@@ -29,14 +30,30 @@ BEGIN
 			ELSE
 				SET V_TABLE_NAME = I_TBL;
 			END IF;
+			
+			SET v_cnt_tbl_stmt = 'SEL COUNT (1) (float) FROM ' ||V_TABLE_NAME ||';' ;
+			
+			PREPARE S1 FROM v_cnt_tbl_stmt;
+			OPEN C1;
+			FETCH C1 INTO v_cnt_tbl;
+			CLOSE C1;
+			
 		END IF;
 		
-		SET v_cnt_query = 'SEL COUNT (1) (float) FROM ' ||V_TABLE_NAME ||';' ;
-		PREPARE S1 FROM v_cnt_query;
-		OPEN C1;
-		FETCH C1 INTO v_cnt_result;
-		CLOSE C1;
-		SET O_CNT = v_cnt_result;
+		IF COALESCE (I_QUERY, '') <>'' 
+		THEN
+			
+			SET v_cnt_query_stmt = 'SEL COUNT (1) (float) FROM (' ||I_QUERY ||') x;' ;
+			
+			PREPARE S1 FROM v_cnt_query_stmt;
+			OPEN C1;
+			FETCH C1 INTO v_cnt_qry;
+			CLOSE C1;
+			
+		END IF;
+		
+		
+		SET O_CNT = v_cnt_tbl + v_cnt_qry;
 		SET O_RETURN_CODE = 0;
 		SET O_RETURN_MSG = 'Process Completed Successfully';
 	END;
