@@ -195,6 +195,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			
 			--------------------------------------------------------------------------------------------------------------------------------
 			set v_where_clause = ' AND ((X.INPV_DELETE_FLAG = 1 and END_TS IS NULL) or (X.INPV_DELETE_FLAG = 0 and END_TS IS not NULL))';
+			SET V_CLOSE_END_DATE = '';
 			if V_APPLY_TYPE = V_HISTORY_TYPE
 			then
 				set V_CLOSE_END_DATE = ','||V_END_DATE_COLUMN||' = case when X.INPV_DELETE_FLAG = 1 and '||V_END_DATE_COLUMN||' is null then Y.'||V_START_DATE_COLUMN||' else '||V_END_DATE_COLUMN||' end';
