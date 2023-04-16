@@ -1,5 +1,6 @@
 """
 TODO:
+    Override technical columns
     an option to do replace or create, when deploying DB objects
     add _IN to end of all input views
     add main_stg_table column to process table
