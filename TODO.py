@@ -33,6 +33,7 @@ TODO:
     ColumnMapping:
         DONE raise error if trx is invalid for columns mapping
     Pipeline:
+        add name for each pipeline
         DONE A function to get table by alias
         DONE Handle alias for main tables
         handle alias in difference expressions (col, where, etc.)
