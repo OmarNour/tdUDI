@@ -10,14 +10,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
     BEGIN
         DECLARE 	V_RETURN_CODE  				INTEGER DEFAULT 0;
         DECLARE 	V_RETURN_MSG 				VARCHAR(5000) DEFAULT 'Process Completed Successfully';
-        DECLARE 	V_ROWS_IN_TMP, V_ROWS_IN_BASE, V_ROWS_IN_DELTA, V_ROWS_COUNT				FLOAT DEFAULT 0;
+        DECLARE 	V_ROWS_IN_1batch, V_ROWS_IN_DELTA, V_ROWS_COUNT				FLOAT DEFAULT 0;
         DECLARE		v_run_id					BIGINT;
         DECLARE 	V_SQL_SCRIPT_ID				INTEGER DEFAULT 0;
         DECLARE 	V_DBC_RETURN_CODE 			INTEGER;
 		DECLARE 	V_DBC_RETURN_MSG  			VARCHAR(1000);
 		DECLARE 	V_DBC_ROWS_COUNT			FLOAT;
     	DECLARE 	v_drop_1batch
-    				, v_create_1batch			CLOB;                                
+    				, v_update_tgt
+    				, v_insert_into_tgt
+    				, v_create_1batch			CLOB;    
+    				
         DECLARE    	V_SRC_DB					VARCHAR(500);
         DECLARE    	V_SRC_TABLE					VARCHAR(500);
         DECLARE    	V_TGT_DB					VARCHAR(500);
@@ -43,9 +46,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 		DECLARE		V_IS_TARANSACTIOANL			INTEGER;
 		declare		v_online_load_id_filter,
 					v_valid_batches_filter,
-					V_UPDATE_ALL_TO_D,
+					V_UPDATE_ALL_TO_D,V_ALL_COLS,
 					V_KEY_COLs, v_, v_keys_eql,
-					v_valid_data_filter			varchar(2000) default '';
+					v_set_non_key_cols, v_valid_data_filter			varchar(2000) default '';
 		
         DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN 	
@@ -108,7 +111,29 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
             	leave MAINBLOCK;
 			end if;
 			
-		
+			SELECT 
+			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)|| ' = SRC.' ||trim(COLUMNNAME) || ',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) SET_COLS
+			FROM DBC.COLUMNSV v
+			WHERE DATABASENAME = V_STAGING_DB
+			AND TABLENAME  = i_TABLE_NAME
+			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM', 'MODIFICATION_TYPE')
+			and not exists (select 1 
+							from GDEV1t_GCFR.TRANSFORM_KEYCOL k 
+							where k.TABLE_NAME = v.DATABASENAME 
+							and k.TABLE_NAME = v.TABLENAME
+							and k.Key_Column = v.COLUMNNAME)
+			GROUP BY DATABASENAME, TABLENAME
+			INTO v_set_non_key_cols;
+			
+			SELECT 
+			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)|| ',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) COLS
+			FROM DBC.COLUMNSV v
+			WHERE DATABASENAME = V_STAGING_DB
+			AND TABLENAME  = i_TABLE_NAME
+			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM', 'MODIFICATION_TYPE')
+			GROUP BY DATABASENAME, TABLENAME
+			INTO V_ALL_COLS;
+			
 		    set v_table_name_1batch = i_TABLE_NAME||'_1batch';
 		    if V_REJECTION_TABLE_NAME is not null and V_BUSINESS_RULES_TABLE_NAME is not null
 		    then
@@ -181,12 +206,29 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 			
 			set v_update_tgt = 
 							'update tgt
-							from '||I_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_table_name_1batch||' src
-							set '||v_set_non_key_cols||', '||v_UPDT_MODIFICATION_TYPE_COL||'
+							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_table_name_1batch||' src
+							set '||v_set_non_key_cols||'
+							,MODIFICATION_TYPE = src.MODIFICATION_TYPE
+							,UPD_DTTM = current_timestamp
 							where '||v_keys_eql||';		
 							';
 							
-            SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+            set v_insert_into_tgt = 
+							'insert into '||V_STAGING_DB||'.'||i_TABLE_NAME||'
+							('||V_ALL_COLS||', MODIFICATION_TYPE, INS_DTTM)
+							SELECT 
+								 '||V_ALL_COLS||'
+								, MODIFICATION_TYPE
+								, current_timestamp INS_DTTM 
+							FROM '||v_table_name_1batch||' src
+							where not exists (
+											select 1 
+											from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt 
+											where '||v_keys_eql||'
+											);
+							';		
+							
+			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
 			CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(v_drop_1batch,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
 			IF V_DBC_RETURN_CODE <> 0 THEN
 				SET V_RETURN_CODE = V_DBC_RETURN_CODE;
@@ -196,6 +238,25 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 			
 			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
 			CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(v_create_1batch,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+			IF V_DBC_RETURN_CODE <> 0 THEN
+				SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+				SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+				LEAVE MainBlock;
+			END IF;
+			
+			CALL GDEV1P_PP.COUNT_ROWS('', v_table_name_1batch, '',V_ROWS_IN_1batch, V_DBC_RETURN_CODE, V_DBC_RETURN_MSG);
+			IF V_DBC_RETURN_CODE <> 0 THEN
+				SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+				SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+				LEAVE MainBlock;
+			END IF;
+			
+			if V_ROWS_IN_1batch = 0
+			then
+				LEAVE MainBlock;
+			end if;
+			
+			CALL GDEV1P_PP.CHECK_MANDATORY_COLUMNS(NULL, v_table_name_1batch, V_KEY_COLs,V_NULLABLE_COLUMN, V_DBC_RETURN_CODE, V_DBC_RETURN_MSG);
 			IF V_DBC_RETURN_CODE <> 0 THEN
 				SET V_RETURN_CODE = V_DBC_RETURN_CODE;
 				SET V_RETURN_MSG = V_DBC_RETURN_MSG;
@@ -221,6 +282,27 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 				END IF;
 			end if;
 			
+			if cast(v_update_tgt as char(10)) <> ''
+			then
+				SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+				CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(v_update_tgt,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+				IF V_DBC_RETURN_CODE <> 0 THEN
+					SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+					LEAVE MainBlock;
+				END IF;
+			end if;
+			
+			if cast(v_insert_into_tgt as char(10)) <> ''
+			then
+				SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+				CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(v_insert_into_tgt,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+				IF V_DBC_RETURN_CODE <> 0 THEN
+					SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+					LEAVE MainBlock;
+				END IF;
+			end if;
 			
 			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
 			CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG('ET',V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
