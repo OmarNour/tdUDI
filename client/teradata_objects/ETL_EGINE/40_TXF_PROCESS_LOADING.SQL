@@ -53,10 +53,11 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
         DECLARE 	V_START_DATE_COLUMN_JOIN	VARCHAR(2000)	DEFAULT '';
         DECLARE		V_TMP_INPUT_VIEW_NAME, V_BASE_VT_NAME, V_DELTA_INPUT_VIEW_NAME		VARCHAR(150)	DEFAULT '';
         
-     	DECLARE 	V_FROM_BASE_IN_TMP, V_KEYS_IN_BASE, V_INSERT_INTO_MODEL_FROM_INPV, V_UPDATE_END_DATE_COLUMN, V_UPDATE_MODEL_DATA_FROM_INPV, V_DEL_FROM_MODEL_SAME_HC
+     	DECLARE 	V_UPDATE_MODEL_DELETE_FLAG, V_FROM_BASE_IN_TMP, V_KEYS_IN_BASE, V_INSERT_INTO_MODEL_FROM_INPV, V_UPDATE_END_DATE_COLUMN
+     				, V_REOPEN_END_DATE_COL, V_UPDATE_MODEL_DATA_FROM_INPV, V_DEL_FROM_MODEL_SAME_HC
      				, V_VT_UPSERT_MODEL, V_VT_NEW_MODEL_END_DATE , V_VT_ALL_KEYS, V_VT_BASE_TABLE, V_VT_INPUT_VIEW
      				, V_VT_DELTA_INPUT_VIEW, V_TMP_INPUT_VIEW		clob;
-     	DECLARE 	V_DROP_UPSERT_MODEL, V_DROP_NEW_MODEL_END_DATE, V_DROP_ALL_KEYS, V_DROP_BASE_TABLE
+     	DECLARE 	V_CLOSE_END_DATE, V_DROP_UPSERT_MODEL, V_DROP_NEW_MODEL_END_DATE, V_DROP_ALL_KEYS, V_DROP_BASE_TABLE
      				, V_DROP_INPUT_VIEW, V_DROP_DELTA_INPUT_VIEW, V_DROP_TMP_INPUT_VIEW								VARCHAR(2000);
      	
         DECLARE 	V_WITH_DATA_PI			VARCHAR(100) DEFAULT 'WITH DATA AND STATS PRIMARY INDEX';
@@ -161,7 +162,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			into V_TMP_INPUT_VIEW_NAME, V_DROP_TMP_INPUT_VIEW, V_TMP_INPUT_VIEW;
 			
 			CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(V_DROP_TMP_INPUT_VIEW,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,I_PROCESSNAME,I_LOAD_ID,0/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
-
+				
 			IF CAST(V_TMP_INPUT_VIEW AS CHAR(10)) <> ''
 			THEN
 				SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
@@ -193,8 +194,80 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			END IF;
 			
 			--------------------------------------------------------------------------------------------------------------------------------
+			set v_where_clause = ' AND ((X.INPV_DELETE_FLAG = 1 and END_TS IS NULL) or (X.INPV_DELETE_FLAG = 0 and END_TS IS not NULL))';
+			if V_APPLY_TYPE = V_HISTORY_TYPE
+			then
+				set V_CLOSE_END_DATE = ','||V_END_DATE_COLUMN||' = case when X.INPV_DELETE_FLAG = 1 and '||V_END_DATE_COLUMN||' is null then Y.'||V_START_DATE_COLUMN||' else '||V_END_DATE_COLUMN||' end';
+				set v_where_clause = ' AND ((X.INPV_DELETE_FLAG = 1 and (END_TS IS NULL or '||V_END_DATE_COLUMN||' is null)) or (X.INPV_DELETE_FLAG = 0 and END_TS IS not NULL))';
+			end if;
+			
+			SELECT 
+			'
+			UPDATE Y 
+			FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' Y
+			-- SELECT * FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' Y
+				, TMP_INPUT_VIEW_' || V_TGT_TABLE || ' X			
+			SET  END_TS = 	case when X.INPV_DELETE_FLAG = 1 and END_TS IS NULL then CURRENT_TIMESTAMP else null end
+				'||V_CLOSE_END_DATE||'				
+				,UPDATE_TS = CURRENT_TIMESTAMP
+				,UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
+				,batch_id = x.batch_id
+			where ' || V_FULL_KEY_JOIN || '
+			' || v_where_clause || ';'
+			
+			INTO V_UPDATE_MODEL_DELETE_FLAG
+			WHERE V_APPLY_TYPE <> V_INSERT_TYPE;
+			
+			IF CAST(V_UPDATE_MODEL_DELETE_FLAG AS CHAR(10)) <> ''
+			then
+				SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+				CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(V_UPDATE_MODEL_DELETE_FLAG,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,I_PROCESSNAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+				IF V_DBC_RETURN_CODE <> 0 THEN
+					SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+					LEAVE MainBlock;
+				END IF;
+				set V_UPDATED_ROWS_COUNT = V_UPDATED_ROWS_COUNT + V_DBC_ROWS_COUNT;
+			end if;
+			--------------------------------------------------------------------------------------------------------------------------------
+			SELECT 
+			'UPDATE Y 
+			FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' Y
+			-- SELECT * FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' Y
+				, (
+					select ' || V_FULL_KEY || ' 
+					from '||V_TGT_DB||'.' || V_TGT_TABLE || ' X
+					where exists (
+								select 1 
+								from TMP_INPUT_VIEW_' || V_TGT_TABLE || ' y 
+								where ' || V_KEY_COLUMNS_JOIN || '
+								)
+					QUALIFY ROW_NUMBER()  OVER(PARTITION BY '||V_KEY_COLUMNS||' ORDER BY  '||V_START_DATE_COLUMN||' DESC)=1 
+				) X			
+			SET '||V_END_DATE_COLUMN||' = Null			
+				,UPDATE_TS = CURRENT_TIMESTAMP
+				,UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
+			where ' || V_FULL_KEY_JOIN || '
+			AND Y.END_TS IS NULL AND Y.'||V_END_DATE_COLUMN||' IS NOT NULL;'
+			INTO V_REOPEN_END_DATE_COL
+			WHERE V_APPLY_TYPE = V_HISTORY_TYPE;
+			
+			IF CAST(V_REOPEN_END_DATE_COL AS CHAR(10)) <> ''
+			then
+				SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+				CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(V_REOPEN_END_DATE_COL,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,I_PROCESSNAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+				IF V_DBC_RETURN_CODE <> 0 THEN
+					SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+					LEAVE MainBlock;
+				END IF;
+				set V_UPDATED_ROWS_COUNT = V_UPDATED_ROWS_COUNT + V_DBC_ROWS_COUNT;
+			end if;
+			--------------------------------------------------------------------------------------------------------------------------------
+			
 			SET V_FROM_BASE_IN_TMP = 'FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' X
-									where exists (
+									where end_ts is null
+									and exists (
 												select 1 
 												from TMP_INPUT_VIEW_' || V_TGT_TABLE || ' y 
 												where ' || V_KEY_COLUMNS_JOIN || '
@@ -213,43 +286,34 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				,'DROP TABLE DELTA_INPUT_VIEW_'		|| V_TGT_TABLE ||';'
 				,'CREATE VOLATILE MULTISET TABLE DELTA_INPUT_VIEW_' || V_TGT_TABLE || ' , no fallback AS 
 				(
-					SELECT ' || V_FULL_KEY || V_NORMAL_COMMON_COLUMNS ||V_HISTORY_COLUMNS	|| ', INPV_DELETE_FLAG					 
+					SELECT ' || V_FULL_KEY || V_NORMAL_COMMON_COLUMNS ||V_HISTORY_COLUMNS	|| '			 
 					FROM TMP_INPUT_VIEW_' || V_TGT_TABLE || '
+					WHERE INPV_DELETE_FLAG = 0
 					MINUS
-					SELECT ' || V_FULL_KEY || V_NORMAL_COMMON_COLUMNS ||V_HISTORY_COLUMNS	|| ',CASE WHEN END_TS IS NOT NULL THEN 1 ELSE 0 END DELETE_FLAG					 
+					SELECT ' || V_FULL_KEY || V_NORMAL_COMMON_COLUMNS ||V_HISTORY_COLUMNS	|| '			 
 					'||V_FROM_BASE_IN_TMP||'							
 				)  ' || V_WITH_DATA_UNIQUE_PI || '  (' || V_FULL_KEY || ') ON COMMIT PRESERVE ROWS;' 
 			into V_DELTA_INPUT_VIEW_NAME, V_DROP_DELTA_INPUT_VIEW, V_VT_DELTA_INPUT_VIEW
 			WHERE V_APPLY_TYPE <> V_INSERT_TYPE and V_KEYS_IN_BASE_CT > 0;
 			--------------------------------------------------------------------------------------------------------------------------------			
 			set v_select_clause = 'select * ';
-			set v_where_clause = '';
+			set v_where_clause = 'WHERE INPV_DELETE_FLAG = 0';
 			
 			if V_APPLY_TYPE = V_HISTORY_TYPE
 			then
 				set v_calculate_end_date = 
 				'(
 					LEAD('||V_START_DATE_COLUMN||') OVER(PARTITION BY '||v_KEY_COLUMNS||' ORDER BY '||V_START_DATE_COLUMN||'  ) 
-				) + INTERVAL - ''1'' SECOND ';
+				) + INTERVAL - ''1'' SECOND '|| V_END_DATE_COLUMN;
 				
-				set v_coalesce_end_date = 
-				'COALESCE(
-							'||v_calculate_end_date||'
-							, CASE WHEN INPV_DELETE_FLAG = 1 THEN '||V_START_DATE_COLUMN||' END
-						)	'||V_END_DATE_COLUMN;
 						
-				set v_select_clause = 'select x.*,'||v_coalesce_end_date;
+				set v_select_clause = 'select x.*,'||v_calculate_end_date;
 			end if;
 			
 			if V_KEYS_IN_BASE_CT > 0
 			then
-				set v_coalesce_end_date = 
-					'COALESCE(
-								'||v_calculate_end_date||'
-								, CASE WHEN FOLLOWING_IN_MODEL IS NULL AND DELETE_FLAG = 1 THEN '||V_START_DATE_COLUMN||' END
-							)	'||V_END_DATE_COLUMN;
 							
-				set v_where_clause = 'where exists (
+				set v_where_clause = 'WHERE exists (
 												select 1 
 												from DELTA_INPUT_VIEW_' || V_TGT_TABLE || ' y 
 												where ' || V_FULL_KEY_JOIN || '
@@ -275,9 +339,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			,'CREATE VOLATILE MULTISET TABLE BASE_' || V_TGT_TABLE || ' , no fallback AS 
 				(
 					SELECT x.*
-						  ,CASE WHEN x.END_TS IS NOT NULL THEN 1 ELSE 0 END MDL_DELETE_FLAG
 					FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' x
-					where exists (
+					where end_ts is null
+					and exists (
 								select 1 
 								from DELTA_INPUT_VIEW_' || V_TGT_TABLE || ' y 
 								where ' || V_KEY_COLUMNS_JOIN || '
@@ -307,13 +371,6 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 						,CASE WHEN X.'||V_START_DATE_COLUMN||' IS NOT NULL THEN 1 		ELSE 0		END FROM_INPV'	||'
 						'||v_X_HISTORY_COLUMNS||'
 						'||v_X_NORMAL_COMMON_COLUMNS||'
-						,INPV_DELETE_FLAG
-						,MDL_DELETE_FLAG
-						,CASE WHEN INPV_DELETE_FLAG = 1 OR (MDL_DELETE_FLAG = 1 AND FROM_INPV = 0) THEN 1 ELSE 0 END DELETE_FLAG
-					
-						--,COALESCE(Y.PROCESS_NAME, X.PROCESS_NAME) PROCESS_NAME
-						--,CASE WHEN Y.PROCESS_NAME IS NOT NULL THEN X.PROCESS_NAME ELSE NULL END UPDATE_PROCESS_NAME
-						,Y.END_TS
 						 FROM INPUT_VIEW_'||V_TGT_TABLE||' X
 							FULL OUTER JOIN BASE_'||V_TGT_TABLE||' Y
 							ON ' || V_FULL_KEY_JOIN || ' 
@@ -324,13 +381,11 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 					'|| v_HISTORY_COLUMNS||'
 					'|| V_NORMAL_COMMON_COLUMNS||'
 					,END_DATE_IN_MODEL
-					,IN_MODEL, FROM_INPV, INPV_DELETE_FLAG, MDL_DELETE_FLAG, DELETE_FLAG, END_TS
-					,LEAD(IN_MODEL)		OVER(PARTITION BY '|| v_KEY_COLUMNS ||' ORDER BY '||V_START_DATE_COLUMN||') FOLLOWING_IN_MODEL
-					,LAG(HC) 			OVER(PARTITION BY '|| v_KEY_COLUMNS ||' ORDER BY '||V_START_DATE_COLUMN||') PRECEDING_HC
-					,LAG(DELETE_FLAG) 	OVER(PARTITION BY '|| v_KEY_COLUMNS ||' ORDER BY '||V_START_DATE_COLUMN||') PRECEDING_DELETE_FLAG				
+					,IN_MODEL
+					,FROM_INPV
+					,LAG(HC) 			OVER(PARTITION BY '|| v_KEY_COLUMNS ||' ORDER BY '||V_START_DATE_COLUMN||') PRECEDING_HC				
 					,HC_X,HC_Y,HC
-					,CASE WHEN IN_MODEL=1 AND PRECEDING_HC = HC AND PRECEDING_DELETE_FLAG = DELETE_FLAG THEN 1 ELSE 0 END DELETE_FROM_MODEL
-					--, PROCESS_NAME, UPDATE_PROCESS_NAME
+					,CASE WHEN IN_MODEL=1 AND PRECEDING_HC = HC THEN 1 ELSE 0 END DELETE_FROM_MODEL
 					FROM T1
 
 				)  ' || V_WITH_DATA_UNIQUE_PI || ' (' || V_FULL_KEY || ') ON COMMIT PRESERVE ROWS;'
@@ -342,12 +397,11 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			,'CREATE VOLATILE MULTISET TABLE NEW_MODEL_END_DATE_'||V_TGT_TABLE||' , no fallback AS 
 			(
 				SELECT 
-				T.* ,'||v_coalesce_end_date||' 
+				T.* ,'||v_calculate_end_date||' 
 				FROM ALL_KEYS_'||V_TGT_TABLE||' T
 				WHERE DELETE_FROM_MODEL = 0
 				AND (
 						COALESCE(PRECEDING_HC,'''') <> COALESCE(HC,'''') 
-						OR (PRECEDING_DELETE_FLAG <> DELETE_FLAG)
 						OR (PRECEDING_HC IS NULL AND FROM_INPV = 1 AND IN_MODEL = 0 )  
 						OR (END_DATE_IN_MODEL IS NULL AND IN_MODEL = 1) 
 					)
@@ -361,7 +415,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				SELECT * FROM NEW_MODEL_END_DATE_'||V_TGT_TABLE||' T
 				WHERE (
 						COALESCE(END_DATE_IN_MODEL,(''9999-12-31 00:00:00'' (TIMESTAMP))) <> COALESCE('||V_END_DATE_COLUMN||',(''9999-12-31 00:00:00'' (TIMESTAMP))) 
-						OR ( ( COALESCE(HC_Y,'''') <> COALESCE(HC_X,'''') OR INPV_DELETE_FLAG <> MDL_DELETE_FLAG ) AND IN_MODEL=1 AND FROM_INPV=1)
+						OR (FROM_INPV = 1 AND COALESCE(HC_Y,'''') <> COALESCE(HC_X,'''') )
 						OR IN_MODEL = 0
 						)
 				)  ' || V_WITH_DATA_UNIQUE_PI || ' (' || V_FULL_KEY || ') ON COMMIT PRESERVE ROWS;' 
@@ -389,21 +443,11 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				'||V_SET_HISTORY_COLUMNS||'
 				'||V_SET_NORMAL_COMMON_COLUMNS||'
 				,UPDATE_TS = CURRENT_TIMESTAMP				
-				,END_TS = 	CASE 
-								WHEN INPV_DELETE_FLAG = 1 
-								THEN 
-									CASE 
-										WHEN Y.END_TS IS NULL 
-										THEN CURRENT_TIMESTAMP 
-										ELSE Y.END_TS 
-									END 
-								ELSE NULL 
-							END 
-				, batch_id = x.batch_id
+				,END_TS = 	NULL 
+				,batch_id = x.batch_id
 				,UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
 			where ' || V_FULL_KEY_JOIN || ' 						
-			AND X.FROM_INPV = 1
-			AND X.IN_MODEL = 1;'
+			AND X.FROM_INPV = 1;'
 			into V_UPDATE_MODEL_DATA_FROM_INPV
 			WHERE V_APPLY_TYPE = V_HISTORY_TYPE and V_KEYS_IN_BASE_CT > 0;
 			
@@ -417,17 +461,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 				'||V_SET_NORMAL_COMMON_COLUMNS||'	
 				'||V_SET_HISTORY_COLUMNS||'		
 				,UPDATE_TS = CURRENT_TIMESTAMP
-				,END_TS = 	CASE 
-								WHEN INPV_DELETE_FLAG = 1 
-								THEN 
-									CASE 
-										WHEN Y.END_TS IS NULL 
-										THEN CURRENT_TIMESTAMP 
-										ELSE Y.END_TS 
-									END 
-								ELSE NULL 
-							END 
-			WHERE ' || V_FULL_KEY_JOIN || ' ;' 
+				,END_TS = 	NULL 
+			WHERE ' || V_FULL_KEY_JOIN || ';' 
 			into V_UPDATE_MODEL_DATA_FROM_INPV
 			WHERE V_APPLY_TYPE in( V_UPSERT_TYPE, V_UPSERTDELETE_TYPE ) and V_KEYS_IN_BASE_CT > 0;
 			--------------------------------------------------------------------------------------------------------------------------------
@@ -439,7 +474,6 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			SET '||V_END_DATE_COLUMN||' = X.'||V_END_DATE_COLUMN||'
 				,UPDATE_TS = CURRENT_TIMESTAMP
 				,UPDATE_PROCESS_NAME = '''||I_PROCESSNAME||'''
-				,batch_id = x.batch_id
 			where ' || V_FULL_KEY_JOIN || ' 						
 			AND X.FROM_INPV = 0;'
 			into V_UPDATE_END_DATE_COLUMN
@@ -460,7 +494,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			, START_TS, END_TS, PROCESS_NAME, batch_id)
 			SELECT 
 				'||V_FULL_KEY ||V_HISTORY_COLUMNS ||V_NORMAL_COMMON_COLUMNS||', '||V_END_DATE_COLUMN||'
-				,CURRENT_TIMESTAMP START_TS ,CASE WHEN INPV_DELETE_FLAG = 1 THEN CURRENT_TIMESTAMP ELSE NULL END END_TS ,'''||I_PROCESSNAME||''' ,batch_id
+				,CURRENT_TIMESTAMP START_TS ,NULL  END_TS ,'''||I_PROCESSNAME||''' ,batch_id
 			'||v_from_clause||'
 			'||v_where_clause||';'
 			into V_INSERT_INTO_MODEL_FROM_INPV
@@ -472,9 +506,10 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.TXF_PROCESS_LOADING
 			, START_TS, END_TS, PROCESS_NAME, batch_id)
 			SELECT 
 				'||V_FULL_KEY ||V_NORMAL_COMMON_COLUMNS||'
-				,CURRENT_TIMESTAMP(6) Start_Ts ,CASE WHEN INPV_DELETE_FLAG = 1 THEN CURRENT_TIMESTAMP ELSE NULL END END_TS, '''||I_PROCESSNAME||''', batch_id
+				,CURRENT_TIMESTAMP(6) Start_Ts ,NULL END_TS, '''||I_PROCESSNAME||''', batch_id
 			FROM TMP_INPUT_VIEW_'||V_TGT_TABLE||' X
-			 WHERE NOT EXISTS (SEL 1 FROM '||V_TGT_DB||'.'||V_TGT_TABLE||' Y WHERE ' || V_FULL_KEY_JOIN || ' ) ;' 
+			WHERE INPV_DELETE_FLAG = 0
+			AND NOT EXISTS (SEL 1 FROM '||V_TGT_DB||'.'||V_TGT_TABLE||' Y WHERE ' || V_FULL_KEY_JOIN || ' ) ;' 
 			into V_INSERT_INTO_MODEL_FROM_INPV
 			WHERE V_APPLY_TYPE <> V_HISTORY_TYPE;
 
