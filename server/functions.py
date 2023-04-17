@@ -83,6 +83,13 @@ def remove_folder(path):
         pass
 
 
+def string_to_list(string, separator=None) -> list:
+    if separator is None:
+        return string.split()
+    else:
+        return string.split(separator)
+
+
 def list_to_string(_list, separator=None, quotes=0):
     if separator is None:
         prefix = ""
@@ -139,7 +146,7 @@ def log_error_decorator():
             # source_output_path = args[1]
             # file_name = get_file_name(__file__)
             try:
-                function(*args, **kwargs)
+                return function(*args, **kwargs)
             except:
                 # print(traceback.format_exc()) if error_log_path is None else None
                 error_detailed = f"""\n\nFunction Name: {function.__name__}\n\nargs: {args}\n\nkwargs: {kwargs}\n\nError: {traceback.format_exc()}"""

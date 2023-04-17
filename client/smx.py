@@ -442,7 +442,7 @@ class SMX:
             @log_error_decorator()
             def extract_srci_view_columns(row):
                 stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+                # stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
                 stg_t_col = None
 
                 srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
@@ -459,10 +459,10 @@ class SMX:
                                 logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!, processing row:\n{row}""")
                             else:
                                 txf_process_name = BK_PROCESS_NAME_TEMPLATE.format(set_id=data_set.set_code
-                                                                                , src_table_name=stg_t.table_name
-                                                                                , column_name=srci_t_col.column_name
-                                                                                , domain_id=srci_t_col.domain.domain_code
-                                                                                )
+                                                                                   , src_table_name=stg_t.table_name
+                                                                                   , column_name=srci_t_col.column_name
+                                                                                   , domain_id=srci_t_col.domain.domain_code
+                                                                                   )
                                 txf_view_name = BK_VIEW_NAME_TEMPLATE.format(view_name=txf_process_name)
                                 # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
                                 txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
@@ -659,7 +659,7 @@ class SMX:
                         #     logging.error(f"Historization algorithm and core table definition are not consistent, processing row:\n{row}")
 
                         txf_process_name = CORE_PROCESS_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
-                        txf_view_name   = CORE_VIEW_NAME_TEMPLATE.format(view_name=txf_process_name)
+                        txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(view_name=txf_process_name)
                         core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
 
                         core_txf_vl = LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
@@ -906,11 +906,11 @@ def layer_table_scripts(row):
     table_kind = row.layer_table.table.table_kind
     if DROP_BEFORE_CREATE:
         if table_kind == 'T':
-            drop_table = DROP_TABLE_TEMPLATE.format(schema_name=row.layer_table.table.schema.schema_name, table_name=row.layer_table.table.table_name)+"\n"
+            drop_table = DROP_TABLE_TEMPLATE.format(schema_name=row.layer_table.table.schema.schema_name, table_name=row.layer_table.table.table_name) + "\n"
     if ddl:
         kind_folder = 'tables' if table_kind == 'T' else 'views'
         tables_file = WriteFile(row.out_path, kind_folder, "sql", 'a')
-        tables_file.write(drop_table+ddl)
+        tables_file.write(drop_table + ddl)
         tables_file.write('\n')
         tables_file.close()
 
@@ -935,7 +935,7 @@ def layer_table_scripts(row):
 
 @log_error_decorator()
 def generate_schemas_ddl(smx: SMX):
-    schema:Schema
+    schema: Schema
     db_create_file = WriteFile(smx.current_scripts_path, "create_schemas", "sql")
     db_drop_file = WriteFile(smx.current_scripts_path, "drop_schemas", "sql")
 
@@ -945,8 +945,8 @@ def generate_schemas_ddl(smx: SMX):
         delete_schema_ddl = DELETE_DATABASE_TEMPLATE.format(db_name=schema.schema_name)
         drop_schema_ddl = DROP_DATABASE_TEMPLATE.format(db_name=schema.schema_name)
         if ddl:
-            db_drop_file.write(delete_schema_ddl+"\n"+drop_schema_ddl+"\n\n")
-            db_create_file.write(ddl+"\n")
+            db_drop_file.write(delete_schema_ddl + "\n" + drop_schema_ddl + "\n\n")
+            db_create_file.write(ddl + "\n")
 
     db_drop_file.write(DROP_DATABASE_TEMPLATE.format(db_name=MAIN_DB_NAME) + "\n")
 
@@ -1112,6 +1112,7 @@ def generate_metadata_scripts(smx: SMX):
     core_tables_file.close()
 
 
+@log_error_decorator()
 @time_elapsed_decorator
 def deploy():
     db: DataBaseEngine
@@ -1123,6 +1124,9 @@ def deploy():
         if db.conn:
             # for schema in db.schemas:
             #     db.execute(schema.ddl)
+            grants = string_to_list(GRANTS, ';')
+            for grant in grants:
+                db.execute(grant)
 
             for schema in db.schemas:
                 for table in schema.kind_T_tables:
@@ -1132,7 +1136,9 @@ def deploy():
 
             for schema in db.schemas:
                 for table in schema.kind_V_tables:
-                    db.execute(table.ddl)
+                    cursor = db.execute(table.ddl)
+                    if cursor:
+                        db.execute(f"select top 1 * from {schema.schema_name}.{table.table_name}")
 
             if db.conn:
                 db.conn.close()

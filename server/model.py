@@ -290,6 +290,7 @@ class DataBaseEngine(MyID):
             if self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute(stmt)
+                return cursor
         except teradatasql.OperationalError as e:
             error_msg = e.__str__()
             if "[Error 5612]" in error_msg:
