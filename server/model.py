@@ -297,16 +297,16 @@ class DataBaseEngine(MyID):
                 tailored_msg = f"A user, database, role, or zone with the specified name already exists.\nStatment:\n{stmt}"
                 logging.warning(tailored_msg)
             elif "[Error 3803]" in error_msg:
-                tailored_msg = f"Table already exists.\nStatment:\n{stmt}"
+                tailored_msg = f"Table already exists.\n\nStatment:\n{stmt}"
                 logging.warning(tailored_msg)
             elif "[Error 3804]" in error_msg:
-                tailored_msg = f"View already exists.\nStatment:\n{stmt}"
+                tailored_msg = f"View already exists.\n\nStatment:\n{stmt}"
                 logging.warning(tailored_msg)
             elif "[Error 3706]" in error_msg:
-                tailored_msg = f"Syntax error.\nStatment:\n{stmt}"
+                tailored_msg = f"\n{error_msg}\n\nStatment:\n{stmt}"
                 logging.error(tailored_msg)
             else:
-                logging.error(e.__str__() + f"\nStatment:\n{stmt}")
+                logging.error(error_msg + f"\n\nStatment:\n{stmt}")
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
         data_type: DataType
