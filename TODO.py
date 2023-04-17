@@ -1,10 +1,10 @@
 """
 TODO:
-    Override technical columns
-    an option to do replace or create, when deploying DB objects
-    add _IN to end of all input views
+    DONE Override technical columns
+    DONE an option to do replace or create, when deploying DB objects
+    DONE add _IN to end of all input views
     add main_stg_table column to process table
-    In Deploy() select top 1 from each view
+    DONE In Deploy() select top 1 from each view
     DONE handle "select *", in pipelines
     generate fake data
     USE CONFIG FILE, one for server and another for client
