@@ -1033,7 +1033,7 @@ def generate_metadata_scripts(smx: SMX):
                                                                    SOURCE_NAME=single_quotes(source.source_name),
                                                                    REJECTION_TABLE_NAME='NULL',
                                                                    BUSINESS_RULES_TABLE_NAME='NULL',
-                                                                   SOURCE_MODE=single_quotes('ONLINE'),
+                                                                   LOADING_MODE=single_quotes(LOADING_MODE),
                                                                    SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
                                                                    DATA_SRC_CD='NULL'
                                                                    )
@@ -1098,6 +1098,7 @@ def generate_metadata_scripts(smx: SMX):
                                                               TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
                                                               TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
                                                               APPLY_TYPE=single_quotes(apply_type),
+                                                              MAIN_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
                                                               KEY_SET_ID=key_set_id,
                                                               DOMAIN_ID=domain_id,
                                                               CODE_SET_ID='NULL'
