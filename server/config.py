@@ -106,6 +106,8 @@ WHERE_TEMPLATE = """where {conditions}"""
 GROUP_BY_TEMPLATE = """group by {columns}"""
 PI_TEMPLATE = """PRIMARY INDEX ( {pi_cols} )"""
 COL_DTYPE_TEMPLATE = """\t{comma}{col_name}  {data_type}{precision} {latin_unicode} {case_sensitive} {not_null}\n """
+DROP_BEFORE_CREATE = True
+DROP_TABLE_TEMPLATE = """DROP TABLE {schema_name}.{table_name};"""
 DDL_TABLE_TEMPLATE = """ 
 CREATE {set_multiset} TABLE {schema_name}.{table_name}
     ,FALLBACK

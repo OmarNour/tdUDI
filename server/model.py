@@ -305,7 +305,7 @@ class DataBaseEngine(MyID):
                 tailored_msg = f"Syntax error.\nStatment:\n{stmt}"
                 logging.error(tailored_msg)
             else:
-                logging.error(e.__str__())
+                logging.error(e.__str__() + f"\nStatment:\n{stmt}")
 
     def valid_trx(self, trx: str, extra_words: [] = None) -> bool:
         data_type: DataType

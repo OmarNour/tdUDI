@@ -902,10 +902,15 @@ class SMX:
 def layer_table_scripts(row):
     row.layer_table: LayerTable
     ddl = row.layer_table.table.ddl
+    drop_table = ""
+    table_kind = row.layer_table.table.table_kind
+    if DROP_BEFORE_CREATE:
+        if table_kind == 'T':
+            drop_table = DROP_TABLE_TEMPLATE.format(schema_name=row.layer_table.table.schema.schema_name, table_name=row.layer_table.table.table_name)+"\n"
     if ddl:
-        kind_folder = 'tables' if row.layer_table.table.table_kind == 'T' else 'views'
+        kind_folder = 'tables' if table_kind == 'T' else 'views'
         tables_file = WriteFile(row.out_path, kind_folder, "sql", 'a')
-        tables_file.write(ddl)
+        tables_file.write(drop_table+ddl)
         tables_file.write('\n')
         tables_file.close()
 
@@ -1121,6 +1126,8 @@ def deploy():
 
             for schema in db.schemas:
                 for table in schema.kind_T_tables:
+                    if DROP_BEFORE_CREATE:
+                        db.execute(DROP_TABLE_TEMPLATE.format(schema_name=schema.schema_name, table_name=table.table_name))
                     db.execute(table.ddl)
 
             for schema in db.schemas:
