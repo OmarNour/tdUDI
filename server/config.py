@@ -117,7 +117,8 @@ CREATE {set_multiset} TABLE {schema_name}.{table_name}
 {pi_index}
 {si_index}
  """
-DDL_VIEW_TEMPLATE = """CREATE VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
+CREATE_REPLACE = 'REPLACE'
+DDL_VIEW_TEMPLATE = """{create_replace} VIEW /*VER.1*/  {schema_name}.{view_name} AS LOCK ROW FOR ACCESS {query_txt}"""
 QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\n{from_clause} {join_clause}\n{where_clause}\n{group_by_clause}\n{having_clause}"""
 JOIN_CLAUSE_TEMPLATE = "\n\t{join_type} {with_table} {with_alias}\n\ton {on_clause}"
 SRCI_V_BKEY_TEMPLATE_QUERY = """(select EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key} {cast}\n and DOMAIN_ID={domain_id})"""
@@ -127,19 +128,25 @@ BK_VIEW_NAME_TEMPLATE = "{view_name}_IN"
 CORE_PROCESS_NAME_TEMPLATE = "TXF_CORE_{mapping_name}"
 CORE_VIEW_NAME_TEMPLATE = "{view_name}_IN"
 
-MAIN_DATABASE_TEMPLATE = """
-CREATE DATABASE EDW
-AS PERMANENT = 60e6, -- 60MB
-    SPOOL = 120e6; -- 120MB
+DELETE_DATABASE_TEMPLATE = """DELETE DATABASE {db_name} ALL;"""
+DROP_DATABASE_TEMPLATE = """DROP DATABASE {db_name};"""
+
+MAIN_DB_NAME = f"{PREFIX}_EDWH"
+
+MAIN_DATABASE_TEMPLATE = f"""
+CREATE DATABASE {MAIN_DB_NAME}
+AS PERMANENT = 5000e6, -- 5GB
+    SPOOL = 1000e6; -- 1GB
 """
 
 DATABASE_TEMPLATE = """
-CREATE DATABASE {db_name} from EDW
+CREATE DATABASE {db_name} from {main_db_name}
 AS PERMANENT = 60e6, -- 60MB
     SPOOL = 120e6; -- 120MB
 """
-OTHER_SCHEMAS = [DATABASE_TEMPLATE.format(db_name=f"{PREFIX}P_FF")
-    , DATABASE_TEMPLATE.format(db_name=f"{PREFIX}P_PP")]
+OTHER_SCHEMAS = [f"{PREFIX}P_FF", f"{PREFIX}P_PP"]
+# OTHER_SCHEMAS = [DATABASE_TEMPLATE.format(db_name=f"{PREFIX}P_FF")
+#     , DATABASE_TEMPLATE.format(db_name=f"{PREFIX}P_PP")]
 ##################### Metadata ####################
 INSERT_INTO_SOURCE_SYSTEMS = """
 INSERT INTO {meta_db}.SOURCE_SYSTEMS (

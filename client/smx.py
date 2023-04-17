@@ -49,6 +49,9 @@ class SMX:
             if layer_value.v_db:
                 Schema(db_id=self.db_engine.id, schema_name=layer_value.v_db, _override=1)
 
+        for other_schema in OTHER_SCHEMAS:
+            Schema(db_id=self.db_engine.id, schema_name=other_schema, _override=1)
+
         DataSetType(name=DS_BKEY)
         DataSetType(name=DS_BMAP)
 
@@ -455,11 +458,12 @@ class SMX:
                             if not domain:
                                 logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!, processing row:\n{row}""")
                             else:
-                                txf_view_name = BK_PROCESS_NAME_TEMPLATE.format(set_id=data_set.set_code
+                                txf_process_name = BK_PROCESS_NAME_TEMPLATE.format(set_id=data_set.set_code
                                                                                 , src_table_name=stg_t.table_name
                                                                                 , column_name=srci_t_col.column_name
                                                                                 , domain_id=srci_t_col.domain.domain_code
                                                                                 )
+                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(view_name=txf_process_name)
                                 # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
                                 txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
                                 txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
@@ -610,7 +614,7 @@ class SMX:
                                         else:
                                             logging.error(f"Invalid Table '{src_table.table_name}', processing row:\n{_row}")
                                     else:
-                                        logging.error(f"Invalid alias '{src_table_alias}', processing row:\n{_row}")
+                                        logging.error(f"Invalid alias '{src_table_alias}' for mapping {row.mapping_name}, processing row:\n{_row}")
                             elif transformation_type == 'CONST':
                                 if str(_row.transformation_rule).upper() == '':
                                     transformation_rule = None
@@ -926,18 +930,23 @@ def layer_table_scripts(row):
 
 @log_error_decorator()
 def generate_schemas_ddl(smx: SMX):
-    db_file = WriteFile(smx.current_scripts_path, "schemas", "sql")
+    schema:Schema
+    db_create_file = WriteFile(smx.current_scripts_path, "create_schemas", "sql")
+    db_drop_file = WriteFile(smx.current_scripts_path, "drop_schemas", "sql")
+
+    db_create_file.write(MAIN_DATABASE_TEMPLATE + "\n")
     for schema in Schema.get_all_instances():
         ddl = schema.ddl
+        delete_schema_ddl = DELETE_DATABASE_TEMPLATE.format(db_name=schema.schema_name)
+        drop_schema_ddl = DROP_DATABASE_TEMPLATE.format(db_name=schema.schema_name)
         if ddl:
-            db_file.write(ddl)
-            db_file.write("\n")
+            db_drop_file.write(delete_schema_ddl+"\n"+drop_schema_ddl+"\n\n")
+            db_create_file.write(ddl+"\n")
 
-    for schema_ddl in OTHER_SCHEMAS:
-        db_file.write(schema_ddl)
-        db_file.write("\n")
+    db_drop_file.write(DROP_DATABASE_TEMPLATE.format(db_name=MAIN_DB_NAME) + "\n")
 
-    db_file.close()
+    db_create_file.close()
+    db_drop_file.close()
 
     grants_file = WriteFile(smx.current_scripts_path, "grants", "sql")
     grants_file.write(GRANTS)
@@ -1107,10 +1116,8 @@ def deploy():
         db.conn = db.get_connection()
 
         if db.conn:
-            for schema in db.schemas:
-                db.execute(schema.ddl)
-
-            # for db in DataBaseEngine.get_all_instances():
+            # for schema in db.schemas:
+            #     db.execute(schema.ddl)
 
             for schema in db.schemas:
                 for table in schema.kind_T_tables:

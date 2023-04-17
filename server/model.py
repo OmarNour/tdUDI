@@ -380,7 +380,7 @@ class Schema(MyID):
 
     @property
     def ddl(self) -> str:
-        return DATABASE_TEMPLATE.format(db_name=self.schema_name)
+        return DATABASE_TEMPLATE.format(db_name=self.schema_name, main_db_name=MAIN_DB_NAME)
 
     @property
     def layers(self) -> []:
@@ -536,7 +536,10 @@ class Table(MyID):
         elif self.table_kind == 'V':
             self.pipeline: Pipeline
             if self.pipeline:
-                self._ddl = DDL_VIEW_TEMPLATE.format(schema_name=self.schema.schema_name, view_name=self.table_name, query_txt=self.pipeline.query)
+                self._ddl = DDL_VIEW_TEMPLATE.format(create_replace=CREATE_REPLACE
+                                                     , schema_name=self.schema.schema_name
+                                                     , view_name=self.table_name
+                                                     , query_txt=self.pipeline.query)
 
         return (self._ddl.strip() + ';\n') if self._ddl is not None else None
 
