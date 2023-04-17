@@ -1,7 +1,3 @@
-import logging
-
-import pandas as pd
-
 from server.model import *
 
 

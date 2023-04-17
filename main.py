@@ -1,7 +1,4 @@
-import pandas as pd
-
 from client.smx import *
-# from client.smx2 import *
 
 
 @time_elapsed_decorator

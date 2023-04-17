@@ -10,6 +10,8 @@ import swifter
 import teradatasql
 from swifter import set_defaults
 import itertools
+import random
+from faker import Faker
 
 set_defaults(
     npartitions=100,
