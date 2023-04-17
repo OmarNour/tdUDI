@@ -797,9 +797,10 @@ class LayerTable(MyID):
 
 class Pipeline(MyID):
     def __init__(self
-                 , src_lyr_table_id: int
-                 , tgt_lyr_table_id: int | None
-                 , lyr_view_id: int | None = None
+                 , lyr_view_id: int
+                 , name: str = None
+                 , src_lyr_table_id: int | None = None
+                 , tgt_lyr_table_id: int | None = None
                  , select_asterisk: bool = False
                  , src_table_alias: str = None
                  , domain_id: int = None
@@ -815,6 +816,9 @@ class Pipeline(MyID):
         self.all_cols_constant = True if not select_asterisk else False
         self._domain_id = domain_id
         self.select_asterisk = select_asterisk
+        self._name = name if name else self.lyr_view.table.table_name
+
+        assert self._name, "Pipeline name is missing!"
 
         if self.src_lyr_table:
             self._src_table_alias = src_table_alias if src_table_alias else self._alphabets.pop(0)
@@ -828,6 +832,10 @@ class Pipeline(MyID):
 
         assert self.lyr_view.table.table_kind == 'V', 'Pipeline must be linked to a view only!'
         assert self._src_lyr_table_id, "Source Table is missing!"
+
+    @property
+    def name(self):
+        return self._name.upper()
 
     @property
     def domain(self) -> Domain:

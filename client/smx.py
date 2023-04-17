@@ -419,19 +419,20 @@ class SMX:
                                 srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
                                 srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
 
-                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(set_id=data_set.set_code
-                                                                             , src_table_name=stg_t.table_name
-                                                                             , column_name=srci_col.column_name
-                                                                             , domain_id=srci_col.domain.domain_code
-                                                                             )
-
-                                bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
+                                bk_process_name = BK_PROCESS_NAME_TEMPLATE.format(set_id=data_set.set_code
+                                                                                  , src_table_name=stg_t.table_name
+                                                                                  , column_name=srci_col.column_name
+                                                                                  , domain_id=srci_col.domain.domain_code
+                                                                                  )
+                                bk_view_name = BK_VIEW_NAME_TEMPLATE.format(view_name=bk_process_name)
+                                bkey_v = Table(schema_id=self.txf_bkey_v_schema.id, table_name=bk_view_name, table_kind='V', source_id=ds.id)
                                 bkey_vl = LayerTable(layer_id=self.txf_bkey_layer.id, table_id=bkey_v.id)
 
                                 bkey_pipeline = Pipeline(src_lyr_table_id=stg_lt.id
                                                          , tgt_lyr_table_id=domain.data_set.surrogate_table.id
                                                          , lyr_view_id=bkey_vl.id
-                                                         , domain_id=srci_col.domain.id)
+                                                         , domain_id=srci_col.domain.id
+                                                         , name=bk_process_name)
                                 if row.bkey_filter:
                                     Filter(pipeline_id=bkey_pipeline.id, filter_seq=1, complete_filter_expr=row.bkey_filter)
 
@@ -454,11 +455,11 @@ class SMX:
                             if not domain:
                                 logging.error(f"""{row.key_domain_name}, is not defined, please check the 'BKEY' sheet!, processing row:\n{row}""")
                             else:
-                                txf_view_name = BK_VIEW_NAME_TEMPLATE.format(set_id=data_set.set_code
-                                                                             , src_table_name=stg_t.table_name
-                                                                             , column_name=srci_t_col.column_name
-                                                                             , domain_id=srci_t_col.domain.domain_code
-                                                                             )
+                                txf_view_name = BK_PROCESS_NAME_TEMPLATE.format(set_id=data_set.set_code
+                                                                                , src_table_name=stg_t.table_name
+                                                                                , column_name=srci_t_col.column_name
+                                                                                , domain_id=srci_t_col.domain.domain_code
+                                                                                )
                                 # txf_view_name = f"BKEY_{row.table_name}_{row.column_name}_{srci_t_col.domain.domain_code}"
                                 txf_v = Table.get_instance(_key=(self.txf_bkey_v_schema.id, txf_view_name))
                                 txf_bkey_lt = LayerTable.get_instance(_key=(self.txf_bkey_layer.id, txf_v.id))
@@ -653,14 +654,16 @@ class SMX:
                         #         or (row.historization_algorithm.upper() != 'HISTORY' and core_t.history_table):
                         #     logging.error(f"Historization algorithm and core table definition are not consistent, processing row:\n{row}")
 
-                        txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
+                        txf_process_name = CORE_PROCESS_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
+                        txf_view_name   = CORE_VIEW_NAME_TEMPLATE.format(view_name=txf_process_name)
                         core_txf_v = Table(schema_id=self.txf_core_v_schema.id, table_name=txf_view_name, table_kind='V', source_id=ds.id)
 
                         core_txf_vl = LayerTable(layer_id=self.txf_core_layer.id, table_id=core_txf_v.id)
                         core_pipeline = Pipeline(src_lyr_table_id=srci_lt.id
                                                  , tgt_lyr_table_id=core_lt.id
                                                  , src_table_alias=main_table_alias
-                                                 , lyr_view_id=core_txf_vl.id)
+                                                 , lyr_view_id=core_txf_vl.id
+                                                 , name=txf_process_name)
 
                         if row.join:
                             parse_join(row.join)
@@ -1067,13 +1070,13 @@ def generate_metadata_scripts(smx: SMX):
             if pipeline.tgt_lyr_table.table.history_table:
                 for hist_col_mapping in pipeline.scd_type2_col:
                     history_file.write(INSERT_INTO_HISTORY.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                  PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
+                                                                  PROCESS_NAME=single_quotes(pipeline.name),
                                                                   HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
                                                                   )
                                        )
             if process_type:
                 process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
-                                                              PROCESS_NAME=single_quotes(pipeline.lyr_view.table.table_name),
+                                                              PROCESS_NAME=single_quotes(pipeline.name),
                                                               SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
                                                               PROCESS_TYPE=single_quotes(process_type),
                                                               SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
