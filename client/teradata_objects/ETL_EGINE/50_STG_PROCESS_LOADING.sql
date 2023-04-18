@@ -119,7 +119,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 			FROM DBC.COLUMNSV v
 			WHERE DATABASENAME = V_STAGING_DB
 			AND TABLENAME  = i_TABLE_NAME
-			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM', 'MODIFICATION_TYPE')
+			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM')
 			and not exists (select 1 
 							from GDEV1t_GCFR.TRANSFORM_KEYCOL k 
 							where k.TABLE_NAME = v.DATABASENAME 
@@ -133,7 +133,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 			FROM DBC.COLUMNSV v
 			WHERE DATABASENAME = V_STAGING_DB
 			AND TABLENAME  = i_TABLE_NAME
-			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM', 'MODIFICATION_TYPE')
+			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM')
 			GROUP BY DATABASENAME, TABLENAME
 			INTO V_ALL_COLS;
 			
@@ -211,17 +211,15 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 							'update tgt
 							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_table_name_1batch||' src
 							set '||v_set_non_key_cols||'
-							,MODIFICATION_TYPE = src.MODIFICATION_TYPE
 							,UPD_DTTM = current_timestamp
 							where '||v_keys_eql||';		
 							';
 		
             set v_insert_into_tgt = 
 							'insert into '||V_STAGING_DB||'.'||i_TABLE_NAME||'
-							('||V_ALL_COLS||', MODIFICATION_TYPE, INS_DTTM)
+							('||V_ALL_COLS||', INS_DTTM)
 							SELECT 
 								 '||V_ALL_COLS||'
-								, MODIFICATION_TYPE
 								, current_timestamp INS_DTTM 
 							FROM '||v_table_name_1batch||' src
 							where not exists (
@@ -290,7 +288,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
 					LEAVE MainBlock;
 				END IF;
-				set V_INSERTED_ROWS_COUNT = V_INSERTED_ROWS_COUNT + V_DBC_ROWS_COUNT;
+				set V_UPDATED_ROWS_COUNT = V_UPDATED_ROWS_COUNT + V_DBC_ROWS_COUNT;
 			end if;
 			
 			if cast(v_insert_into_tgt as char(10)) <> ''
@@ -302,7 +300,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
 					LEAVE MainBlock;
 				END IF;
-				set V_UPDATED_ROWS_COUNT = V_UPDATED_ROWS_COUNT + V_DBC_ROWS_COUNT;
+				set V_INSERTED_ROWS_COUNT = V_INSERTED_ROWS_COUNT + V_DBC_ROWS_COUNT;
 			end if;
 			
 			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
