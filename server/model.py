@@ -977,8 +977,10 @@ class Pipeline(MyID):
             join_clause = ''
             jw: JoinWith
             for jw in self.join_with:
+                with_lyr_table = jw.with_lyr_table.table
+                with_table = with_lyr_table.schema.schema_name + '.' + with_lyr_table.table_name
                 join_clause += JOIN_CLAUSE_TEMPLATE.format(join_type=jw.join_type.name
-                                                           , with_table=jw.with_lyr_table.table.table_name
+                                                           , with_table=with_table
                                                            , with_alias=jw.with_alias
                                                            , on_clause=jw.join_on.complete_join_on_expr
                                                            )
