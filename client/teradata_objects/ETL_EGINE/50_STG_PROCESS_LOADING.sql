@@ -107,7 +107,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1P_PP.STG_PROCESS_LOADING
 			AND TABLE_NAME  = i_TABLE_NAME
 			INTO V_KEY_COLs, v_, v_keys_eql;
 			
-			if coalesce(V_KEY_COLs,'') is null 
+			if coalesce(V_KEY_COLs,'') = ''
 			then
 				set V_RETURN_CODE = -1;
             	SET V_RETURN_MSG = 'No keys defined for table '||i_TABLE_NAME||'!';
