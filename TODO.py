@@ -6,7 +6,7 @@ TODO:
     DONE add main_stg_table column to process table
     DONE In Deploy() select top 1 from each view
     DONE handle "select *", in pipelines
-    generate fake data
+    DONE generate fake data
     USE CONFIG FILE, one for server and another for client
     handle unified data
     DONE Populate lookup core tables, by creating BAMP TXF
