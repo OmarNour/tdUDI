@@ -15,6 +15,8 @@ def fake_data():
 
 
 def fake_data_cso(cursor, row_count):
+    load_id = fake.uuid4()
+    batch_id = random.randint(1, 5)
     # Generate fake data and insert into table
     for i in range(row_count):
         cso_number = random.randint(100000000, 999999999)
@@ -26,8 +28,6 @@ def fake_data_cso(cursor, row_count):
         data_extraction_date = fake.date_time_between(start_date="-1y", end_date="now")
         ins_dttm = fake.date_time_between(start_date="-1y", end_date="now")
         upd_dttm = fake.date_time_between(start_date=ins_dttm, end_date="now")
-        load_id = fake.uuid4()
-        batch_id = random.randint(1, 5)
         delivered_date = fake.date_time_between(start_date="-1y", end_date="now")
 
         # CSO_ADDRESS data
@@ -37,7 +37,7 @@ def fake_data_cso(cursor, row_count):
         governorate_id = random.randint(1, 20)
 
         # CSO_NEW_PERSON data
-        national_id = fake.random_int(min=1, max=9999999999)
+        national_id = ''.join(str(random.randint(0, 9)) for _ in range(14))
         birth_date = fake.date_of_birth(minimum_age=18, maximum_age=100).strftime('%y/%m/%d')
         first_name = fake.first_name()
         father_name = fake.last_name()

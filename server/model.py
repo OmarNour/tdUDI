@@ -1203,11 +1203,21 @@ class ColumnMapping(MyID):
     @property
     def src_col_trx(self):
         # alias = ''
-        _src_col_trx = '(' + str(self._src_col_trx) + ')' if self._src_col_trx else f"{self.src_table_alias}.{self.src_col.column_name}" if self.src_col else 'NULL'
+        # _src_col_trx = '(' + str(self._src_col_trx) + ')' if self._src_col_trx else f"{self.src_table_alias}.{self.src_col.column_name}" if self.src_col else 'NULL'
 
+        if self._src_col_trx:
+            _src_col_trx = '(' + str(self._src_col_trx) + ')'
+        elif self.src_col:
+            _src_col_trx = f"{self.src_table_alias}.{self.src_col.column_name}"
+        else:
+            _src_col_trx = 'NULL'
         # if self.src_col:
         #     if self.pipeline.src_lyr_table.table.id == self.src_col.table.id:
         #         alias = self.pipeline.src_table_alias + '.'
+
+        if self.pipeline.domain or self.tgt_col.domain:
+            _src_col_trx = f"trim({_src_col_trx})"
+            # print(_src_col_trx)
 
         if self.tgt_col.domain:
 
