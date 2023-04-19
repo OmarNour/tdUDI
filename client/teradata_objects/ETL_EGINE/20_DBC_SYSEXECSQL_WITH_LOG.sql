@@ -1,4 +1,4 @@
-REPLACE PROCEDURE GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG
+REPLACE PROCEDURE GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG
 /*
 ###################################################################################################################################################################
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8,7 +8,7 @@ REPLACE PROCEDURE GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG
 #  1.0        	| 23 December, 2019 	| Omar Nour
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #  Examples:
-#  CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG('sel 1 ;', 1, 99999, 'SCRIPT_SRC', 'SCRIPT_TBL', 'SCRIPT_LOAD_ID', 1, o_RETURN_CODE, o_RETURN_MSG, o_Rows_Count);
+#  CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG('sel 1 ;', 1, 99999, 'SCRIPT_SRC', 'SCRIPT_TBL', 'SCRIPT_LOAD_ID', 1, o_RETURN_CODE, o_RETURN_MSG, o_Rows_Count);
 ###################################################################################################################################################################
 */
 
@@ -44,7 +44,7 @@ BEGIN
 
 		
 		if i_log = 1 then
-			INSERT INTO GDEV1T_GCFR.EXEC_LOGS  (RUN_ID, LOAD_ID, SOURCE_NAME, TABLE_NAME, SQL_SCRIPT_SEQ, SQL_SCRIPT, START_TIMESTAMP, END_TIMESTAMP, ERROR_CODE, ERROR_MSG, ROWS_COUNT)  
+			INSERT INTO GDEV1_ETL.EXEC_LOGS  (RUN_ID, LOAD_ID, SOURCE_NAME, TABLE_NAME, SQL_SCRIPT_SEQ, SQL_SCRIPT, START_TIMESTAMP, END_TIMESTAMP, ERROR_CODE, ERROR_MSG, ROWS_COUNT)  
 			VALUES(COALESCE(v_run_id,i_run_id,-1),i_LOAD_ID,i_SOURCE_NAME,i_TABLE_NAME,i_SCRIPT_SEQ,i_SQL_SCRIPT,v_START_TIMESTAMP,CURRENT_TIMESTAMP,v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, 0) ;
 		END IF;
 		
@@ -54,14 +54,14 @@ BEGIN
 	
 	if i_log = 1 then
 		IF i_run_id IS NULL THEN 
-			select GDEV1P_FF.generate_run_id()
+			select GDEV1_ETL.generate_run_id()
 			into v_run_id;
 		ELSE 	
 			SET v_run_id=	i_run_id;
 		END IF;
 	end if;
 	
-	SELECT 'PROCEDURE=GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG;' 
+	SELECT 'PROCEDURE=GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG;' 
 		|| 'i_SCRIPT_SEQ='||COALESCE(i_SCRIPT_SEQ,'')||';'
 		|| 'i_run_id='||COALESCE(i_run_id,'')||';'
 		|| 'i_SOURCE_NAME='||COALESCE(i_SOURCE_NAME,'')||';'
@@ -71,11 +71,11 @@ BEGIN
 		into V_QUERY_BAND;
 		
 	set v_START_TIMESTAMP = CURRENT_TIMESTAMP;
-	CALL GDEV1P_PP.DBC_SYSEXECSQL(i_SQL_SCRIPT, V_QUERY_BAND, v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count);	
+	CALL GDEV1_ETL.DBC_SYSEXECSQL(i_SQL_SCRIPT, V_QUERY_BAND, v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count);	
 	
 	
 	if i_log = 1 then
-		INSERT INTO GDEV1T_GCFR.EXEC_LOGS  (RUN_ID, LOAD_ID, SOURCE_NAME, TABLE_NAME, SQL_SCRIPT_SEQ, SQL_SCRIPT, START_TIMESTAMP, END_TIMESTAMP, ERROR_CODE, ERROR_MSG, ROWS_COUNT)  
+		INSERT INTO GDEV1_ETL.EXEC_LOGS  (RUN_ID, LOAD_ID, SOURCE_NAME, TABLE_NAME, SQL_SCRIPT_SEQ, SQL_SCRIPT, START_TIMESTAMP, END_TIMESTAMP, ERROR_CODE, ERROR_MSG, ROWS_COUNT)  
 		VALUES(v_run_id,i_LOAD_ID,i_SOURCE_NAME,i_TABLE_NAME,i_SCRIPT_SEQ,i_SQL_SCRIPT,v_START_TIMESTAMP,CURRENT_TIMESTAMP,v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count) ;
 	end if;
 	

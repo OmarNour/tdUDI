@@ -1,4 +1,4 @@
-REPLACE PROCEDURE  /*VER.5*/ GDEV1P_PP.CHECK_MANDATORY_COLUMNS
+REPLACE PROCEDURE  /*VER.5*/ GDEV1_ETL.CHECK_MANDATORY_COLUMNS
 /*
 ###################################################################################################################################################################
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ REPLACE PROCEDURE  /*VER.5*/ GDEV1P_PP.CHECK_MANDATORY_COLUMNS
 #	5.0				| 27 Feb, 2023 	| ASHRAF ELHAWARY			| Check for CLOUMNS from DBC.COLUMNSV
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #  Examples:
-CALL GDEV1P_PP.CHECK_MANDATORY_COLUMNS('GDEV1V_base', 'PRTY', I_MORE_COLUMNS,O_NULLABLE_COLUMN, O_RETURN_CODE, O_RETURN_MSG);
+CALL GDEV1_ETL.CHECK_MANDATORY_COLUMNS('GDEV1V_base', 'PRTY', I_MORE_COLUMNS,O_NULLABLE_COLUMN, O_RETURN_CODE, O_RETURN_MSG);
 ###################################################################################################################################################################
 */
 
@@ -58,7 +58,7 @@ BEGIN
 			FROM (				
 				
 				SELECT TRIM(KEY_COLUMN) as KEY_COL
-				FROM GDEV1T_GCFR.TRANSFORM_KEYCOL
+				FROM GDEV1_ETL.TRANSFORM_KEYCOL
 				where DB_Name = V_DATABASE_NAME
 				and TABLE_Name = V_TABLE_NAME
 				
@@ -86,7 +86,7 @@ BEGIN
 			
 		) Y WHERE Y.KEY_COL IS NOT NULL
 		DO
-			CALL GDEV1P_PP.COLUMN_IS_NULL(V_DATABASE_NAME, V_TABLE_NAME, PROCESS_KEY_COLUMNS.KEY_COL, V_IS_NULL, V_RETURN_CODE, V_RETURN_MSG);
+			CALL GDEV1_ETL.COLUMN_IS_NULL(V_DATABASE_NAME, V_TABLE_NAME, PROCESS_KEY_COLUMNS.KEY_COL, V_IS_NULL, V_RETURN_CODE, V_RETURN_MSG);
 			IF V_IS_NULL = 1 OR V_RETURN_CODE <> 0
 			THEN
 				SET V_NULLABLE_COLUMN = PROCESS_KEY_COLUMNS.KEY_COL;

@@ -1,4 +1,4 @@
-REPLACE PROCEDURE /*VER.2*/ GDEV1P_PP.BKEY_PROCESS_LOADING
+REPLACE PROCEDURE /*VER.2*/ GDEV1_ETL.BKEY_PROCESS_LOADING
 (
 	IN i_LOAD_ID 			VARCHAR(100), 
 	IN i_run_id 			BIGINT,
@@ -60,7 +60,7 @@ BEGIN
 			,P.Key_Set_Id
 			,P.Domain_Id
 			,p.source_name
-		from GDEV1T_GCFR.PROCESS P
+		from GDEV1_ETL.PROCESS P
 		where  P.PROCESS_NAME = I_PROCESS_NAME
 		into v_src_DB
 			,v_src_table
@@ -96,7 +96,7 @@ BEGIN
 										and tgt.domain_id = '||v_Domain_Id||'
 										);
 			';
-			CALL GDEV1P_PP.DBC_SYSEXECSQL_WITH_LOG(v_statment,1,I_RUN_ID,V_SOURCE_NAME,i_PROCESS_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_statment,1,I_RUN_ID,V_SOURCE_NAME,i_PROCESS_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
 		else
 			set V_DBC_RETURN_CODE = -1;
 			set V_DBC_RETURN_MSG = 'BKEY is not registered in PROCESS table';

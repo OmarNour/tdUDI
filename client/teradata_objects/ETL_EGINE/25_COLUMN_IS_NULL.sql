@@ -1,4 +1,4 @@
-REPLACE PROCEDURE GDEV1P_PP.COLUMN_IS_NULL
+REPLACE PROCEDURE GDEV1_ETL.COLUMN_IS_NULL
 /*
 ###################################################################################################################################################################
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8,8 +8,8 @@ REPLACE PROCEDURE GDEV1P_PP.COLUMN_IS_NULL
 #  1.0        	| 28 December, 2021 	| Omar Nour		| Initial version
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #  Examples:
-CALL GDEV1P_PP.COLUMN_IS_NULL('GDEV1V_base', 'PRTY', 'UPDATE_PROCESS_NAME', IS_NULL, RETURN_CODE, RETURN_MSG);
-CALL GDEV1P_PP.COLUMN_IS_NULL('GDEV1V_base', 'PRTY', 'PROCESS_NAME', IS_NULL, RETURN_CODE, RETURN_MSG);
+CALL GDEV1_ETL.COLUMN_IS_NULL('GDEV1V_base', 'PRTY', 'UPDATE_PROCESS_NAME', IS_NULL, RETURN_CODE, RETURN_MSG);
+CALL GDEV1_ETL.COLUMN_IS_NULL('GDEV1V_base', 'PRTY', 'PROCESS_NAME', IS_NULL, RETURN_CODE, RETURN_MSG);
 ###################################################################################################################################################################
 */
 

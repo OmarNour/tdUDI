@@ -10,7 +10,7 @@ def fake_data():
     password = "dbc"
     conn = teradatasql.connect(host=ip, user=user, password=password)
     cursor = conn.cursor()
-    fake_data_cso(cursor, row_count=1000)
+    fake_data_cso(cursor, row_count=100)
     conn.close()
 
 
