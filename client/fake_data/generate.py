@@ -10,7 +10,7 @@ def fake_data():
     password = "dbc"
     conn = teradatasql.connect(host=ip, user=user, password=password)
     cursor = conn.cursor()
-    fake_data_cso(cursor, row_count=100)
+    fake_data_cso(cursor, row_count=1000)
     conn.close()
 
 
@@ -32,9 +32,14 @@ def fake_data_cso(cursor, row_count):
 
         # CSO_ADDRESS data
         address = fake.address()
-        address_date = fake.date_time_between(start_date=delivered_date, end_date="now")
+        address_date = fake.date_time_between(start_date="-10y", end_date="now")
         police_station_id = random.randint(100, 999)
         governorate_id = random.randint(1, 20)
+
+        address1 = fake.address()
+        address_date1 = fake.date_time_between(start_date="-10y", end_date="now")
+        police_station_id1 = random.randint(100, 999)
+        governorate_id1 = random.randint(1, 20)
 
         # CSO_NEW_PERSON data
         national_id = ''.join(str(random.randint(0, 9)) for _ in range(14))
@@ -56,6 +61,10 @@ def fake_data_cso(cursor, row_count):
 
         insert_query = f"INSERT INTO STG_ONLINE.CSO_ADDRESS (CSO_NUMBER, DELIVERED_DATE, ADDRESS, ADDRESS_DATE, POLICE_STATION_ID, GOVERNORATE_ID, REF_KEY, LOAD_ID, BATCH_ID, MODIFICATION_TYPE, IS_TRANSFERRED, DATA_EXTRACTION_DATE, INS_DTTM, UPD_DTTM) " \
                        f"VALUES ({cso_number}, '{delivered_date}', '{address}', '{address_date}', {police_station_id}, {governorate_id}, {ref_key}, '{load_id}', {batch_id}, '{modification_type}', {is_transferred}, '{data_extraction_date}', '{ins_dttm}', '{upd_dttm}')"
+        cursor.execute(insert_query)
+
+        insert_query = f"INSERT INTO STG_ONLINE.CSO_ADDRESS (CSO_NUMBER, DELIVERED_DATE, ADDRESS, ADDRESS_DATE, POLICE_STATION_ID, GOVERNORATE_ID, REF_KEY, LOAD_ID, BATCH_ID, MODIFICATION_TYPE, IS_TRANSFERRED, DATA_EXTRACTION_DATE, INS_DTTM, UPD_DTTM) " \
+                       f"VALUES ({cso_number}, '{delivered_date}', '{address1}', '{address_date1}', {police_station_id1}, {governorate_id1}, {ref_key}, '{load_id}', {batch_id}, '{modification_type}', {is_transferred}, '{data_extraction_date}', '{ins_dttm}', '{upd_dttm}')"
         cursor.execute(insert_query)
 
     print(f"{row_count} rows of fake data generated and inserted into STG_ONLINE.CSO_ADDRESS table.")
