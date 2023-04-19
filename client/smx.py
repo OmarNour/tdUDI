@@ -1121,9 +1121,9 @@ def deploy():
         if db.conn:
             # for schema in db.schemas:
             #     db.execute(schema.ddl)
-            grants = string_to_list(GRANTS, ';')
-            for grant in grants:
-                db.execute(grant)
+            # grants = string_to_list(GRANTS, ';')
+            # for grant in grants:
+            #     db.execute(grant)
 
             for schema in db.schemas:
                 for table in schema.kind_T_tables:

@@ -303,6 +303,8 @@ class DataBaseEngine(MyID):
             elif "[Error 3706]" in error_msg:
                 tailored_msg = f"\n{error_msg}\n\nStatment:\n{stmt}"
                 logging.error(tailored_msg)
+            elif "[Error 3807]" in error_msg:
+                pass #Object 'XxX' does not exist.
             else:
                 logging.error(error_msg + f"\n\nStatment:\n{stmt}")
 
