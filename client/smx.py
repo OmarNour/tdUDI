@@ -154,7 +154,9 @@ class SMX:
             @log_error_decorator()
             def extract_core_tables(row):
                 history_table = True if row.table_name in history_tables_lst else False
-                table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name, table_kind='T', history_table=history_table)
+                is_lkp = True if row.table_name in _core_tables_bmap else False
+                table = Table(schema_id=self.core_t_schema.id, table_name=row.table_name
+                              , table_kind='T', history_table=history_table, is_lkp=is_lkp)
                 LayerTable(layer_id=self.core_layer.id, table_id=table.id)
 
             @log_error_decorator()
@@ -283,10 +285,12 @@ class SMX:
 
                     # if is_start_date and not pk:
                     #     logging.error(f"Start date column '{row.column_name}', should be primary key as well!, processing row:\n{row}")
-
+                    unicode = False
+                    if core_table.is_lkp:
+                        unicode = True
                     Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
                            , data_type_id=data_type.id, dt_precision=precision
-                           , is_start_date=is_start_date, is_end_date=is_end_date)
+                           , is_start_date=is_start_date, is_end_date=is_end_date, unicode=unicode)
 
             @log_error_decorator()
             def extract_bkey_tables(row):
@@ -361,7 +365,7 @@ class SMX:
 
                     Column(table_id=table.id, column_name='DESCRIPTION', is_pk=0, mandatory=1
                            , data_type_id=vchar_data_type.id, dt_precision=None
-                           , is_start_date=0, is_end_date=0)
+                           , is_start_date=0, is_end_date=0, unicode=1)
 
             @log_error_decorator()
             def extract_bmap_datasets(row):
@@ -371,7 +375,7 @@ class SMX:
                 set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
                 if set_table and row.code_set_id and surrogate_table:
                     DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
-                    set_table.is_lkp = True
+                    # set_table.is_lkp = True
                     surrogate_table.is_bmap = True
                 else:
                     logging.error(f"Invalid set table '{row.code_set_name}' or surrogate table '{row.physical_table}', processing row:\n{row}")
@@ -920,7 +924,9 @@ def layer_table_scripts(row):
         if core_lookup_ds:
             src_schema = core_lookup_ds.surrogate_table.schema.schema_name
             src_table = core_lookup_ds.surrogate_table.table_name
-            dml = f"""insert into {schema_name}.{table_name}\n({table_name}_CD, {table_name}_DESC)\nselect distinct EDW_CODE,DESCRIPTION\nfrom {src_schema}.{src_table};\n"""
+            dml = f"insert into {schema_name}.{table_name}\n({table_name}_CD, {table_name}_DESC, PROCESS_NAME, START_TS, BATCH_ID)\n" \
+                  f"select distinct EDW_CODE,DESCRIPTION, '{src_table}', current_timestamp(0), 0\n" \
+                  f"from {src_schema}.{src_table};\n"
 
     if dml:
         data_file = WriteFile(row.out_path, 'data', "sql", 'a')

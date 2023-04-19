@@ -8,7 +8,7 @@ def start(source_name: str|list|None, with_scripts=True):
     smx.populate_model(source_name=source_name)
 
     if with_scripts:
-        generate_schemas_ddl(smx)
+        # generate_schemas_ddl(smx)
         generate_scripts(smx)
         generate_metadata_scripts(smx)
         deploy()

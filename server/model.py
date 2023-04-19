@@ -428,7 +428,7 @@ class Table(MyID):
 
     def __init__(self, schema_id: int, table_name: str, table_kind: str
                  , source_id: int = None, multiset: int = 1, active: int = 1
-                 , history_table: bool = False, transactional_data: bool = False, *args, **kwargs):
+                 , history_table: bool = False, is_lkp=False, transactional_data: bool = False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schema_id = schema_id
         self._table_name = table_name
@@ -439,7 +439,7 @@ class Table(MyID):
         self._ddl = None
         self.history_table = history_table
         self.transactional_data = transactional_data
-        self.is_lkp = False
+        self.is_lkp = is_lkp
         self.is_bkey = False
         self.is_bmap = False
 
