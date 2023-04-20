@@ -304,7 +304,7 @@ class DataBaseEngine(MyID):
                 tailored_msg = f"\n{error_msg}\n\nStatment:\n{stmt}"
                 logging.error(tailored_msg)
             elif "[Error 3807]" in error_msg:
-                pass #Object 'XxX' does not exist.
+                pass  # Object 'XxX' does not exist.
             else:
                 logging.error(error_msg + f"\n\nStatment:\n{stmt}")
 
@@ -443,6 +443,14 @@ class Table(MyID):
         self.is_bkey = False
         self.is_bmap = False
 
+    def set_key(self, key: str | list | None):
+        _new_key = key if isinstance(key, list) else [key] if key else []
+        col: Column
+        for col in self.columns:
+            col.is_pk = 0
+            if col.column_name in upper_string_in_list(_new_key):
+                col.is_pk = 1
+
     @property
     def data_source(self) -> DataSource:
         return DataSource.get_instance(_id=self._source_id)
@@ -480,18 +488,18 @@ class Table(MyID):
     @property
     def key_col(self):
         col: Column
-        return [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_pk == 1]
+        return [col for col in self.columns if col.table.id == self.id and col.is_pk == 1]
 
     @property
     def start_date_col(self):
         col: Column
-        col_list = [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_start_date == 1]
+        col_list = [col for col in self.columns if col.table.id == self.id and col.is_start_date == 1]
         return col_list[0] if col_list else None
 
     @property
     def end_date_col(self):
         col: Column
-        col_list = [col for col in Column.get_all_instances() if col.table.id == self.id and col.is_end_date == 1]
+        col_list = [col for col in self.columns if col.table.id == self.id and col.is_end_date == 1]
         return col_list[0] if col_list else None
 
     @property

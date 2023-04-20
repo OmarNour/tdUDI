@@ -838,12 +838,12 @@ class SMX:
             missing_tech_col: TechColumn
 
             for table in tables:
-                # table_columns = [column.column_name for column in table.columns]
-                # technical_column_names = [technical_col.column_name for technical_col in technical_column_objs]
-                # missing_tech_cols_names = list(set(technical_column_names) - set(table_columns))
-                # missing_tech_cols = [technical_col for technical_col in technical_column_objs if technical_col.column_name in missing_tech_cols_names]
+                src_table = False
+                if table.schema.id == self.src_t_schema.id:
+                    table.set_key(None)
+                    src_table = True
+
                 for missing_tech_col in technical_column_objs:
-                    # print(missing_tech_col)
                     data_type_name, precision = parse_data_type(missing_tech_col.data_type)
                     data_type = DataType(db_id=self.db_engine.id, dt_name=data_type_name, _override=1)
                     Column(table_id=table.id
@@ -861,28 +861,8 @@ class SMX:
                            , is_delete_flag=missing_tech_col.is_delete_flag
                            , mandatory=missing_tech_col.mandatory
                            , _override=1
+                           , is_pk=1 if src_table and missing_tech_col.column_name.upper() == 'REF_KEY' else 0
                            )
-
-        @log_error_decorator()
-        def map_technical_columns(src_tables):
-            src_table: Table
-            tgt_table: Table
-            pipeline: Pipeline
-            src_col: Column
-            tgt_col: Column
-
-            for src_table in src_tables:
-                src_cols = src_table.columns
-                pipelines = [pipeline for pipeline in Pipeline.get_all_instances() if pipeline.src_lyr_table if pipeline.src_lyr_table.table.id == src_table.id
-                             and not pipeline.select_asterisk and pipeline.tgt_lyr_table]
-                for pipeline in pipelines:
-                    tgt_cols = pipeline.tgt_lyr_table.table.columns
-                    for src_col in src_cols:
-                        for tgt_col in tgt_cols:
-                            if src_col.column_name == tgt_col.column_name:
-                                ColumnMapping(pipeline_id=pipeline.id,
-                                              tgt_col_id=tgt_col.id,
-                                              src_col_id=src_col.id)
 
         extract_all()
         stg_tables = (table for table in Table.get_all_instances() if table.schema.id in (self.src_t_schema.id
