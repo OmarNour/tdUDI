@@ -1,0 +1,1 @@
+CREATE USER power_user    FROM GDEV1_EDWH AS    PASSWORD  =  power_user,    PERMANENT = 60e6,    SPOOL = 120e6,    DEFAULT DATABASE = GDEV1_ETL;    

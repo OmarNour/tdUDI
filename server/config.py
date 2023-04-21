@@ -9,8 +9,8 @@ pickle_path = "pickled_objs"
 scripts_path = "/Users/omarnour/Downloads/smx_scripts"
 DB_NAME = 'teradata'
 HOST = 'localhost'
-USER = 'dbc'
-PASSWORD = 'dbc'
+USER = 'power_user'
+PASSWORD = 'power_user'
 
 cls_keys = {
     'server': 'server_name'

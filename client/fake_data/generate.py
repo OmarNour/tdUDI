@@ -6,8 +6,8 @@ fake = Faker()
 def fake_data():
     # Connect to Teradata
     ip = "localhost"
-    user = "dbc"
-    password = "dbc"
+    user = "power_user"
+    password = "power_user"
     conn = teradatasql.connect(host=ip, user=user, password=password)
     cursor = conn.cursor()
     fake_data_cso(cursor, row_count=100)
