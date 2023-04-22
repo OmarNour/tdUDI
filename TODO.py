@@ -1,6 +1,7 @@
 """
 TODO:
-    fix bmap_standard_map issue
+    DML to be on table level instead of table layer level
+    DONE fix bmap_standard_map issue
     USE CONFIG FILE, one for server and another for client
     handle unified data
     DONE Override technical columns
