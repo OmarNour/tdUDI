@@ -1,5 +1,7 @@
 """
 TODO:
+    USE CONFIG FILE, one for server and another for client
+    handle unified data
     DONE Override technical columns
     DONE an option to do replace or create, when deploying DB objects
     DONE add _IN to end of all input views
@@ -7,8 +9,6 @@ TODO:
     DONE In Deploy() select top 1 from each view
     DONE handle "select *", in pipelines
     DONE generate fake data
-    USE CONFIG FILE, one for server and another for client
-    handle unified data
     DONE Populate lookup core tables, by creating BAMP TXF
     DONE Validate columns' names for lookup core tables, are <table_name>_CD, <table_name>_DESC
     DONE finish generate_metadata_scripts
@@ -19,9 +19,9 @@ TODO:
     return all data from all classes in DF
     DataSet:
         DONE set_name, should be changed tp core_table_id
-    Create new objects, one for attribute names only, and the other for entity names only, then the both will create tables and columns!
+    Create new objects, one for attribute names only, and the other for entity names only, then both together will create tables and columns!
     Rejection tables and rules, to be distinguished
-    Connect to the DB, to deploy and report issues
+    DONE Connect to the DB, to deploy and report issues
     Data Lineage report
     Data Quality report
     DataBase:
@@ -33,11 +33,11 @@ TODO:
     ColumnMapping:
         DONE raise error if trx is invalid for columns mapping
     Pipeline:
-        add name for each pipeline
+        DONE add name for each pipeline
         DONE A function to get table by alias
         DONE Handle alias for main tables
         handle alias in difference expressions (col, where, etc.)
-        Handle alias for join tables
+        DONE Handle alias for join tables
         DONE use ALPHABETS.pop(), to get aliases!
         DONE handle transactional_data flag, to differentiate between trans and non-trans data
         DONE change Pipeline.table_id, to Pipeline.layer_view_id
