@@ -1113,12 +1113,13 @@ def generate_metadata_scripts(smx: SMX):
 
             if process_type:
                 for key_set in key_sets:
+                    domain_id = 'NULL'
+                    key_set_id = 'NULL'
+                    code_set_id = 'NULL'
+
                     if key_set and process_type == 'BKEY':
                         domain_id = pipeline.domain.domain_code
                         key_set_id = key_set
-                    else:
-                        domain_id = 'NULL'
-                        key_set_id = 'NULL'
 
                     process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
                                                                   PROCESS_NAME=single_quotes(pipeline.name),
@@ -1132,7 +1133,7 @@ def generate_metadata_scripts(smx: SMX):
                                                                   MAIN_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
                                                                   KEY_SET_ID=key_set_id,
                                                                   DOMAIN_ID=domain_id,
-                                                                  CODE_SET_ID='NULL'
+                                                                  CODE_SET_ID=code_set_id
                                                                   )
                                        )
 
