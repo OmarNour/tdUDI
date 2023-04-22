@@ -479,11 +479,9 @@ class Table(MyID):
         return Schema.get_instance(_id=self._schema_id)
 
     @functools.cached_property
-    def surrogate_data_set(self):
+    def surrogate_data_sets(self) -> list:
         _data_set: DataSet
-        for _data_set in DataSet.get_all_instances():
-            if _data_set.surrogate_table.id == self.id:
-                return _data_set
+        return [_data_set for _data_set in DataSet.get_all_instances() if _data_set.surrogate_table.id == self.id]
 
     @property
     def key_col(self):
@@ -794,16 +792,18 @@ class LayerTable(MyID):
         dml = ''
         if self.table.is_bmap:
             # based on the layer type, select the data from DomainValues
+            data_set: DataSet
             domain: Domain
             dv: DomainValue
-            for domain in self.table.surrogate_data_set.domains:
-                domain_code = domain.domain_code
-                set_code = domain.data_set.set_code
-                for dv in domain.values:
-                    src_code = dv.source_key
-                    edw_code = dv.edw_key
-                    desc = dv.description
-                    dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
+            for data_set in self.table.surrogate_data_sets:
+                for domain in data_set.domains:
+                    domain_code = domain.domain_code
+                    set_code = data_set.set_code
+                    for dv in domain.values:
+                        src_code = dv.source_key
+                        edw_code = dv.edw_key
+                        desc = dv.description
+                        dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
         return dml
 
 

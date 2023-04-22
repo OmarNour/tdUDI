@@ -2,7 +2,7 @@ from client.smx import *
 
 
 @time_elapsed_decorator
-def start(source_name: str|list|None, with_scripts=True, with_deploy=True):
+def start(source_name: str | list | None, with_scripts=True, with_deploy=True):
     smx = SMX()
     smx.parse_file()
     smx.populate_model(source_name=source_name)
