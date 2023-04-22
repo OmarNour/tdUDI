@@ -79,7 +79,8 @@ LAYERS = {
     'META': LayerDtl(LAYER_TYPES[0], 0, f'{PREFIX}_ETL', f'{PREFIX}_ETL')
     , 'SRC': LayerDtl(LAYER_TYPES[1], 0, f'{PREFIX}V_STG_ONLINE', 'STG_ONLINE')
     , 'STG': LayerDtl(LAYER_TYPES[2], 1, f'{PREFIX}V_STG', f'{PREFIX}T_STG')
-    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[2], 2, f'{PREFIX}V_INP', '')
+    , 'TXF_BKEY': LayerDtl(LAYER_TYPES[3], 2, f'{PREFIX}V_INP', '')
+    , 'TXF_BMAP': LayerDtl(LAYER_TYPES[3], 2, f'{PREFIX}V_INP', '')
     , 'BKEY': LayerDtl(LAYER_TYPES[3], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
     , 'BMAP': LayerDtl(LAYER_TYPES[3], 3, f'{PREFIX}V_UTLFW', f'{PREFIX}T_UTLFW')
     , 'SRCI': LayerDtl(LAYER_TYPES[4], 4, f'{PREFIX}V_SRCI', f'{PREFIX}T_SRCI')
@@ -125,8 +126,13 @@ QUERY_TEMPLATE = """ {with_clause}\nselect {distinct}\n{col_mapping}\n{from_clau
 JOIN_CLAUSE_TEMPLATE = "\n\t{join_type} {with_table} {with_alias}\n\ton {on_clause}"
 SRCI_V_BKEY_TEMPLATE_QUERY = """(select EDW_KEY\n from {bkey_db}.{bkey_table_name}\n where SOURCE_KEY = {src_key} {cast}\n and DOMAIN_ID={domain_id})"""
 SRCI_V_BMAP_TEMPLATE_QUERY = """(select EDW_Code\n from {bmap_db}.{bmap_table_name}\n where SOURCE_CODE = {source_code} {cast}\n and CODE_SET_ID = {code_set_id}\n and DOMAIN_ID={domain_id})"""
+
 BK_PROCESS_NAME_TEMPLATE = "BK_{set_id}_{src_table_name}_{column_name}_{domain_id}"
 BK_VIEW_NAME_TEMPLATE = "{view_name}_IN"
+
+BMAP_PROCESS_NAME_TEMPLATE = "BMAP_{set_id}_{src_table_name}_{column_name}_{domain_id}"
+BMAP_VIEW_NAME_TEMPLATE = "{view_name}_IN"
+
 CORE_PROCESS_NAME_TEMPLATE = "TXF_CORE_{mapping_name}"
 CORE_VIEW_NAME_TEMPLATE = "{view_name}_IN"
 

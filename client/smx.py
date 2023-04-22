@@ -57,6 +57,7 @@ class SMX:
         self.src_layer = Layer.get_instance(_key='SRC')
         self.stg_layer = Layer.get_instance(_key='STG')
         self.txf_bkey_layer = Layer.get_instance(_key='TXF_BKEY')
+        self.txf_bmap_layer = Layer.get_instance(_key='TXF_BMAP')
         self.bmap_layer = Layer.get_instance(_key='BMAP')
         self.bkey_layer = Layer.get_instance(_key='BKEY')
         self.srci_layer = Layer.get_instance(_key='SRCI')
@@ -77,6 +78,7 @@ class SMX:
         self.bmap_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BMAP'].v_db))
         self.bkey_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['BKEY'].v_db))
         self.txf_bkey_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_BKEY'].v_db))
+        self.txf_bmap_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_BMAP'].v_db))
         self.srci_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['SRCI'].v_db))
         self.txf_core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['TXF_CORE'].v_db))
         self.core_v_schema = Schema.get_instance(_key=(self.db_engine.id, LAYERS['CORE'].v_db))
@@ -396,7 +398,49 @@ class SMX:
                         DomainValue(domain_id=domain.id, source_key=row.source_code, edw_key=row.edw_code, description=row.description)
 
             @log_error_decorator()
-            def extract_bkey_txf_views(row):
+            def extract_bmap_views(row):
+                domain: Domain
+                stg_col: Column
+                stg_t: Table
+                stg_lt: LayerTable
+                srci_col: Column
+                if row.code_domain_name != '':
+                    ds = DataSource.get_instance(_key=row.schema)
+                    if not ds:
+                        logging.error(f"Invalid source name '{row.schema}', processing row:\n{row}")
+                    else:
+                        data_set = DataSet.get_by_name(self.bmap_set_type.id, row.code_set_name)
+                        if not data_set:
+                            logging.error(f"Invalid code set '{row.code_set_name}', processing row:\n{row}")
+                        else:
+                            domain = Domain.get_by_name(data_set_id=data_set.id, domain_name=row.code_domain_name)
+                            if not domain:
+                                logging.error(f"Invalid code domain name '{row.code_domain_name}', processing row:\n{row}")
+                            else:
+                                stg_t = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+                                stg_lt = LayerTable.get_instance(_key=(self.stg_layer.id, stg_t.id))
+
+                                srci_t = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+                                srci_col = Column.get_instance(_key=(srci_t.id, row.column_name))
+
+                                bmap_process_name = BMAP_PROCESS_NAME_TEMPLATE.format(set_id=data_set.set_code
+                                                                                      , src_table_name=stg_t.table_name
+                                                                                      , column_name=srci_col.column_name
+                                                                                      , domain_id=srci_col.domain.domain_code
+                                                                                      )
+                                bmap_view_name = BMAP_VIEW_NAME_TEMPLATE.format(view_name=bmap_process_name)
+                                bmap_v = Table(schema_id=self.txf_bmap_v_schema.id, table_name=bmap_view_name, table_kind='V', source_id=ds.id)
+                                bmap_vl = LayerTable(layer_id=self.txf_bmap_layer.id, table_id=bmap_v.id)
+
+                                Pipeline(src_lyr_table_id=stg_lt.id
+                                         , tgt_lyr_table_id=domain.data_set.surrogate_table.id
+                                         , lyr_view_id=bmap_vl.id
+                                         , domain_id=srci_col.domain.id
+                                         , name=bmap_process_name
+                                         , distinct=True)
+
+            @log_error_decorator()
+            def extract_bkey_views(row):
                 if row.natural_key != '' and row.key_domain_name != '':
                     ds = DataSource.get_instance(_key=row.schema)
                     if not ds:
@@ -777,13 +821,16 @@ class SMX:
                     stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name', 'column_transformation_rule']].drop_duplicates().apply(extract_src_view_columns, axis=1)
                     # stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name']].drop_duplicates().apply(extract_stg_view_columns, axis=1)
 
-                    ##########################  Start bkey TXF view  #####################
+                    ##########################  Start bkey & bmap TXF view  #####################
                     stg_tables_df[['schema', 'table_name', 'natural_key', 'column_name'
-                        , 'key_set_name', 'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_txf_views, axis=1)
-                    # extract_bkey_txf_columns
+                        , 'key_set_name', 'key_domain_name', 'bkey_filter']].drop_duplicates().apply(extract_bkey_views, axis=1)
+
+                    # stg_tables_df[['schema', 'column_name'
+                    #     , 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_bmap_views, axis=1)
+
                     ##########################  End bkey TXF view    #####################
                     stg_tables_df[['schema', 'table_name', 'column_name', 'natural_key'
-                        , 'key_set_name', 'key_domain_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
+                        , 'key_set_name', 'key_domain_name', 'code_set_name', 'code_domain_name']].drop_duplicates().apply(extract_srci_view_columns, axis=1)
                     ##########################      Start Core TXF view     #####################
                     if not core_tables_df.empty:
                         core_tables_df[['table_name', 'column_name', 'data_type', 'pk'
@@ -905,7 +952,7 @@ def layer_table_scripts(row):
             src_schema = core_lookup_ds.surrogate_table.schema.schema_name
             src_table = core_lookup_ds.surrogate_table.table_name
             dml = f"insert into {schema_name}.{table_name}\n({table_name}_CD, {table_name}_DESC, PROCESS_NAME, START_TS, BATCH_ID)\n" \
-                  f"select distinct EDW_CODE,DESCRIPTION, '{src_table}', current_timestamp(0), 0\n" \
+                  f"select distinct EDW_CODE,DESCRIPTION, '{src_table}', CURRENT_TIMESTAMP(0), 0\n" \
                   f"from {src_schema}.{src_table};\n"
 
     if dml:
@@ -1009,6 +1056,7 @@ def generate_metadata_scripts(smx: SMX):
     pk_col: Column
     hist_col_mapping: ColumnMapping
     pipeline: Pipeline
+    data_set: DataSet
 
     for source in DataSource.get_all_instances():
         source_sytems_file.write(INSERT_INTO_SOURCE_SYSTEMS.format(meta_db=smx.meta_t_schema.schema_name,
@@ -1050,18 +1098,43 @@ def generate_metadata_scripts(smx: SMX):
         if pipeline.tgt_lyr_table:
             process_type = None
             apply_type = 'INSERT'
-            key_set_id = 'NULL'
-            domain_id = 'NULL'
+
+            key_sets = [None]
             if pipeline.lyr_view.layer.id == smx.txf_bkey_layer.id:
                 process_type = 'BKEY'
-                key_set_id = pipeline.tgt_lyr_table.table.surrogate_data_set.set_code
-                domain_id = pipeline.domain.domain_code
+                key_sets = [data_set.set_code for data_set in pipeline.tgt_lyr_table.table.surrogate_data_sets]
+
             elif pipeline.lyr_view.layer.id == smx.txf_core_layer.id:
                 process_type = 'TXF'
                 if pipeline.scd_type2_col:
                     apply_type = 'HISTORY'
                 elif pipeline.scd_type1_col:
                     apply_type = 'UPSERTDELETE'
+
+            if process_type:
+                for key_set in key_sets:
+                    if key_set and process_type == 'BKEY':
+                        domain_id = pipeline.domain.domain_code
+                        key_set_id = key_set
+                    else:
+                        domain_id = 'NULL'
+                        key_set_id = 'NULL'
+
+                    process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                  PROCESS_NAME=single_quotes(pipeline.name),
+                                                                  SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
+                                                                  PROCESS_TYPE=single_quotes(process_type),
+                                                                  SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
+                                                                  SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
+                                                                  TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
+                                                                  TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
+                                                                  APPLY_TYPE=single_quotes(apply_type),
+                                                                  MAIN_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
+                                                                  KEY_SET_ID=key_set_id,
+                                                                  DOMAIN_ID=domain_id,
+                                                                  CODE_SET_ID='NULL'
+                                                                  )
+                                       )
 
             if pipeline.tgt_lyr_table.table.history_table:
                 for hist_col_mapping in pipeline.scd_type2_col:
@@ -1070,23 +1143,6 @@ def generate_metadata_scripts(smx: SMX):
                                                                   HISTORY_COLUMN=single_quotes(hist_col_mapping.tgt_col.column_name)
                                                                   )
                                        )
-            if process_type:
-                process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
-                                                              PROCESS_NAME=single_quotes(pipeline.name),
-                                                              SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
-                                                              PROCESS_TYPE=single_quotes(process_type),
-                                                              SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
-                                                              SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
-                                                              TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
-                                                              TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
-                                                              APPLY_TYPE=single_quotes(apply_type),
-                                                              MAIN_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
-                                                              KEY_SET_ID=key_set_id,
-                                                              DOMAIN_ID=domain_id,
-                                                              CODE_SET_ID='NULL'
-                                                              )
-                                   )
-
     source_sytems_file.close()
     stg_tables_file.close()
     transform_keycol_file.close()

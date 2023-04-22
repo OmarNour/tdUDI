@@ -816,9 +816,12 @@ class Pipeline(MyID):
                  , select_asterisk: bool = False
                  , src_table_alias: str = None
                  , domain_id: int = None
+                 , distinct: bool = False
                  , active: int = 1
+
                  , *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.distinct = distinct
         self._src_lyr_table_id = src_lyr_table_id
         self._tgt_lyr_table_id = tgt_lyr_table_id
         self._lyr_view_id = lyr_view_id
@@ -970,7 +973,7 @@ class Pipeline(MyID):
 
     @property
     def query(self):
-        distinct = ''
+        distinct = 'distict' if self.distinct else ''
         col_mapping = ''
         with_clause = ''
         from_clause = ''
