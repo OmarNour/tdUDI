@@ -1,5 +1,6 @@
 """
 TODO:
+    fix bmap_standard_map issue
     USE CONFIG FILE, one for server and another for client
     handle unified data
     DONE Override technical columns
