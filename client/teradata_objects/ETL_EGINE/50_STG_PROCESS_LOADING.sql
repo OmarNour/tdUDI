@@ -166,10 +166,10 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 				then
 					set v_online_load_id_filter = ' and exists (
 																select 1 
-																from GDEV1_ETL.ONLINE_RUN_CONFIG c 
+																from GDEV1_ETL.EXEC_SOURCE_LOGS c 
 																where c.LOAD_ID = x.LOAD_ID 
-																and c.STATUS <> ''DELETED''
-																and c.STG_status = ''DONE''
+																and c.DELETED <> 0
+																and c.STG_DONE = 1
 																)';		
 				end if;
 				
@@ -177,17 +177,10 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 						' and exists 
 						(
 							SELECT 1
-							FROM '||V_SOURCE_DB||'.ibm_audit_table adt
-							WHERE adt.DB2_TO_TERA_STATUS in (''SUCCESS'', ''SUCCESS WITH WARNINGS'')
-							AND adt.DB2_JOB_END_TIME IS NOT NULL  
-							AND adt.MIC_EXECUTIONGUID = x.LOAD_ID
-							AND adt.MIC_RUNID = x.BATCH_ID
-							AND exists (
-											select 1 
-											from GDEV1_ETL.SOURCE_NAME_LKP lkp
-											where lkp.teradata_SOURCE_NAME = '''||V_SOURCE_DB||'''
-											and lkp.MICROSOFT_SOURCE_NAME = adt.MIC_GANAME
-										)
+							FROM GDEV1_ETL.CDC_AUDIT adt
+							WHERE adt.PROCESSED = 0
+							AND adt.LOAD_ID = x.LOAD_ID
+							AND adt.SOURCE_NAME = '''||V_SOURCE_DB||'''
 						)';	
 					
             else
