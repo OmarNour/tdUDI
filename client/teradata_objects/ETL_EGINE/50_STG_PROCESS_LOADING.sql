@@ -21,9 +21,11 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 		DECLARE 	V_DBC_RETURN_MSG  			VARCHAR(1000);
 		DECLARE 	V_DBC_ROWS_COUNT			FLOAT;
     	DECLARE 	v_drop_1batch
+    				, v_drop_delta
     				, v_update_tgt
     				, v_insert_into_tgt
-    				, v_create_1batch			CLOB;    
+    				, v_create_1batch
+    				, v_create_delta	CLOB;    
     				
         DECLARE    	V_SRC_DB					VARCHAR(500);
         DECLARE    	V_SRC_TABLE					VARCHAR(500);
@@ -40,7 +42,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
         DECLARE 	V_WITH_DATA_PI				VARCHAR(100) DEFAULT 'WITH DATA AND STATS PRIMARY INDEX';
 		DECLARE 	V_WITH_DATA_UNIQUE_PI		VARCHAR(100) DEFAULT 'WITH DATA AND STATS UNIQUE PRIMARY INDEX';
 	
-		DECLARE		v_table_name_1batch,
+		DECLARE		v_delta_TBL_NAME,
+					v_table_name_1batch,
 					V_SOURCE_NAME,
 				    V_LOADING_MODE,
 				    V_REJECTION_TABLE_NAME,
@@ -52,7 +55,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 					v_valid_batches_filter,
 					V_UPDATE_ALL_TO_D,V_ALL_COLS,
 					V_KEY_COLs, v_, v_keys_eql,
-					v_set_non_key_cols, v_valid_data_filter			varchar(2000) default '';
+					v_set_non_key_cols, v_valid_data_filter,
+					v_delta_COLS varchar(2000) default '';
 		
         DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN 	
@@ -130,6 +134,15 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			INTO v_set_non_key_cols;
 			
 			SELECT 
+			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)||',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) COLS
+			FROM DBC.COLUMNSV v
+			WHERE DATABASENAME = V_STAGING_DB
+			AND TABLENAME  = i_TABLE_NAME
+			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM', 'MODIFICATION_TYPE', 'LOAD_ID', 'BATCH_ID', 'REF_KEY')
+			GROUP BY DATABASENAME, TABLENAME
+			INTO v_delta_COLS;
+			
+			SELECT 
 			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)|| ',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) COLS
 			FROM DBC.COLUMNSV v
 			WHERE DATABASENAME = V_STAGING_DB
@@ -139,6 +152,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			INTO V_ALL_COLS;
 			
 		    set v_table_name_1batch = i_TABLE_NAME||'_1batch';
+		    set v_delta_TBL_NAME = v_table_name_1batch||'_delta';
+		    
 		    if V_REJECTION_TABLE_NAME is not null and V_BUSINESS_RULES_TABLE_NAME is not null
 		    then
 			    set v_valid_data_filter = 
@@ -192,6 +207,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
             
 			
             set v_drop_1batch = 'DROP TABLE '||v_table_name_1batch||';';
+            set v_drop_delta = 'DROP TABLE '||v_delta_TBL_NAME||';';
+            
             set v_create_1batch = 
 			'create multiset volatile TABLE '||v_table_name_1batch||'  , no fallback as 
 			(
@@ -203,9 +220,33 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 				QUALIFY ROW_NUMBER()  OVER(PARTITION BY '||V_KEY_COLs||' ORDER BY BATCH_ID DESC,MODIFICATION_TYPE DESC,REF_KEY DESC)=1
 			) with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
 			
+			SET v_create_delta =  'CREATE VOLATILE TABLE '||v_delta_TBL_NAME||' AS 
+						(	
+							with delta as
+							(
+							    SELECT '||v_delta_COLS||' 
+								FROM '||v_table_name_1batch||'
+							    MINUS
+							    SELECT '||v_delta_COLS||' 
+								FROM '||V_STAGING_DB||'.'||i_TABLE_NAME||' src
+								where exists (
+											select 1 
+											from '||v_table_name_1batch||' tgt 
+											where '||v_keys_eql||'
+										)
+							)
+							select * from '||v_table_name_1batch||' src
+							where exists (
+											select 1 
+											from delta tgt 
+											where '||v_keys_eql||'
+										)
+						)
+					  with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
+					  
 			set v_update_tgt = 
 							'update tgt
-							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_table_name_1batch||' src
+							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_delta_TBL_NAME||' src
 							set '||v_set_non_key_cols||'
 							,UPD_DTTM = current_timestamp
 							where '||v_keys_eql||';		
@@ -217,7 +258,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							SELECT 
 								 '||V_ALL_COLS||'
 								, current_timestamp INS_DTTM 
-							FROM '||v_table_name_1batch||' src
+							FROM '||v_delta_TBL_NAME||' src
 							where not exists (
 											select 1 
 											from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt 
@@ -227,6 +268,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							
 
 			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_drop_1batch,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_drop_delta,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
 
 			
 			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
@@ -255,6 +297,26 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 				SET V_RETURN_MSG = V_DBC_RETURN_MSG;
 				LEAVE MainBlock;
 			END IF;
+			
+			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_create_delta,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+			IF V_DBC_RETURN_CODE <> 0 THEN
+				SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+				SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+				LEAVE MainBlock;
+			END IF;
+			
+			CALL GDEV1_ETL.COUNT_ROWS('', v_delta_TBL_NAME, '',V_ROWS_IN_delta, V_DBC_RETURN_CODE, V_DBC_RETURN_MSG);
+			IF V_DBC_RETURN_CODE <> 0 THEN
+				SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+				SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+				LEAVE MainBlock;
+			END IF;
+			
+			if V_ROWS_IN_delta = 0
+			then
+				LEAVE MainBlock;
+			end if;
 			
 			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
 			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG('BT',V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
