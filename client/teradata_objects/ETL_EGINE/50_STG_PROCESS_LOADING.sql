@@ -222,18 +222,24 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			
 			SET v_create_delta =  'CREATE VOLATILE TABLE '||v_delta_TBL_NAME||' AS 
 						(	
-							with delta as
+							with 
+							tgt_matched_keys as
 							(
-							    SELECT '||v_delta_COLS||' 
-								FROM '||v_table_name_1batch||'
-							    MINUS
-							    SELECT '||v_delta_COLS||' 
+								SELECT '||v_delta_COLS||' 
 								FROM '||V_STAGING_DB||'.'||i_TABLE_NAME||' src
 								where exists (
 											select 1 
 											from '||v_table_name_1batch||' tgt 
 											where '||v_keys_eql||'
 										)
+							)
+							,delta as
+							(
+							    SELECT '||v_delta_COLS||' 
+								FROM '||v_table_name_1batch||'
+							    MINUS
+							    SELECT '||v_delta_COLS||' 
+								FROM tgt_matched_keys
 							)
 							select * from '||v_table_name_1batch||' src
 							where exists (
@@ -268,6 +274,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							
 
 			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_drop_1batch,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
+			
+			SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
 			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_drop_delta,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT);
 
 			
