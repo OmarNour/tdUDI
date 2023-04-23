@@ -3,6 +3,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
     IN 		i_TABLE_NAME  			VARCHAR(1000),
     IN 		I_RUN_ID 				BIGINT,
     IN		I_LOAD_ID				VARCHAR(500),
+    IN		I_REFRESH_LOADS			INTEGER, /* 1 RELOAD ALL LOADS WHICH LOADED SUCCESSFULLY BEFORE, 0 IGNORE*/
     OUT  	O_ROWS_INSERTED_COUNT	FLOAT,
     OUT  	O_ROWS_UPDATED_COUNT	FLOAT,
     OUT  	O_ROWS_DELETED_COUNT	FLOAT,
@@ -162,9 +163,10 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 					set v_online_load_id_filter = ' and x.LOAD_ID = '''||i_LOAD_ID||'''';		
 				end if;
 				
-				if i_LOAD_ID = 'RELOAD_DONE'
+				if I_REFRESH_LOADS = 1
 				then
-					set v_online_load_id_filter = ' and exists (
+					set v_online_load_id_filter = v_online_load_id_filter ||
+													' and exists (
 																select 1 
 																from GDEV1_ETL.EXEC_SOURCE_LOGS c 
 																where c.LOAD_ID = x.LOAD_ID 
@@ -180,7 +182,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							FROM GDEV1_ETL.CDC_AUDIT adt
 							WHERE adt.PROCESSED = 0
 							AND adt.LOAD_ID = x.LOAD_ID
-							AND adt.SOURCE_NAME = '''||V_SOURCE_DB||'''
+							AND adt.SOURCE_NAME = '''||V_SOURCE_NAME||'''
+							AND adt.TABLE_NAME = '''||i_TABLE_NAME||'''
 						)';	
 					
             else

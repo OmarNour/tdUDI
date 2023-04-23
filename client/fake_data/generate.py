@@ -70,6 +70,16 @@ def fake_data_cso(cursor, row_count):
     print(f"{row_count} rows of fake data generated and inserted into STG_ONLINE.CSO_ADDRESS table.")
     print(f"{row_count} rows of fake data generated and inserted into STG_ONLINE.CSO_NEW_PERSON table.")
 
+    cdc_audit = f"""INSERT INTO GDEV1_ETL.CDC_AUDIT  
+                    (SOURCE_NAME, LOAD_ID, BATCH_ID, TABLE_NAME, PROCESSED, RECORDS_COUNT)  
+                    VALUES('CSO','{load_id}',{batch_id},'CSO_ADDRESS',0,{row_count}) ;"""
+    cursor.execute(cdc_audit)
+
+    cdc_audit = f"""INSERT INTO GDEV1_ETL.CDC_AUDIT  
+                        (SOURCE_NAME, LOAD_ID, BATCH_ID, TABLE_NAME, PROCESSED, RECORDS_COUNT)  
+                        VALUES('CSO','{load_id}',{batch_id},'CSO_NEW_PERSON',0,{row_count}) ;"""
+    cursor.execute(cdc_audit)
+
 
 if __name__ == '__main__':
     fake_data()
