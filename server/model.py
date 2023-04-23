@@ -1026,7 +1026,7 @@ class Pipeline(MyID):
                                                            , cast_dtype=cast_dtype
                                                            , alias=alias
                                                            )
-            if self.lyr_view.layer.layer_type.id != 3:  # avoid adding technical columns for BKEY input views
+            if self.lyr_view.layer.layer_type.type_name != 'SK':  # avoid adding technical columns for BKEY input views
                 if col_mapping:
                     for technical_cols in self.technical_cols:
                         comma = '\n,'
