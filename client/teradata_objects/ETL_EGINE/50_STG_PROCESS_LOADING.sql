@@ -3,7 +3,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
     IN 		i_TABLE_NAME  			VARCHAR(1000),
     IN 		I_RUN_ID 				BIGINT,
     IN		I_LOAD_ID				VARCHAR(500),
-    IN		I_REFRESH_LOADS			INTEGER, /* 1 RELOAD ALL LOADS WHICH LOADED SUCCESSFULLY BEFORE, 0 IGNORE*/
+    IN		I_RELOAD				INTEGER, /* 1 RELOAD ALL LOADS WHICH LOADED SUCCESSFULLY BEFORE, 0 IGNORE*/
+    IN		I_ALL_BATCHES			INTEGER, /* 1 INCLUDES BATCH_ID COLUMN AS A KEY, SO IT GRASPS ALL DATA FROM ALL BATCHES, 0 IGNORE*/
     OUT  	O_ROWS_INSERTED_COUNT	FLOAT,
     OUT  	O_ROWS_UPDATED_COUNT	FLOAT,
     OUT  	O_ROWS_DELETED_COUNT	FLOAT,
@@ -54,7 +55,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 		declare		v_online_load_id_filter,
 					v_valid_batches_filter,
 					V_UPDATE_ALL_TO_D,V_ALL_COLS,
-					V_KEY_COLs, v_, v_keys_eql,
+					V_KEY_COLs, V_QUALIFY, v_, v_keys_eql, v_delta_keys_eql,
 					v_set_non_key_cols, v_valid_data_filter,
 					v_delta_COLS varchar(2000) default '';
 		
@@ -119,6 +120,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
             	leave MAINBLOCK;
 			end if;
 			
+			set v_delta_keys_eql = v_keys_eql;
+			
+			IF I_ALL_BATCHES = 1
+			THEN
+				SET V_KEY_COLs = V_KEY_COLs || ', ' || V_BATCH_ID;
+				SET v_keys_eql = v_keys_eql || ' AND TGT.' || V_BATCH_ID || ' = SRC.' || V_BATCH_ID;
+				SET V_QUALIFY = 'QUALIFY ROW_NUMBER()  OVER(PARTITION BY '||V_KEY_COLs||' ORDER BY MODIFICATION_TYPE DESC,REF_KEY DESC)=1';
+			ELSE
+				SET V_QUALIFY = 'QUALIFY ROW_NUMBER()  OVER(PARTITION BY '||V_KEY_COLs||' ORDER BY BATCH_ID DESC,MODIFICATION_TYPE DESC,REF_KEY DESC)=1';
+			END IF;
+			
 			SELECT 
 			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)|| ' = SRC.' ||trim(COLUMNNAME) || ',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) SET_COLS
 			FROM DBC.COLUMNSV v
@@ -130,6 +142,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							where k.TABLE_NAME = v.DATABASENAME 
 							and k.TABLE_NAME = v.TABLENAME
 							and k.Key_Column = v.COLUMNNAME)
+			AND (I_ALL_BATCHES=0 OR (I_ALL_BATCHES=1 AND COLUMNNAME<>V_BATCH_ID))
 			GROUP BY DATABASENAME, TABLENAME
 			INTO v_set_non_key_cols;
 			
@@ -178,7 +191,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 					set v_online_load_id_filter = ' and x.LOAD_ID = '''||i_LOAD_ID||'''';		
 				end if;
 				
-				if I_REFRESH_LOADS = 1
+				if I_RELOAD = 1
 				then
 					set v_online_load_id_filter = v_online_load_id_filter ||
 													' and exists (
@@ -201,7 +214,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							AND adt.TABLE_NAME = '''||i_TABLE_NAME||'''
 						)';	
 					
-            else
+            else -- 'OFFLINE'
             	SET V_UPDATE_ALL_TO_D = 'update '||V_STAGING_DB||'.'||i_TABLE_NAME||' set modification_type = ''D''; ';
             end if;
             
@@ -216,8 +229,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 				where 1=1
 				'||v_valid_data_filter||'
 				'||v_valid_batches_filter||' 		
-				'||v_online_load_id_filter||' 
-				QUALIFY ROW_NUMBER()  OVER(PARTITION BY '||V_KEY_COLs||' ORDER BY BATCH_ID DESC,MODIFICATION_TYPE DESC,REF_KEY DESC)=1
+				'||v_online_load_id_filter||'
+				'||V_QUALIFY||' 
 			) with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
 			
 			SET v_create_delta =  'CREATE VOLATILE TABLE '||v_delta_TBL_NAME||' AS 
@@ -230,7 +243,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 								where exists (
 											select 1 
 											from '||v_table_name_1batch||' tgt 
-											where '||v_keys_eql||'
+											where '||v_delta_keys_eql||'
 										)
 							)
 							,delta as
@@ -245,7 +258,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							where exists (
 											select 1 
 											from delta tgt 
-											where '||v_keys_eql||'
+											where '||v_delta_keys_eql||'
 										)
 						)
 					  with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
