@@ -196,6 +196,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.TXF_PROCESS_LOADING
 			--------------------------------------------------------------------------------------------------------------------------------
 			set v_where_clause = ' AND ((X.INPV_DELETE_FLAG = 1 and END_TS IS NULL) or (X.INPV_DELETE_FLAG = 0 and END_TS IS not NULL))';
 			SET V_CLOSE_END_DATE = '';
+			
 			if V_APPLY_TYPE = V_HISTORY_TYPE
 			then
 				set V_CLOSE_END_DATE = ','||V_END_DATE_COLUMN||' = case when X.INPV_DELETE_FLAG = 1 and '||V_END_DATE_COLUMN||' is null then Y.'||V_START_DATE_COLUMN||' else '||V_END_DATE_COLUMN||' end';
@@ -232,6 +233,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.TXF_PROCESS_LOADING
 			end if;
 			--------------------------------------------------------------------------------------------------------------------------------
 			SELECT 
+			/*
+			 * get the last row in base table, if its not deleted and end data is not null, then make it null!
+			 */
 			'UPDATE Y 
 			FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' Y
 			-- SELECT * FROM '||V_TGT_DB||'.' || V_TGT_TABLE || ' Y
