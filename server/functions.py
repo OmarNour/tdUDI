@@ -61,8 +61,9 @@ class WriteFile:
 def upper_string_in_list(_list: list) -> list:
     return [x.upper() if isinstance(x, str) else x for x in _list]
 
+
 def generate_run_id():
-    return int(str(time.time()).replace('.', ''))
+    return str(dt.datetime.now().strftime("%Y%m%d%H%M%S"))
 
 
 def open_folder(path):
@@ -227,3 +228,4 @@ if __name__ == '__main__':
     _ = """ dasda's """
     x = single_quotes(_)
     print(x)
+    print(generate_run_id())
