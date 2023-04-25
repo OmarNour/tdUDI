@@ -27,6 +27,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_LOADING
 		
         DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN 	
+	        SET o_run_id = coalesce(v_run_id, i_run_id);
             SET O_RETURN_CODE = SQLCODE;
             GET DIAGNOSTICS EXCEPTION 1 O_RETURN_MSG = MESSAGE_TEXT;
         END;
