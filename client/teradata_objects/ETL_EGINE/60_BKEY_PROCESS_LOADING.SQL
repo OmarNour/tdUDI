@@ -120,7 +120,7 @@ BEGIN
 			set V_RETURN_MSG = V_DBC_RETURN_MSG;
 		else
 			set V_RETURN_CODE = -1;
-			set V_RETURN_MSG = 'BKEY '||I_PROCESS_NAME||', is not registered in PROCESS table';
+			set V_RETURN_MSG = 'BKEY, is not registered in PROCESS table';
 		end if;
 	end;
 	
