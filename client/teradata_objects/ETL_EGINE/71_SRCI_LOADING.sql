@@ -1,10 +1,12 @@
-REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.BKEY_LOADING
+REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_LOADING
     (
     IN 		i_SOURCE_NAME  			VARCHAR(200),
-    IN 		I_PROCESS_NAME  		VARCHAR(200),
+    IN 		i_TABLE_NAME  			VARCHAR(200),
     IN 		I_RUN_ID 				BIGINT,
     IN		I_LOAD_ID				VARCHAR(500),
     OUT  	O_ROWS_INSERTED_COUNT	FLOAT,
+    OUT  	O_ROWS_UPDATED_COUNT	FLOAT,
+    OUT  	O_ROWS_DELETED_COUNT	FLOAT,
     OUT  	O_RETURN_CODE  			INTEGER,
     OUT  	O_RETURN_MSG 			VARCHAR(5000),
     OUT 	o_run_id 				BIGINT
@@ -23,8 +25,10 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.BKEY_LOADING
 		
         DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN 	
-	        set O_ROWS_INSERTED_COUNT = V_INSERTED_ROWS_COUNT;
 	        SET o_run_id = coalesce(v_run_id, i_run_id);
+	        SET O_ROWS_INSERTED_COUNT	= V_INSERTED_ROWS_COUNT;
+    		SET	O_ROWS_UPDATED_COUNT	= V_UPDATED_ROWS_COUNT;
+    		SET	O_ROWS_DELETED_COUNT	= V_DELETED_ROWS_COUNT;
             SET O_RETURN_CODE = SQLCODE;
             GET DIAGNOSTICS EXCEPTION 1 O_RETURN_MSG = MESSAGE_TEXT;
         END;
@@ -41,26 +45,35 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.BKEY_LOADING
 			END IF;
             
 			FOR	loop1 AS loopx CURSOR FOR 
-						select 
-						 p.PROCESS_NAME
-					from GDEV1_ETL.PROCESS P
-					where p.active = 1
-					and p.process_type ='BKEY'
-					and (P.PROCESS_NAME = I_PROCESS_NAME or I_PROCESS_NAME is null)
-					and (P.SOURCE_NAME = i_SOURCE_NAME or i_SOURCE_NAME is null) 
+						SELECT 
+					    TBL.TABLE_NAME
+					    FROM GDEV1_ETL.STG_TABLES TBL
+					    WHERE EXISTS (
+					    SELECT 1
+					        FROM GDEV1_ETL.SOURCE_SYSTEMS SRC
+					        WHERE TBL.SOURCE_NAME=SRC.SOURCE_NAME
+					            AND  SRC.ACTIVE = 1
+					            AND  SRC.STG_ACTIVE = 1
+					            AND  SRC.ACTIVE = 1
+					    )
+					        AND  TBL.ACTIVE = 1
+					        AND  (TBL.TABLE_NAME = i_TABLE_NAME or i_TABLE_NAME is  null )
+					        AND  (TBL.SOURCE_NAME = i_SOURCE_NAME or i_SOURCE_NAME is  null )
 					        
 			DO
-				call GDEV1_ETL.BKEY_PROCESS_LOADING
-												(
-													I_LOAD_ID	--IN i_LOAD_ID 			VARCHAR(100), 
-													,v_run_id--IN i_run_id 			BIGINT,
-													,loop1.PROCESS_NAME --i_PROCESS_NAME  		VARCHAR(500), 
-													,V_DBC_RETURN_CODE	--OUT RETURN_CODE    		INTEGER,
-													,V_DBC_RETURN_MSG 	--OUT RETURN_MSG  		VARCHAR(1000),
-													,V_dbc_INSERTED_ROWS_COUNT	--OUT ROWS_COUNT_VALUE	INTEGER
-													,v_dbc_run_id
-												);	
-												
+				call GDEV1_ETL.SRCI_PROCESS_LOADING
+											    (
+											    loop1.TABLE_NAME	--IN 		I_PROCESSNAME  			VARCHAR(1000),
+											    ,v_run_id			--IN 		I_RUN_ID 				BIGINT,
+											    ,I_LOAD_ID			--IN		I_LOAD_ID				VARCHAR(500),
+											    ,V_dbc_INSERTED_ROWS_COUNT 	--OUT  	O_ROWS_INSERTED_COUNT	FLOAT,
+											    ,V_dbc_updated_ROWS_COUNT 	--OUT  	O_ROWS_UPDATED_COUNT	FLOAT,
+											    ,V_dbc_deleted_ROWS_COUNT 	--OUT  	O_ROWS_DELETED_COUNT	FLOAT,
+											    ,V_DBC_RETURN_CODE 	--OUT  	O_RETURN_CODE  			INTEGER,
+											    ,V_DBC_RETURN_MSG 	--OUT  	O_RETURN_MSG 			VARCHAR(5000)
+											    ,v_dbc_run_id
+											    );
+											    
 				if v_dbc_return_code <> 0 and V_RETURN_CODE = 0
 				then
 					set V_RETURN_CODE = v_dbc_return_code;
@@ -68,6 +81,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.BKEY_LOADING
 				end if;
 				
 				set V_INSERTED_ROWS_COUNT = V_INSERTED_ROWS_COUNT + V_dbc_INSERTED_ROWS_COUNT;
+				set V_updated_ROWS_COUNT = V_updated_ROWS_COUNT + V_dbc_updated_ROWS_COUNT;
+				set V_deleted_ROWS_COUNT = V_deleted_ROWS_COUNT + V_dbc_deleted_ROWS_COUNT;
 			end for;
         END;
                                                                                         
@@ -76,5 +91,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.BKEY_LOADING
         SET O_RETURN_MSG = V_RETURN_MSG;
         
         SET O_ROWS_INSERTED_COUNT	= V_INSERTED_ROWS_COUNT;
+    	SET	O_ROWS_UPDATED_COUNT	= V_UPDATED_ROWS_COUNT;
+    	SET	O_ROWS_DELETED_COUNT	= V_DELETED_ROWS_COUNT;
     	SET	o_run_id				= v_run_id;
     END;

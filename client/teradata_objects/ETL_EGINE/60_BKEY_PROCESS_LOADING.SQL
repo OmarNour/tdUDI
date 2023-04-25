@@ -82,6 +82,7 @@ BEGIN
 		from GDEV1_ETL.PROCESS P
 		where  P.PROCESS_NAME = I_PROCESS_NAME
 		and p.active = 1
+		and p.process_type ='BKEY'
 		into v_src_DB
 			,v_src_table
 			,v_tgt_db
