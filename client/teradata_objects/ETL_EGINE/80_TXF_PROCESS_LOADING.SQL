@@ -133,6 +133,13 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.TXF_PROCESS_LOADING
             	leave MAINBLOCK;
             end if;
             
+            IF V_HISTORY_COLUMNS = '' and V_APPLY_TYPE = V_HISTORY_TYPE
+			THEN
+				SET V_RETURN_CODE = -1;
+				SET V_RETURN_MSG = 'History Columns are not defined!';
+				LEAVE MainBlock;
+			END IF;
+			
             SET V_FULL_KEY = V_KEY_COLUMNS;
             SET V_FULL_KEY_JOIN = V_KEY_COLUMNS_JOIN;
             
@@ -701,6 +708,6 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.TXF_PROCESS_LOADING
         SET O_ROWS_INSERTED_COUNT	= V_INSERTED_ROWS_COUNT;
     	SET	O_ROWS_UPDATED_COUNT	= V_UPDATED_ROWS_COUNT;
     	SET	O_ROWS_DELETED_COUNT	= V_DELETED_ROWS_COUNT;
-    	set o_run_id 				= v_dbc_run_id;
+    	set o_run_id 				= v_run_id;
     
     END;
