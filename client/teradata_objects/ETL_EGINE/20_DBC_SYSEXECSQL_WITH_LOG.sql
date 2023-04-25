@@ -12,16 +12,17 @@ REPLACE PROCEDURE GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG
 ###################################################################################################################################################################
 */
 
-(	IN 	i_SQL_SCRIPT 	clob character set unicode,
+(	IN 	i_SQL_SCRIPT 		clob character set unicode,
 	IN 	i_SCRIPT_SEQ		integer,
-	IN 	i_run_id 		BIGINT,
-	in 	i_SOURCE_NAME	VARCHAR(50),
-	in	i_PROCESS_NAME	VARCHAR(500),
-	in	i_LOAD_ID		VARCHAR(100),
-	in	i_log			integer, -- 1 log , 0 dont log
+	IN 	i_run_id 			BIGINT,
+	in 	i_SOURCE_NAME		VARCHAR(50),
+	in	i_PROCESS_NAME		VARCHAR(500),
+	in	i_LOAD_ID			VARCHAR(100),
+	in	i_log				integer, -- 1 log , 0 dont log
 	OUT o_RETURN_CODE    	INTEGER,
-	OUT o_RETURN_MSG  	VARCHAR(10000),
-	OUT o_Rows_Count 		INTEGER
+	OUT o_RETURN_MSG  		VARCHAR(10000),
+	OUT o_Rows_Count 		INTEGER,
+	OUT o_run_id 			BIGINT
 )
 
 BEGIN
@@ -82,4 +83,5 @@ BEGIN
 	SET o_RETURN_CODE =  v_dbc_RETURN_CODE;
 	SET o_RETURN_MSG 	=  v_dbc_RETURN_MSG;
 	SET o_Rows_Count 	= v_dbc_Rows_Count;
+	set o_run_id		= v_run_id;
 END;
