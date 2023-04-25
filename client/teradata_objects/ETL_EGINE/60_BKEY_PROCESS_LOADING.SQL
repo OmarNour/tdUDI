@@ -30,7 +30,7 @@ BEGIN
 
 	DECLARE v_RETURN_CODE, V_DBC_RETURN_CODE 			INTEGER default 0;
 	DECLARE v_RETURN_MSG, V_DBC_RETURN_MSG  			VARCHAR(1000) DEFAULT 'Process Completed Successfully';
-	DECLARE V_DBC_ROWS_COUNT			INTEGER default 0;
+	DECLARE V_DBC_ROWS_COUNT			float default 0;
 	
 	DECLARE	v_run_id, v_dbc_run_id		BIGINT;
 	
@@ -81,6 +81,7 @@ BEGIN
 			,p.source_name
 		from GDEV1_ETL.PROCESS P
 		where  P.PROCESS_NAME = I_PROCESS_NAME
+		and p.active = 1
 		into v_src_DB
 			,v_src_table
 			,v_tgt_db
@@ -119,7 +120,7 @@ BEGIN
 			set V_RETURN_MSG = V_DBC_RETURN_MSG;
 		else
 			set V_RETURN_CODE = -1;
-			set V_RETURN_MSG = 'BKEY is not registered in PROCESS table';
+			set V_RETURN_MSG = 'BKEY '||I_PROCESS_NAME||', is not registered in PROCESS table';
 		end if;
 	end;
 	
@@ -131,6 +132,6 @@ BEGIN
 	INSERT INTO GDEV1_ETL.EXEC_PROCESS_LOGS  
     (RUN_ID, LOAD_ID, SOURCE_NAME, PROCESS_NAME, START_TIMESTAMP, END_TIMESTAMP, ROWS_INSERTED_COUNT, ROWS_UPDATED_COUNT, ROWS_DELETED_COUNT, ERROR_CODE, ERROR_MSG)  
     VALUES
-    (v_run_id, i_LOAD_ID, V_SOURCE_NAME, i_PROCESS_NAME, v_START_TIMESTAMP, current_timestamp, V_DBC_ROWS_COUNT, 0, 0, V_DBC_RETURN_CODE, V_DBC_RETURN_MSG);
+    (v_run_id, i_LOAD_ID, V_SOURCE_NAME, i_PROCESS_NAME, v_START_TIMESTAMP, current_timestamp, V_DBC_ROWS_COUNT, 0, 0, V_RETURN_CODE, V_RETURN_MSG);
 	
 END;
