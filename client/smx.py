@@ -698,9 +698,11 @@ class SMX:
                         core_t = Table.get_instance(_key=(self.core_t_schema.id, row.target_table_name))
                         core_lt = LayerTable.get_instance(_key=(self.core_layer.id, core_t.id))
 
-                        # if (row.historization_algorithm.upper() == 'HISTORY' and not core_t.history_table) \
-                        #         or (row.historization_algorithm.upper() != 'HISTORY' and core_t.history_table):
-                        #     logging.error(f"Historization algorithm and core table definition are not consistent, processing row:\n{row}")
+                        if row.historization_algorithm.upper() == 'HISTORY' and not core_t.history_table:
+                            logging.error(f"History process should deal with history table only, processing row:\n{row}")
+
+                        if row.historization_algorithm.upper() != 'HISTORY' and core_t.history_table:
+                            logging.error(f"Non-history process should not deal with history table, processing row:\n{row}")
 
                         txf_process_name = CORE_PROCESS_NAME_TEMPLATE.format(mapping_name=row.mapping_name)
                         txf_view_name = CORE_VIEW_NAME_TEMPLATE.format(view_name=txf_process_name)
