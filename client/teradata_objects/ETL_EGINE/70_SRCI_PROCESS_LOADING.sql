@@ -25,9 +25,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
 		DECLARE 	V_DBC_RETURN_MSG  			VARCHAR(1000);
   
     				
-        DECLARE    	V_SRC_DB					VARCHAR(500) DEFAULT 'GDEV1V_SRCI';
+        DECLARE    	V_SRC_DB					VARCHAR(500);
         DECLARE    	V_SRC_TABLE					VARCHAR(500);
-        DECLARE    	V_TGT_DB					VARCHAR(500) DEFAULT 'GDEV1T_SRCI';
+        DECLARE    	V_TGT_DB					VARCHAR(500);
         DECLARE    	V_TGT_TABLE					VARCHAR(500);
         
      	
@@ -71,6 +71,23 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
 		
         MAINBLOCK:
         BEGIN
+	        SELECT P1.P_VALUE
+			FROM GDEV1_ETL.PARAMETERS P1 
+			WHERE P1.P_KEY='SRCI_V_DB'
+	        into V_SRC_DB;
+	        
+	        SELECT P1.P_VALUE
+			FROM GDEV1_ETL.PARAMETERS P1 
+			WHERE P1.P_KEY='SRCI_T_DB'
+	        into V_TGT_DB;
+	        
+	        if V_SRC_DB is null or V_TGT_DB is null
+	        then
+	        	set V_RETURN_CODE = -1;
+            	SET V_RETURN_MSG = 'Parameters SRCI_V_DB and/or SRCI_T_DB are not defined in PARAMETERS table!';
+            	leave MAINBLOCK;
+	        end if;
+	        
             SELECT SRC.SOURCE_NAME
 		    FROM GDEV1_ETL.STG_TABLES TBL
 		    	JOIN GDEV1_ETL.SOURCE_SYSTEMS SRC
