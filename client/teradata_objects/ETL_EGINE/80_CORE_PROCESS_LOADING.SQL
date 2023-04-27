@@ -15,7 +15,8 @@ REPLACE PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_PROCESS_LOADING
     	DECLARE 	v_START_TIMESTAMP 			TIMESTAMP(6) default current_timestamp;
         DECLARE 	V_RETURN_CODE  				INTEGER DEFAULT 0;
         DECLARE 	V_RETURN_MSG 				VARCHAR(5000) DEFAULT 'Process Completed Successfully';
-        DECLARE 	V_ROWS_IN_TMP, V_KEYS_IN_BASE_CT, V_ROWS_IN_DELTA, V_ROWS_COUNT				FLOAT DEFAULT 0;
+        DECLARE 	V_ROWS_IN_TMP, V_ROWS_IN_DELTA, V_ROWS_COUNT				FLOAT DEFAULT 0;
+        DECLARE 	V_KEYS_IN_BASE_CT, v_large_object_count						INTEGER DEFAULT 0;
         DECLARE		v_run_id, v_dbc_run_id		BIGINT;
         DECLARE 	V_SQL_SCRIPT_ID				INTEGER DEFAULT 0;
         DECLARE 	V_DBC_RETURN_CODE 			INTEGER;
@@ -308,6 +309,14 @@ REPLACE PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_PROCESS_LOADING
 			END IF;
 			
 			select 
+			count(1) cnt
+			FROM DBC.columnsV 
+			where DATABASENAME = V_TGT_DB
+			and tablename=V_TGT_TABLE
+			and ColumnType = 'CO'
+			into v_large_object_count;
+			
+			select 
 				 'DELTA_INPUT_VIEW_'		|| V_TGT_TABLE  
 				,'DROP TABLE DELTA_INPUT_VIEW_'		|| V_TGT_TABLE ||';'
 				,'CREATE VOLATILE MULTISET TABLE DELTA_INPUT_VIEW_' || V_TGT_TABLE || ' , no fallback AS 
@@ -320,7 +329,7 @@ REPLACE PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_PROCESS_LOADING
 					'||V_FROM_BASE_IN_TMP||'							
 				)  ' || V_WITH_DATA_UNIQUE_PI || '  (' || V_FULL_KEY || ') ON COMMIT PRESERVE ROWS;' 
 			into V_DELTA_INPUT_VIEW_NAME, V_DROP_DELTA_INPUT_VIEW, V_VT_DELTA_INPUT_VIEW
-			WHERE V_APPLY_TYPE <> V_INSERT_TYPE and V_KEYS_IN_BASE_CT > 0;
+			WHERE V_APPLY_TYPE <> V_INSERT_TYPE and V_KEYS_IN_BASE_CT > 0 and v_large_object_count = 0;
 			--------------------------------------------------------------------------------------------------------------------------------			
 			set v_select_clause = 'select * ';
 			set v_where_clause = 'WHERE INPV_DELETE_FLAG = 0';
@@ -336,7 +345,7 @@ REPLACE PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_PROCESS_LOADING
 				set v_select_clause = 'select x.*,'||v_calculate_end_date;
 			end if;
 			
-			if V_KEYS_IN_BASE_CT > 0
+			if V_KEYS_IN_BASE_CT > 0 and v_large_object_count = 0
 			then
 							
 				set v_where_clause = 'WHERE exists (

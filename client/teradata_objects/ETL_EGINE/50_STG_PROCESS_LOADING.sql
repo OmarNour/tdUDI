@@ -48,13 +48,14 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 	
 		DECLARE		v_delta_TBL_NAME,
 					v_table_name_1batch,
+					v_src_table_name,
 					V_SOURCE_NAME,
 				    V_LOADING_MODE,
 				    V_REJECTION_TABLE_NAME,
 				    V_BUSINESS_RULES_TABLE_NAME,
 				    V_SOURCE_DB					VARCHAR(500);
 				    
-		DECLARE		V_IS_TARANSACTIOANL			INTEGER;
+		DECLARE		V_IS_TARANSACTIOANL, v_large_object_count			INTEGER default 0;
 		declare		v_online_load_id_filter,
 					v_valid_batches_filter,
 					V_UPDATE_ALL_TO_D,V_ALL_COLS,
@@ -192,6 +193,14 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			GROUP BY DATABASENAME, TABLENAME
 			INTO V_ALL_COLS;
 			
+			select 
+			count(1) cnt
+			FROM DBC.columnsV 
+			where DATABASENAME = V_STAGING_DB
+			and tablename=i_TABLE_NAME
+			and ColumnType = 'CO'
+			into v_large_object_count;
+			
 		    set v_table_name_1batch = i_TABLE_NAME||'_1batch';
 		    set v_delta_TBL_NAME = v_table_name_1batch||'_delta';
 		    
@@ -290,10 +299,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 										)
 						)
 					  with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
-					  
+			
+			if v_large_object_count > 0
+			then
+				set v_src_table_name = v_table_name_1batch;
+			else
+				set v_src_table_name = v_delta_TBL_NAME;
+			end if;
+			
 			set v_update_tgt = 
 							'update tgt
-							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_delta_TBL_NAME||' src
+							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_src_table_name||' src
 							set '||v_set_non_key_cols||'
 							,UPD_DTTM = current_timestamp
 							where '||v_keys_eql||';		
@@ -305,7 +321,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							SELECT 
 								 '||V_ALL_COLS||'
 								, current_timestamp INS_DTTM 
-							FROM '||v_delta_TBL_NAME||' src
+							FROM '||v_src_table_name||' src
 							where not exists (
 											select 1 
 											from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt 
