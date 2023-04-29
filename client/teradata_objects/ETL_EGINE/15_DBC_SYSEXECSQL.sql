@@ -17,14 +17,14 @@ REPLACE PROCEDURE /**/ GDEV1_ETL.DBC_SYSEXECSQL
     IN i_QUERY_BAND			VARCHAR(64000),
     OUT o_RETURN_CODE    	INTEGER,
     OUT o_RETURN_MSG  		VARCHAR(10000),
-    OUT o_Rows_Count 		INTEGER
+    OUT o_Rows_Count 		float
     )
     BEGIN
         	
            
         DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN 		
-            		
+            set o_Rows_Count = 0;	
             SET o_RETURN_CODE = SQLCODE;
             GET DIAGNOSTICS EXCEPTION 1 o_RETURN_MSG = MESSAGE_TEXT;
         END;

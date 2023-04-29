@@ -72,17 +72,17 @@ BEGIN
 		END IF;
 		
 		select 
-			 P.SRC_DB
+			 P.SRC_T_DB
 			,P.SRC_TABLE
-			,P.TGT_DB  
+			,P.TGT_T_DB  
 			,P.TGT_TABLE               
 			,P.Key_Set_Id
 			,P.Domain_Id
 			,p.source_name
-		from GDEV1_ETL.PROCESS P
-		where  P.PROCESS_NAME = I_PROCESS_NAME
-		and p.active = 1
-		and p.process_type ='BKEY'
+		from GDEV1_ETL.V_PROCESS P
+		where  p.active = 1
+		and p.TGT_LAYER ='BKEY'
+		and P.PROCESS_NAME = I_PROCESS_NAME
 		into v_src_DB
 			,v_src_table
 			,v_tgt_db

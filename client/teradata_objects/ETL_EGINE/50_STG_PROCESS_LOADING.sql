@@ -41,19 +41,16 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
         DECLARE		V_BATCH_ID					VARCHAR(150)	DEFAULT 'BATCH_ID';
         DECLARE	   	V_REF_KEY   				VARCHAR(150)	DEFAULT 'REF_KEY';
         DECLARE	   	V_MODIFICATION_TYPE 		VARCHAR(150)	DEFAULT 'MODIFICATION_TYPE';
-        DECLARE		V_STAGING_DB				VARCHAR(150);
      	
         DECLARE 	V_WITH_DATA_PI				VARCHAR(100) DEFAULT 'WITH DATA AND STATS PRIMARY INDEX';
 		DECLARE 	V_WITH_DATA_UNIQUE_PI		VARCHAR(100) DEFAULT 'WITH DATA AND STATS UNIQUE PRIMARY INDEX';
 	
 		DECLARE		v_delta_TBL_NAME,
 					v_table_name_1batch,
-					v_src_table_name,
 					V_SOURCE_NAME,
 				    V_LOADING_MODE,
 				    V_REJECTION_TABLE_NAME,
-				    V_BUSINESS_RULES_TABLE_NAME,
-				    V_SOURCE_DB					VARCHAR(500);
+				    V_BUSINESS_RULES_TABLE_NAME VARCHAR(500);
 				    
 		DECLARE		V_IS_TARANSACTIOANL, v_large_object_count			INTEGER default 0;
 		declare		v_online_load_id_filter,
@@ -91,27 +88,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 		
         MAINBLOCK:
         BEGIN
-	        SELECT P1.P_VALUE
-			FROM GDEV1_ETL.PARAMETERS P1 
-			WHERE P1.P_KEY='STG_T_DB'
-	        into V_STAGING_DB;
 	        
-	        if V_STAGING_DB is null
-	        then
-	        	set V_RETURN_CODE = -1;
-            	SET V_RETURN_MSG = 'Parameter STG_T_DB is not defined in PARAMETERS table!';
-            	leave MAINBLOCK;
-	        end if;
-	        
-            SELECT 
+	        SELECT 
             SRC.SOURCE_NAME,
 		    SRC.LOADING_MODE,
 		    SRC.REJECTION_TABLE_NAME,
 		    SRC.BUSINESS_RULES_TABLE_NAME,
-		    SRC.SOURCE_DB,
+		    SRC.src_db SOURCE_DB,
+		    TBL.STG_t_db TGT_DB,
 		    TBL.IS_TARANSACTIOANL
-		    FROM GDEV1_ETL.STG_TABLES TBL
-		    	JOIN GDEV1_ETL.SOURCE_SYSTEMS SRC
+		    FROM GDEV1_ETL.V_SOURCE_SYSTEM_TABLES TBL
+		    	JOIN GDEV1_ETL.V_SOURCE_SYSTEMS SRC
 		    	ON TBL.SOURCE_NAME=SRC.SOURCE_NAME
 		    WHERE SRC.ACTIVE = 1
 		    AND  SRC.STG_ACTIVE = 1
@@ -123,7 +110,8 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 		    V_LOADING_MODE,
 		    V_REJECTION_TABLE_NAME,
 		    V_BUSINESS_RULES_TABLE_NAME,
-		    V_SOURCE_DB,
+		    V_SRC_DB,
+		    V_TGT_DB,
 		    V_IS_TARANSACTIOANL;
             
 		    IF V_SOURCE_NAME IS NULL
@@ -133,12 +121,19 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
             	leave MAINBLOCK;
             end if;
             
+            if V_TGT_DB is null
+	        then
+	        	set V_RETURN_CODE = -1;
+            	SET V_RETURN_MSG = 'Parameter STG_T_DB is not defined in PARAMETERS table!';
+            	leave MAINBLOCK;
+	        end if;
+	        
             SELECT 
 			 TRIM( TRAILING  ',' FROM (XMLAGG(trim(Key_Column)|| ',' ORDER BY Key_Column) (VARCHAR(10000)))) Key_Column
 			, trim(XMLAGG( 'TGT.' || trim(Key_Column)|| ' = SRC.' ||trim(Key_Column) || ' AND ' ORDER BY Key_Column) (VARCHAR(10000))) _keys_eql
 			, left(_keys_eql,(length(_keys_eql)-3)(int)) Keys_eql
-			from GDEV1_ETL.TRANSFORM_KEYCOL
-			WHERE DB_NAME = V_STAGING_DB
+			from GDEV1_ETL.V_TRANSFORM_KEYCOL
+			WHERE db_name = V_TGT_DB
 			AND TABLE_NAME  = i_TABLE_NAME
 			INTO V_KEY_COLs, v_, v_keys_eql;
 			
@@ -163,7 +158,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			SELECT 
 			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)|| ' = SRC.' ||trim(COLUMNNAME) || ',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) SET_COLS
 			FROM DBC.COLUMNSV v
-			WHERE DATABASENAME = V_STAGING_DB
+			WHERE DATABASENAME = V_TGT_DB
 			AND TABLENAME  = i_TABLE_NAME
 			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM')
 			and not exists (select 1 
@@ -178,7 +173,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			SELECT 
 			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)||',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) COLS
 			FROM DBC.COLUMNSV v
-			WHERE DATABASENAME = V_STAGING_DB
+			WHERE DATABASENAME = V_TGT_DB
 			AND TABLENAME  = i_TABLE_NAME
 			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM', 'MODIFICATION_TYPE', 'LOAD_ID', 'BATCH_ID', 'REF_KEY')
 			GROUP BY DATABASENAME, TABLENAME
@@ -187,7 +182,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			SELECT 
 			TRIM( TRAILING  ',' FROM (XMLAGG(trim(COLUMNNAME)|| ',' ORDER BY COLUMNNAME) (VARCHAR(10000)))) COLS
 			FROM DBC.COLUMNSV v
-			WHERE DATABASENAME = V_STAGING_DB
+			WHERE DATABASENAME = V_TGT_DB
 			AND TABLENAME  = i_TABLE_NAME
 			and COLUMNNAME not in ('INS_DTTM' ,'UPD_DTTM')
 			GROUP BY DATABASENAME, TABLENAME
@@ -196,7 +191,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			select 
 			count(1) cnt
 			FROM DBC.columnsV 
-			where DATABASENAME = V_STAGING_DB
+			where DATABASENAME = V_TGT_DB
 			and tablename=i_TABLE_NAME
 			and ColumnType = 'CO'
 			into v_large_object_count;
@@ -210,11 +205,11 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 					'and not exists
 						(
 							sel 1 
-							from '||V_SOURCE_DB||'.'||V_REJECTION_TABLE_NAME||' r  
+							from '||V_SRC_DB||'.'||V_REJECTION_TABLE_NAME||' r  
 							where r.REF_KEY  = x.REF_KEY
 							and exists (
 											select 1 
-											from '||V_SOURCE_DB||'.'||V_BUSINESS_RULES_TABLE_NAME||' br 
+											from '||V_SRC_DB||'.'||V_BUSINESS_RULES_TABLE_NAME||' br 
 											where r.RULE_ID = br.RULE_ID 
 											and br.active = 1 /*hard rejection rules*/							
 										)
@@ -252,7 +247,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 						)';	
 					
             else -- 'OFFLINE'
-            	SET V_UPDATE_ALL_TO_D = 'update '||V_STAGING_DB||'.'||i_TABLE_NAME||' set modification_type = ''D''; ';
+            	SET V_UPDATE_ALL_TO_D = 'update '||V_TGT_DB||'.'||i_TABLE_NAME||' set modification_type = ''D''; ';
             end if;
             
 			
@@ -262,7 +257,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
             set v_create_1batch = 
 			'create multiset volatile TABLE '||v_table_name_1batch||'  , no fallback as 
 			(
-				sel * from '||V_SOURCE_DB||'.'||i_TABLE_NAME||' x
+				sel * from '||V_SRC_DB||'.'||i_TABLE_NAME||' x
 				where 1=1
 				'||v_valid_data_filter||'
 				'||v_valid_batches_filter||' 		
@@ -276,7 +271,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 							tgt_matched_keys as
 							(
 								SELECT '||v_delta_COLS||' 
-								FROM '||V_STAGING_DB||'.'||i_TABLE_NAME||' src
+								FROM '||V_TGT_DB||'.'||i_TABLE_NAME||' src
 								where exists (
 											select 1 
 											from '||v_table_name_1batch||' tgt 
@@ -302,29 +297,29 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			
 			if v_large_object_count > 0
 			then
-				set v_src_table_name = v_table_name_1batch;
+				set V_SRC_TABLE = v_table_name_1batch;
 			else
-				set v_src_table_name = v_delta_TBL_NAME;
+				set V_SRC_TABLE = v_delta_TBL_NAME;
 			end if;
 			
 			set v_update_tgt = 
 							'update tgt
-							from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt, '||v_src_table_name||' src
+							from '||V_TGT_DB||'.'||i_TABLE_NAME||' tgt, '||V_SRC_TABLE||' src
 							set '||v_set_non_key_cols||'
 							,UPD_DTTM = current_timestamp
 							where '||v_keys_eql||';		
 							';
 		
             set v_insert_into_tgt = 
-							'insert into '||V_STAGING_DB||'.'||i_TABLE_NAME||'
+							'insert into '||V_TGT_DB||'.'||i_TABLE_NAME||'
 							('||V_ALL_COLS||', INS_DTTM)
 							SELECT 
 								 '||V_ALL_COLS||'
 								, current_timestamp INS_DTTM 
-							FROM '||v_src_table_name||' src
+							FROM '||V_SRC_TABLE||' src
 							where not exists (
 											select 1 
-											from '||V_STAGING_DB||'.'||i_TABLE_NAME||' tgt 
+											from '||V_TGT_DB||'.'||i_TABLE_NAME||' tgt 
 											where '||v_keys_eql||'
 											);
 							';		

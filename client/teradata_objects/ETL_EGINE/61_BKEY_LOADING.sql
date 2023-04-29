@@ -43,9 +43,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.BKEY_LOADING
 			FOR	loop1 AS loopx CURSOR FOR 
 						select 
 						 p.PROCESS_NAME
-					from GDEV1_ETL.PROCESS P
+					from GDEV1_ETL.V_PROCESS P
 					where p.active = 1
-					and p.process_type ='BKEY'
+					and p.TGT_LAYER ='BKEY'
 					and (P.PROCESS_NAME = I_PROCESS_NAME or I_PROCESS_NAME is null)
 					and (P.SOURCE_NAME = i_SOURCE_NAME or i_SOURCE_NAME is null) 
 					        

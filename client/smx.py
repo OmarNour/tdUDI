@@ -1047,7 +1047,7 @@ def generate_metadata_scripts(smx: SMX):
     """
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
     source_sytems_file = WriteFile(smx.metadata_scripts, 'SOURCE_SYSTEMS', "sql")
-    stg_tables_file = WriteFile(smx.metadata_scripts, 'STG_TABLES', "sql")
+    source_system_tables_file = WriteFile(smx.metadata_scripts, 'SOURCE_SYSTEM_TABLES', "sql")
     core_tables_file = WriteFile(smx.metadata_scripts, 'CORE_TABLES', "sql")
     transform_keycol_file = WriteFile(smx.metadata_scripts, 'TRANSFORM_KEYCOL', "sql")
     history_file = WriteFile(smx.metadata_scripts, 'HISTORY', 'sql')
@@ -1055,6 +1055,7 @@ def generate_metadata_scripts(smx: SMX):
 
     source: DataSource
     table: Table
+    layer_table: LayerTable
     pk_col: Column
     hist_col_mapping: ColumnMapping
     pipeline: Pipeline
@@ -1066,22 +1067,23 @@ def generate_metadata_scripts(smx: SMX):
                                                                    REJECTION_TABLE_NAME='NULL',
                                                                    BUSINESS_RULES_TABLE_NAME='NULL',
                                                                    LOADING_MODE=single_quotes(LOADING_MODE),
-                                                                   SOURCE_DB=single_quotes(smx.src_v_schema.schema_name),
+                                                                   SOURCE_LAYER=single_quotes(Layer.get_instance(_key='SRC').layer_name),
                                                                    DATA_SRC_CD='NULL'
                                                                    )
                                  )
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
-                stg_tables_file.write(INSERT_INTO_STG_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                    SOURCE_NAME=single_quotes(source.source_name),
-                                                                    TABLE_NAME=single_quotes(table.table_name),
-                                                                    IS_TARANSACTIOANL=1 if table.transactional_data else 0
-                                                                    )
+                source_system_tables_file.write(INSERT_INTO_SOURCE_SYSTEM_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                              SOURCE_NAME=single_quotes(source.source_name),
+                                                                              TABLE_NAME=single_quotes(table.table_name),
+                                                                              IS_TARANSACTIOANL=1 if table.transactional_data else 0
+                                                                              )
                                       )
-    for table in Table.get_all_instances():
+    for layer_table in LayerTable.get_all_instances():
+        table = layer_table.table
         for pk_col in table.key_col:
             transform_keycol_file.write(INSERT_INTO_TRANSFORM_KEYCOL.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                            DB_NAME=single_quotes(table.schema.schema_name),
+                                                                            LAYER_NAME=single_quotes(layer_table.layer.layer_name),
                                                                             TABLE_NAME=single_quotes(table.table_name),
                                                                             KEY_COLUMN=single_quotes(pk_col.column_name)
                                                                             )
@@ -1126,11 +1128,9 @@ def generate_metadata_scripts(smx: SMX):
                     process_file.write(INSERT_INTO_PROCESS.format(meta_db=smx.meta_t_schema.schema_name,
                                                                   PROCESS_NAME=single_quotes(pipeline.name),
                                                                   SOURCE_NAME=single_quotes(pipeline.src_lyr_table.table.data_source.source_name),
-                                                                  PROCESS_TYPE=single_quotes(process_type),
-                                                                  SRC_DB=single_quotes(pipeline.lyr_view.table.schema.schema_name),
-                                                                  SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
-                                                                  TGT_DB=single_quotes(pipeline.tgt_lyr_table.table.schema.schema_name),
+                                                                  TGT_LAYER=single_quotes(pipeline.tgt_lyr_table.layer.layer_name),
                                                                   TGT_TABLE=single_quotes(pipeline.tgt_lyr_table.table.table_name),
+                                                                  SRC_TABLE=single_quotes(pipeline.lyr_view.table.table_name),
                                                                   APPLY_TYPE=single_quotes(apply_type),
                                                                   MAIN_TABLE_NAME=single_quotes(pipeline.src_lyr_table.table.table_name),
                                                                   KEY_SET_ID=key_set_id,
@@ -1147,7 +1147,7 @@ def generate_metadata_scripts(smx: SMX):
                                                                   )
                                        )
     source_sytems_file.close()
-    stg_tables_file.close()
+    source_system_tables_file.close()
     transform_keycol_file.close()
     process_file.close()
     history_file.close()

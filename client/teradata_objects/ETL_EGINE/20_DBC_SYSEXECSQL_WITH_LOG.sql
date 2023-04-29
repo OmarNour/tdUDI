@@ -21,7 +21,7 @@ REPLACE PROCEDURE GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG
 	in	i_log				integer, -- 1 log , 0 dont log
 	OUT o_RETURN_CODE    	INTEGER,
 	OUT o_RETURN_MSG  		VARCHAR(10000),
-	OUT o_Rows_Count 		INTEGER,
+	OUT o_Rows_Count 		float,
 	OUT o_run_id 			BIGINT
 )
 
@@ -29,7 +29,7 @@ BEGIN
 	
 	declare v_dbc_RETURN_CODE    	INTEGER default 0;
 	declare v_dbc_RETURN_MSG  	VARCHAR(1000) DEFAULT 'Process Completed Successfully';
-	declare v_dbc_Rows_Count		integer;
+	declare v_dbc_Rows_Count		float;
 	DECLARE v_run_id BIGINT;
 	DECLARE V_QUERY_BAND varchar(64000);
 	declare v_START_TIMESTAMP TIMESTAMP(6);

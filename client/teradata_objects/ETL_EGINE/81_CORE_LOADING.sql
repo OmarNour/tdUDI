@@ -48,9 +48,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_LOADING
 					select 
 						 p.PROCESS_NAME
 						 ,p.APPLY_TYPE
-					from GDEV1_ETL.PROCESS P
+					from GDEV1_ETL.V_PROCESS P
 					where p.active = 1
-					and p.process_type ='TXF'
+					and p.TGT_LAYER ='CORE'
 					and (P.PROCESS_NAME = I_PROCESS_NAME or I_PROCESS_NAME is null)
 					and (P.SOURCE_NAME = i_SOURCE_NAME or i_SOURCE_NAME is null) 
 					        

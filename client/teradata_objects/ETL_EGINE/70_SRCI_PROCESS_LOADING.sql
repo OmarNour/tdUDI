@@ -71,25 +71,12 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
 		
         MAINBLOCK:
         BEGIN
-	        SELECT P1.P_VALUE
-			FROM GDEV1_ETL.PARAMETERS P1 
-			WHERE P1.P_KEY='SRCI_V_DB'
-	        into V_SRC_DB;
-	        
-	        SELECT P1.P_VALUE
-			FROM GDEV1_ETL.PARAMETERS P1 
-			WHERE P1.P_KEY='SRCI_T_DB'
-	        into V_TGT_DB;
-	        
-	        if V_SRC_DB is null or V_TGT_DB is null
-	        then
-	        	set V_RETURN_CODE = -1;
-            	SET V_RETURN_MSG = 'Parameters SRCI_V_DB and/or SRCI_T_DB are not defined in PARAMETERS table!';
-            	leave MAINBLOCK;
-	        end if;
+
 	        
             SELECT SRC.SOURCE_NAME
-		    FROM GDEV1_ETL.STG_TABLES TBL
+            		,TBL.STG_T_DB V_SRC_DB
+            		,TBL.SRCI_T_DB  V_TGT_DB
+		    FROM GDEV1_ETL.V_SOURCE_SYSTEM_TABLES TBL
 		    	JOIN GDEV1_ETL.SOURCE_SYSTEMS SRC
 		    	ON TBL.SOURCE_NAME=SRC.SOURCE_NAME
 		    WHERE SRC.ACTIVE = 1
@@ -98,7 +85,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
 		    AND  TBL.ACTIVE = 1
 		    AND  TBL.TABLE_NAME = i_TABLE_NAME
 		    
-		    INTO V_SOURCE_NAME;
+		    INTO V_SOURCE_NAME, V_SRC_DB, V_TGT_DB;
             
 		    IF V_SOURCE_NAME IS NULL
             THEN
@@ -107,10 +94,17 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
             	leave MAINBLOCK;
             end if;
             
+            if V_SRC_DB is null or V_TGT_DB is null
+	        then
+	        	set V_RETURN_CODE = -1;
+            	SET V_RETURN_MSG = 'INVALID source or target DB!';
+            	leave MAINBLOCK;
+	        end if;
+            
             SELECT 
 			 TRIM( TRAILING  ',' FROM (XMLAGG(trim(Key_Column)|| ',' ORDER BY Key_Column) (VARCHAR(10000)))) Key_Column
-			from GDEV1_ETL.TRANSFORM_KEYCOL
-			WHERE DB_NAME = V_TGT_DB
+			from GDEV1_ETL.V_TRANSFORM_KEYCOL
+			WHERE db_name = V_TGT_DB
 			AND TABLE_NAME  = i_TABLE_NAME
 			INTO V_KEY_COLs;
 			
