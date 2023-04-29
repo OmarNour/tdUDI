@@ -5,10 +5,12 @@ where l.layer_name = DS.SOURCE_LAYER;
 
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_SOURCE_SYSTEM_TABLES AS LOCK ROW FOR ACCESS
 select  t.*
+		,stg_l.src_db stg_src_db		
 		,stg_l.lyr_db stg_t_db  
 		,stg_l.layer_level stg_layer_level
 		,stg_l.layer_name stg_layer_name
 		
+		,srci_l.src_db srci_src_db
 		,srci_l.lyr_db srci_t_db  
 		,srci_l.layer_level srci_layer_level
 		,srci_l.layer_name srci_layer_name
