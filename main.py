@@ -22,7 +22,7 @@ def start(source_name: str | list | None, with_scripts=True, with_deploy=True):
 if __name__ == '__main__':
     # pipreqs /Users/omarnour/PycharmProjects/tdUDI --force --ignore tests
     try:
-        start(source_name=['cso'], with_scripts=True, with_deploy=True)
+        start(source_name=[], with_scripts=True, with_deploy=True)
         # start(source_name=[], with_scripts=False)
         # start(source_name=[], with_scripts=True)
     except KeyboardInterrupt:

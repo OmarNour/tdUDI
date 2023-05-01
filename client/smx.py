@@ -749,7 +749,7 @@ class SMX:
                 stg_tables_df = filter_dataframe(self.data['stg_tables'], 'schema', _source_names)
 
                 if system_df.empty or stg_tables_df.empty:
-                    logging.error("Please make sure there data in both 'System' and 'Stg Tables' sheets!")
+                    logging.error("Please make sure there are data in both 'System' and 'Stg Tables' sheets!")
                 else:
                     table_mapping_df = pd.DataFrame()
                     if 'table_mapping' in self.data.keys():
