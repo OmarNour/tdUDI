@@ -59,7 +59,7 @@ BEGIN
 				
 				SELECT TRIM(KEY_COLUMN) as KEY_COL
 				FROM GDEV1_ETL.V_TRANSFORM_KEYCOL
-				where db_name = V_DATABASE_NAME
+				where lyr_db = V_DATABASE_NAME
 				and TABLE_Name = V_TABLE_NAME
 				
 				UNION

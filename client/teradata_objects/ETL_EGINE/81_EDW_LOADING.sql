@@ -1,7 +1,8 @@
-REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_LOADING
+REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.EDW_LOADING
     (
     IN 		i_SOURCE_NAME  			VARCHAR(200),
     IN 		I_PROCESS_NAME  		VARCHAR(1000),
+    IN 		i_LAYER_NAME  			VARCHAR(200),
     IN 		i_TABLE_NAME  			VARCHAR(200),
     IN 		I_RUN_ID 				BIGINT,
     IN		I_LOAD_ID				VARCHAR(500),
@@ -51,14 +52,15 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.CORE_LOADING
 						 ,p.APPLY_TYPE
 					from GDEV1_ETL.V_PROCESS P
 					where p.active = 1
-					and p.TGT_LAYER ='CORE'
+					and p.TGT_LAYER <> 'BKEY'
 					and (P.PROCESS_NAME = I_PROCESS_NAME or I_PROCESS_NAME is null)
 					and (P.SOURCE_NAME = i_SOURCE_NAME or i_SOURCE_NAME is null) 
+					and (P.TGT_LAYER = i_LAYER_NAME or i_LAYER_NAME is null)
 					and (P.TGT_TABLE = i_TABLE_NAME or i_TABLE_NAME is null)
 					        
 			DO
 				
-				call GDEV1_ETL.CORE_PROCESS_LOADING
+				call GDEV1_ETL.EDW_PROCESS_LOADING
 											    (
 											     loop1.PROCESS_NAME--IN 		I_PROCESSNAME  			VARCHAR(1000),
 											    ,loop1.apply_type-- IN 		I_APPLY_TYPE  			VARCHAR(500),

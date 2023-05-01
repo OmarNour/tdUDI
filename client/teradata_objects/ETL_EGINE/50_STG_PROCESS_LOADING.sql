@@ -134,7 +134,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 			, trim(XMLAGG( 'TGT.' || trim(Key_Column)|| ' = SRC.' ||trim(Key_Column) || ' AND ' ORDER BY Key_Column) (VARCHAR(10000))) _keys_eql
 			, left(_keys_eql,(length(_keys_eql)-3)(int)) Keys_eql
 			from GDEV1_ETL.V_TRANSFORM_KEYCOL
-			WHERE db_name = V_TGT_DB
+			WHERE lyr_db = V_TGT_DB
 			AND TABLE_NAME  = i_TABLE_NAME
 			INTO V_KEY_COLs, v_, v_keys_eql;
 			

@@ -1048,7 +1048,7 @@ def generate_metadata_scripts(smx: SMX):
     # INSERT_INTO_SOURCE_NAME_LKP smx.metadata_scripts
     source_sytems_file = WriteFile(smx.metadata_scripts, 'SOURCE_SYSTEMS', "sql")
     source_system_tables_file = WriteFile(smx.metadata_scripts, 'SOURCE_SYSTEM_TABLES', "sql")
-    core_tables_file = WriteFile(smx.metadata_scripts, 'CORE_TABLES', "sql")
+    edw_tables_file = WriteFile(smx.metadata_scripts, 'EDW_TABLES', "sql")
     transform_keycol_file = WriteFile(smx.metadata_scripts, 'TRANSFORM_KEYCOL', "sql")
     history_file = WriteFile(smx.metadata_scripts, 'HISTORY', 'sql')
     process_file = WriteFile(smx.metadata_scripts, 'PROCESS', "sql")
@@ -1089,13 +1089,14 @@ def generate_metadata_scripts(smx: SMX):
                                                                             )
                                         )
         if table.schema.id == smx.core_t_schema.id:
-            core_tables_file.write(INSERT_INTO_CORE_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                  TABLE_NAME=single_quotes(table.table_name),
-                                                                  IS_LOOKUP=1 if table.is_lkp else 0,
-                                                                  IS_HISTORY=1 if table.history_table else 0,
-                                                                  START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
-                                                                  END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
-                                                                  )
+            edw_tables_file.write(INSERT_INTO_EDW_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
+                                                                 LAYER_NAME=single_quotes(layer_table.layer.layer_name),
+                                                                 TABLE_NAME=single_quotes(table.table_name),
+                                                                 IS_LOOKUP=1 if table.is_lkp else 0,
+                                                                 IS_HISTORY=1 if table.history_table else 0,
+                                                                 START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
+                                                                 END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
+                                                                 )
                                    )
 
     for pipeline in Pipeline.get_all_instances():
@@ -1151,7 +1152,7 @@ def generate_metadata_scripts(smx: SMX):
     transform_keycol_file.close()
     process_file.close()
     history_file.close()
-    core_tables_file.close()
+    edw_tables_file.close()
 
 
 @log_error_decorator()
