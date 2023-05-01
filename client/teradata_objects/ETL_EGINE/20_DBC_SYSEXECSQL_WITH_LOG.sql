@@ -52,32 +52,34 @@ BEGIN
 		
 	END;
 	
-	
-	if i_log = 1 then
-		IF i_run_id IS NULL THEN 
-			select GDEV1_ETL.generate_run_id()
-			into v_run_id;
-		ELSE 	
-			SET v_run_id=	i_run_id;
-		END IF;
-	end if;
-	
-	SELECT 'PROCEDURE=GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG;' 
-		|| 'i_SCRIPT_SEQ='||COALESCE(i_SCRIPT_SEQ,'')||';'
-		|| 'i_run_id='||COALESCE(i_run_id,'')||';'
-		|| 'i_SOURCE_NAME='||COALESCE(i_SOURCE_NAME,'')||';'
-		|| 'i_PROCESS_NAME='||COALESCE(i_PROCESS_NAME,'')||';'
-		|| 'i_LOAD_ID='||COALESCE(i_LOAD_ID,'')||';'
-		|| 'i_log='||COALESCE(i_log,'')||';'
-		into V_QUERY_BAND;
+	IF CAST(i_SQL_SCRIPT AS CHAR(10)) <> ''
+	then
+		if i_log = 1 then
+			IF i_run_id IS NULL THEN 
+				select GDEV1_ETL.generate_run_id()
+				into v_run_id;
+			ELSE 	
+				SET v_run_id=	i_run_id;
+			END IF;
+		end if;
 		
-	set v_START_TIMESTAMP = CURRENT_TIMESTAMP;
-	CALL GDEV1_ETL.DBC_SYSEXECSQL(i_SQL_SCRIPT, V_QUERY_BAND, v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count);	
-	
-	
-	if i_log = 1 then
-		INSERT INTO GDEV1_ETL.EXEC_SCRIPT_LOGS  (RUN_ID, LOAD_ID, SOURCE_NAME, PROCESS_NAME, SQL_SCRIPT_SEQ, SQL_SCRIPT, START_TIMESTAMP, END_TIMESTAMP, ERROR_CODE, ERROR_MSG, ROWS_COUNT)  
-		VALUES(v_run_id,i_LOAD_ID,i_SOURCE_NAME,i_PROCESS_NAME,i_SCRIPT_SEQ,i_SQL_SCRIPT,v_START_TIMESTAMP,CURRENT_TIMESTAMP,v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count) ;
+		SELECT 'PROCEDURE=GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG;' 
+			|| 'i_SCRIPT_SEQ='||COALESCE(i_SCRIPT_SEQ,'')||';'
+			|| 'i_run_id='||COALESCE(i_run_id,'')||';'
+			|| 'i_SOURCE_NAME='||COALESCE(i_SOURCE_NAME,'')||';'
+			|| 'i_PROCESS_NAME='||COALESCE(i_PROCESS_NAME,'')||';'
+			|| 'i_LOAD_ID='||COALESCE(i_LOAD_ID,'')||';'
+			|| 'i_log='||COALESCE(i_log,'')||';'
+			into V_QUERY_BAND;
+			
+		set v_START_TIMESTAMP = CURRENT_TIMESTAMP;
+		CALL GDEV1_ETL.DBC_SYSEXECSQL(i_SQL_SCRIPT, V_QUERY_BAND, v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count);	
+		
+		
+		if i_log = 1 then
+			INSERT INTO GDEV1_ETL.EXEC_SCRIPT_LOGS  (RUN_ID, LOAD_ID, SOURCE_NAME, PROCESS_NAME, SQL_SCRIPT_SEQ, SQL_SCRIPT, START_TIMESTAMP, END_TIMESTAMP, ERROR_CODE, ERROR_MSG, ROWS_COUNT)  
+			VALUES(v_run_id,i_LOAD_ID,i_SOURCE_NAME,i_PROCESS_NAME,i_SCRIPT_SEQ,i_SQL_SCRIPT,v_START_TIMESTAMP,CURRENT_TIMESTAMP,v_dbc_RETURN_CODE, v_dbc_RETURN_MSG, v_dbc_Rows_Count) ;
+		end if;
 	end if;
 	
 	SET o_RETURN_CODE =  v_dbc_RETURN_CODE;

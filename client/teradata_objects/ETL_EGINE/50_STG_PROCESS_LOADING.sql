@@ -26,6 +26,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 		DECLARE 	V_DBC_ROWS_COUNT			FLOAT;
     	DECLARE 	v_drop_1batch
     				, v_drop_delta
+    				, v_delete_from_tgt
     				, v_update_tgt
     				, v_insert_into_tgt
     				, v_create_1batch
@@ -266,7 +267,13 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 				'||V_QUALIFY||' 
 			) with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
 			
-			SET v_create_delta =  'CREATE VOLATILE TABLE '||v_delta_TBL_NAME||' AS 
+			if v_large_object_count > 0 OR V_IS_TARANSACTIOANL = 1
+			then
+				set v_create_delta = '';
+				set V_SRC_TABLE = v_table_name_1batch;
+			else
+				set V_SRC_TABLE = v_delta_TBL_NAME;
+				SET v_create_delta =  'CREATE VOLATILE TABLE '||v_delta_TBL_NAME||' AS 
 						(	
 							with 
 							tgt_matched_keys as
@@ -295,35 +302,43 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 										)
 						)
 					  with data and stats primary index ('||V_KEY_COLs||') on commit preserve rows;';
-			
-			if v_large_object_count > 0
-			then
-				set V_SRC_TABLE = v_table_name_1batch;
-			else
-				set V_SRC_TABLE = v_delta_TBL_NAME;
 			end if;
 			
-			set v_update_tgt = 
-							'update tgt
-							from '||V_TGT_DB||'.'||i_TABLE_NAME||' tgt, '||V_SRC_TABLE||' src
-							set '||v_set_non_key_cols||'
-							,UPD_DTTM = current_timestamp
-							where '||v_keys_eql||';		
-							';
-		
-            set v_insert_into_tgt = 
-							'insert into '||V_TGT_DB||'.'||i_TABLE_NAME||'
-							('||V_ALL_COLS||', INS_DTTM)
-							SELECT 
-								 '||V_ALL_COLS||'
-								, current_timestamp INS_DTTM 
-							FROM '||V_SRC_TABLE||' src
-							where not exists (
-											select 1 
-											from '||V_TGT_DB||'.'||i_TABLE_NAME||' tgt 
-											where '||v_keys_eql||'
-											);
-							';		
+			if V_IS_TARANSACTIOANL = 1
+			THEN
+				set v_delete_from_tgt = 'delete from '||V_TGT_DB||'.'||i_TABLE_NAME;
+				set v_update_tgt = '';
+				set v_insert_into_tgt = 
+								'insert into '||V_TGT_DB||'.'||i_TABLE_NAME||'
+								('||V_ALL_COLS||', INS_DTTM)
+								SELECT 
+									 '||V_ALL_COLS||'
+									, current_timestamp INS_DTTM 
+								FROM '||V_SRC_TABLE||' src';
+			ELSE
+				set v_delete_from_tgt = '';
+				set v_update_tgt = 
+								'update tgt
+								from '||V_TGT_DB||'.'||i_TABLE_NAME||' tgt, '||V_SRC_TABLE||' src
+								set '||v_set_non_key_cols||'
+								,UPD_DTTM = current_timestamp
+								where '||v_keys_eql||';		
+								';
+			
+	            set v_insert_into_tgt = 
+								'insert into '||V_TGT_DB||'.'||i_TABLE_NAME||'
+								('||V_ALL_COLS||', INS_DTTM)
+								SELECT 
+									 '||V_ALL_COLS||'
+									, current_timestamp INS_DTTM 
+								FROM '||V_SRC_TABLE||' src
+								where not exists (
+												select 1 
+												from '||V_TGT_DB||'.'||i_TABLE_NAME||' tgt 
+												where '||v_keys_eql||'
+												);
+								';
+			END IF;
 							
 
 			CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_drop_1batch,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT,v_dbc_run_id);
@@ -396,6 +411,18 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.STG_PROCESS_LOADING
 					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
 					LEAVE MainBlock;
 				END IF;
+			end if;
+			
+			if cast(v_delete_from_tgt as char(10)) <> ''
+			then
+				SET V_SQL_SCRIPT_ID = V_SQL_SCRIPT_ID + 1;
+				CALL GDEV1_ETL.DBC_SYSEXECSQL_WITH_LOG(v_delete_from_tgt,V_SQL_SCRIPT_ID,v_run_id,V_SOURCE_NAME,i_TABLE_NAME,I_LOAD_ID,1/*1 log or 0 don't*/,V_DBC_RETURN_CODE,V_DBC_RETURN_MSG,V_DBC_ROWS_COUNT,v_dbc_run_id);
+				IF V_DBC_RETURN_CODE <> 0 THEN
+					SET V_RETURN_CODE = V_DBC_RETURN_CODE;
+					SET V_RETURN_MSG = V_DBC_RETURN_MSG;
+					LEAVE MainBlock;
+				END IF;
+				set V_UPDATED_ROWS_COUNT = V_UPDATED_ROWS_COUNT + V_DBC_ROWS_COUNT;
 			end if;
 			
 			if cast(v_update_tgt as char(10)) <> ''
