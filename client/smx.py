@@ -99,7 +99,7 @@ class SMX:
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
         if sheet_name in SHEETS:
             df = self.xls.parse(sheet, encoding='utf-8').replace(np.nan, value='', regex=True)
-            df = df.applymap(lambda x: x.replace('\ufeff', '').strip() if type(x) is str else int(x) if type(x) is float else x)
+            df = df.applymap(lambda x: x.replace('\ufeff', '').replace('`', '').strip() if type(x) is str else int(x) if type(x) is float else x)
             df.drop_duplicates()
             df.columns = [c.replace('  ', ' ').replace(' ', '_').lower() for c in df]
             self.data[sheet_name] = df
