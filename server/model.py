@@ -428,7 +428,8 @@ class Table(MyID):
 
     def __init__(self, schema_id: int, table_name: str, table_kind: str
                  , source_id: int = None, multiset: int = 1, active: int = 1
-                 , history_table: bool = False, is_lkp=False, transactional_data: bool = False, *args, **kwargs):
+                 , history_table: bool = False, is_lkp=False, transactional_data: bool = False
+                 , unique_pi=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schema_id = schema_id
         self._table_name = table_name
@@ -442,6 +443,7 @@ class Table(MyID):
         self.is_lkp = is_lkp
         self.is_bkey = False
         self.is_bmap = False
+        self.unique_pi = unique_pi
 
     def set_key(self, key: str | list | None):
         _new_key = key if isinstance(key, list) else [key] if key else []
@@ -532,7 +534,8 @@ class Table(MyID):
                                                        , comma=comma)
                 pi_cols_lst.append(col.column_name) if col.is_pk else None
 
-            pi_index = PI_TEMPLATE.format(pi_cols=list_to_string(_list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
+            pi_index = PI_TEMPLATE.format(unique_pi='unique' if self.unique_pi else ''
+                                          ,pi_cols=list_to_string(_list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
             self._ddl = DDL_TABLE_TEMPLATE.format(set_multiset=set_multiset
                                                   , schema_name=schema_name
                                                   , table_name=table_name
