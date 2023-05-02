@@ -129,29 +129,30 @@ class SMX:
 
             @log_error_decorator()
             def extract_stg_tables(row):
-                ds = DataSource.get_instance(_key=row.schema)
-                if ds:
-                    src_t = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                    stg_t = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
-                    srci_t = Table(schema_id=self.srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                if row.table_name != '':
+                    ds = DataSource.get_instance(_key=row.schema)
+                    if ds:
+                        src_t = Table(schema_id=self.src_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                        stg_t = Table(schema_id=self.stg_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
+                        srci_t = Table(schema_id=self.srci_t_schema.id, table_name=row.table_name, table_kind='T', source_id=ds.id)
 
-                    src_lt = LayerTable(layer_id=self.src_layer.id, table_id=src_t.id)
-                    stg_lt = LayerTable(layer_id=self.stg_layer.id, table_id=stg_t.id)
-                    srci_lt = LayerTable(layer_id=self.srci_layer.id, table_id=srci_t.id)
-                    #############################################################
-                    src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                    src_lv = LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
-                    Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=src_lv.id)
-                    #############################################################
-                    stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                    stg_lv = LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
-                    Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=None, lyr_view_id=stg_lv.id, select_asterisk=True)
-                    #############################################################
-                    srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
-                    srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
-                    Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
-                else:
-                    logging.error(f""" Invalid Source name, {row.schema}, processing row:\n{row}""")
+                        src_lt = LayerTable(layer_id=self.src_layer.id, table_id=src_t.id)
+                        stg_lt = LayerTable(layer_id=self.stg_layer.id, table_id=stg_t.id)
+                        srci_lt = LayerTable(layer_id=self.srci_layer.id, table_id=srci_t.id)
+                        #############################################################
+                        src_v = Table(schema_id=self.src_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                        src_lv = LayerTable(layer_id=self.src_layer.id, table_id=src_v.id)
+                        Pipeline(src_lyr_table_id=src_lt.id, tgt_lyr_table_id=stg_lt.id, lyr_view_id=src_lv.id)
+                        #############################################################
+                        stg_v = Table(schema_id=self.stg_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                        stg_lv = LayerTable(layer_id=self.stg_layer.id, table_id=stg_v.id)
+                        Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=None, lyr_view_id=stg_lv.id, select_asterisk=True)
+                        #############################################################
+                        srci_v = Table(schema_id=self.srci_v_schema.id, table_name=row.table_name, table_kind='V', source_id=ds.id)
+                        srci_vl = LayerTable(layer_id=self.srci_layer.id, table_id=srci_v.id)
+                        Pipeline(src_lyr_table_id=stg_lt.id, tgt_lyr_table_id=srci_lt.id, lyr_view_id=srci_vl.id)
+                    else:
+                        logging.error(f""" Invalid Source name, {row.schema}, processing row:\n{row}""")
 
             @log_error_decorator()
             def extract_core_tables(row):
@@ -163,62 +164,63 @@ class SMX:
 
             @log_error_decorator()
             def extract_stg_srci_table_columns(row):
-                src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
-                stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
-                srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
+                if row.column_name != '':
+                    src_table = Table.get_instance(_key=(self.src_t_schema.id, row.table_name))
+                    stg_table = Table.get_instance(_key=(self.stg_t_schema.id, row.table_name))
+                    srci_table = Table.get_instance(_key=(self.srci_t_schema.id, row.table_name))
 
-                data_type_lst = row.data_type.split(sep='(')
-                _data_type = data_type_lst[0]
-                data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
-                if not data_type:
-                    logging.error(f"Invalid data type, processing row:\n{row}")
-                else:
-                    pk = 1 if row.pk.upper() == 'Y' else 0
-                    mandatory = 1 if row.pk.upper() == 'Y' else 0
-                    precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
-                    domain_id = None
-
-                    if row.natural_key == '':
-                        if src_table:
-                            Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
-
-                        if stg_table:
-                            Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
+                    data_type_lst = row.data_type.split(sep='(')
+                    _data_type = data_type_lst[0]
+                    data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
+                    if not data_type:
+                        logging.error(f"Invalid data type, processing row:\n{row}")
                     else:
-                        domain = None
-                        domain_error_msg = f"Domain not found for {row.table_name}.{row.column_name} column, please check 'Stg tables' sheet!"
-                        if row.key_set_name and row.key_domain_name:
+                        pk = 1 if row.pk.upper() == 'Y' else 0
+                        mandatory = 1 if row.pk.upper() == 'Y' else 0
+                        precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                        domain_id = None
 
-                            data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
-                            if not data_set:
-                                logging.error(f"invalid key set name '{row.key_set_name}', processing row:\n{row}")
-                            else:
-                                domain = Domain.get_by_name(data_set.id, row.key_domain_name)
-                                domain_error_msg = f"Bkey Domain not found for {row.table_name}.{row.column_name} column, " \
-                                                   f"\n key set name:'{row.key_set_name}'" \
-                                                   f"\n key domain name: '{row.key_domain_name}'" \
-                                                   f"\n please check 'Stg tables' sheet!"
+                        if row.natural_key == '':
+                            if src_table:
+                                Column(table_id=src_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
 
-                        elif row.code_set_name and row.code_domain_name:
-
-                            data_set = DataSet.get_by_name(self.bmap_set_type.id, row.code_set_name)
-                            if not data_set:
-                                logging.error(f"invalid code set name '{row.code_set_name}', processing row:\n{row}")
-                            else:
-                                domain = Domain.get_by_name(data_set.id, row.code_domain_name)
-                                domain_error_msg = f"Bmap Domain not found for {row.table_name}.{row.column_name} column, " \
-                                                   f"\n code set name:'{row.code_set_name}'" \
-                                                   f"\n code domain name: '{row.code_domain_name}'" \
-                                                   f"\n please check 'Stg tables' sheet!"
-
-                        if domain:
-                            domain_id = domain.id
+                            if stg_table:
+                                Column(table_id=stg_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory, data_type_id=data_type.id, dt_precision=precision)
                         else:
-                            logging.error(f"{domain_error_msg}, processing row:\n{row}")
+                            domain = None
+                            domain_error_msg = f"Domain not found for {row.table_name}.{row.column_name} column, please check 'Stg tables' sheet!"
+                            if row.key_set_name and row.key_domain_name:
 
-                    if srci_table:
-                        Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
-                               , data_type_id=data_type.id, dt_precision=precision, domain_id=domain_id)
+                                data_set = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
+                                if not data_set:
+                                    logging.error(f"invalid key set name '{row.key_set_name}', processing row:\n{row}")
+                                else:
+                                    domain = Domain.get_by_name(data_set.id, row.key_domain_name)
+                                    domain_error_msg = f"Bkey Domain not found for {row.table_name}.{row.column_name} column, " \
+                                                       f"\n key set name:'{row.key_set_name}'" \
+                                                       f"\n key domain name: '{row.key_domain_name}'" \
+                                                       f"\n please check 'Stg tables' sheet!"
+
+                            elif row.code_set_name and row.code_domain_name:
+
+                                data_set = DataSet.get_by_name(self.bmap_set_type.id, row.code_set_name)
+                                if not data_set:
+                                    logging.error(f"invalid code set name '{row.code_set_name}', processing row:\n{row}")
+                                else:
+                                    domain = Domain.get_by_name(data_set.id, row.code_domain_name)
+                                    domain_error_msg = f"Bmap Domain not found for {row.table_name}.{row.column_name} column, " \
+                                                       f"\n code set name:'{row.code_set_name}'" \
+                                                       f"\n code domain name: '{row.code_domain_name}'" \
+                                                       f"\n please check 'Stg tables' sheet!"
+
+                            if domain:
+                                domain_id = domain.id
+                            else:
+                                logging.error(f"{domain_error_msg}, processing row:\n{row}")
+
+                        if srci_table:
+                            Column(table_id=srci_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
+                                   , data_type_id=data_type.id, dt_precision=precision, domain_id=domain_id)
 
             @log_error_decorator()
             def extract_src_view_columns(row):
@@ -266,74 +268,77 @@ class SMX:
 
             @log_error_decorator()
             def extract_core_columns(row):
-                core_table: Table
-                core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
-                data_type_lst = row.data_type.split(sep='(')
-                _data_type = data_type_lst[0]
-                data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
-                if data_type:
+                if row.column_name != '':
+                    core_table: Table
+                    core_table = Table.get_instance(_key=(self.core_t_schema.id, row.table_name))
+                    data_type_lst = row.data_type.split(sep='(')
+                    _data_type = data_type_lst[0]
+                    data_type = DataType.get_instance(_key=(self.db_engine.id, _data_type))
+                    if data_type:
 
-                    if core_table.history_table:
-                        is_start_date = 1 if row.historization_key.upper() == 'S' else 0
-                        is_end_date = 1 if row.historization_key.upper() == 'E' else 0
-                        pk = 1 if (row.historization_key.upper() == 'Y' or is_start_date) else 0
-                    else:
-                        is_start_date = 0
-                        is_end_date = 0
-                        pk = 1 if row.pk.upper() == 'Y' else 0
+                        if core_table.history_table:
+                            is_start_date = 1 if row.historization_key.upper() == 'S' else 0
+                            is_end_date = 1 if row.historization_key.upper() == 'E' else 0
+                            pk = 1 if (row.historization_key.upper() == 'Y' or is_start_date) else 0
+                        else:
+                            is_start_date = 0
+                            is_end_date = 0
+                            pk = 1 if row.pk.upper() == 'Y' else 0
 
-                    mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
-                    precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
+                        mandatory = 1 if (row.mandatory.upper() == 'Y' or pk) else 0
+                        precision = data_type_lst[1].split(sep=')')[0] if len(data_type_lst) > 1 else None
 
-                    # if is_start_date and not pk:
-                    #     logging.error(f"Start date column '{row.column_name}', should be primary key as well!, processing row:\n{row}")
-                    unicode = False
-                    if core_table.is_lkp:
-                        unicode = True
-                    Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
-                           , data_type_id=data_type.id, dt_precision=precision
-                           , is_start_date=is_start_date, is_end_date=is_end_date, unicode=unicode)
+                        # if is_start_date and not pk:
+                        #     logging.error(f"Start date column '{row.column_name}', should be primary key as well!, processing row:\n{row}")
+                        unicode = False
+                        if core_table.is_lkp:
+                            unicode = True
+                        Column(table_id=core_table.id, column_name=row.column_name, is_pk=pk, mandatory=mandatory
+                               , data_type_id=data_type.id, dt_precision=precision
+                               , is_start_date=is_start_date, is_end_date=is_end_date, unicode=unicode)
 
             @log_error_decorator()
             def extract_bkey_tables(row):
-                table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T')
-                LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
+                if row.physical_table != '':
+                    table = Table(schema_id=self.bkey_t_schema.id, table_name=row.physical_table, table_kind='T')
+                    LayerTable(layer_id=self.bkey_layer.id, table_id=table.id)
 
-                Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
-                       , data_type_id=vchar_data_type.id, dt_precision=100
-                       , is_start_date=0, is_end_date=0)
+                    Column(table_id=table.id, column_name='SOURCE_KEY', is_pk=1, mandatory=1
+                           , data_type_id=vchar_data_type.id, dt_precision=100
+                           , is_start_date=0, is_end_date=0)
 
-                Column(table_id=table.id, column_name='DOMAIN_ID', is_pk=1, mandatory=1
-                       , data_type_id=int_data_type.id, dt_precision=None
-                       , is_start_date=0, is_end_date=0)
+                    Column(table_id=table.id, column_name='DOMAIN_ID', is_pk=1, mandatory=1
+                           , data_type_id=int_data_type.id, dt_precision=None
+                           , is_start_date=0, is_end_date=0)
 
-                Column(table_id=table.id, column_name='EDW_KEY', is_pk=0, mandatory=1
-                       , data_type_id=int_data_type.id, dt_precision=None
-                       , is_start_date=0, is_end_date=0)
+                    Column(table_id=table.id, column_name='EDW_KEY', is_pk=0, mandatory=1
+                           , data_type_id=int_data_type.id, dt_precision=None
+                           , is_start_date=0, is_end_date=0)
 
-                Column(table_id=table.id, column_name='KEY_SET_ID', is_pk=0, mandatory=1
-                       , data_type_id=int_data_type.id, dt_precision=None
-                       , is_start_date=0, is_end_date=0)
+                    Column(table_id=table.id, column_name='KEY_SET_ID', is_pk=0, mandatory=1
+                           , data_type_id=int_data_type.id, dt_precision=None
+                           , is_start_date=0, is_end_date=0)
 
-                Column(table_id=table.id, column_name='START_DATE', is_pk=0, mandatory=1
-                       , data_type_id=timestamp_data_type.id, dt_precision=None
-                       , is_start_date=1, is_end_date=0)
+                    Column(table_id=table.id, column_name='START_DATE', is_pk=0, mandatory=1
+                           , data_type_id=timestamp_data_type.id, dt_precision=None
+                           , is_start_date=1, is_end_date=0)
 
-                Column(table_id=table.id, column_name='PROCESS_NAME', is_pk=0, mandatory=1
-                       , data_type_id=vchar_data_type.id, dt_precision=200
-                       , is_start_date=0, is_end_date=0)
+                    Column(table_id=table.id, column_name='PROCESS_NAME', is_pk=0, mandatory=1
+                           , data_type_id=vchar_data_type.id, dt_precision=200
+                           , is_start_date=0, is_end_date=0)
 
             @log_error_decorator()
             def extract_bkey_datasets(row):
-                surrogate_table: Table
-                set_table: Table
-                surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
-                set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
-                if set_table and surrogate_table:
-                    DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
-                    surrogate_table.is_bkey = True
-                else:
-                    logging.error(f"Invalid set table {row.key_set_name} or surrogate table {row.physical_table}, processing row:\n {row}")
+                if row.physical_table != '':
+                    surrogate_table: Table
+                    set_table: Table
+                    surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
+                    set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
+                    if set_table and surrogate_table:
+                        DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                        surrogate_table.is_bkey = True
+                    else:
+                        logging.error(f"Invalid set table {row.key_set_name} or surrogate table {row.physical_table}, processing row:\n {row}")
 
             @log_error_decorator()
             def extract_bkey_domains(row):
@@ -371,16 +376,17 @@ class SMX:
 
             @log_error_decorator()
             def extract_bmap_datasets(row):
-                set_table: Table
-                surrogate_table: Table
-                surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
-                set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
-                if set_table and row.code_set_id and surrogate_table:
-                    DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
-                    # set_table.is_lkp = True
-                    surrogate_table.is_bmap = True
-                else:
-                    logging.error(f"Invalid set table '{row.code_set_name}' or surrogate table '{row.physical_table}', processing row:\n{row}")
+                if row.physical_table != '':
+                    set_table: Table
+                    surrogate_table: Table
+                    surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
+                    set_table = Table.get_instance(_key=(self.core_t_schema.id, row.code_set_name))
+                    if set_table and row.code_set_id and surrogate_table:
+                        DataSet(set_type_id=self.bmap_set_type.id, set_code=row.code_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                        # set_table.is_lkp = True
+                        surrogate_table.is_bmap = True
+                    else:
+                        logging.error(f"Invalid set table '{row.code_set_name}' or surrogate table '{row.physical_table}', processing row:\n{row}")
 
             @log_error_decorator()
             def extract_bmap_domains(row):

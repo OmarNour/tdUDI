@@ -52,10 +52,9 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.EDW_LOADING
 						 ,p.APPLY_TYPE
 					from GDEV1_ETL.V_PROCESS P
 					where p.active = 1
-					and p.TGT_LAYER <> 'BKEY'
+					and p.TGT_LAYER = i_LAYER_NAME
 					and (P.PROCESS_NAME = I_PROCESS_NAME or I_PROCESS_NAME is null)
 					and (P.SOURCE_NAME = i_SOURCE_NAME or i_SOURCE_NAME is null) 
-					and (P.TGT_LAYER = i_LAYER_NAME or i_LAYER_NAME is null)
 					and (P.TGT_TABLE = i_TABLE_NAME or i_TABLE_NAME is null)
 					        
 			DO
