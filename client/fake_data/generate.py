@@ -2,8 +2,78 @@ from server.functions import *
 
 fake = Faker()
 
+import random
+from datetime import datetime
+from faker import Faker
+import teradatasql
 
-def fake_data():
+fake = Faker()
+
+
+def djezzy_fake_data(num_records, teradata_conn_info):
+    with teradatasql.connect(**teradata_conn_info) as con:
+        with con.cursor() as cur:
+            ref_key = 1
+
+            for _ in range(num_records):
+                # DBSS_CRM_TRANSACTIONSTRANSACTION
+                transaction = {
+                    "CDC_CODE": random.randint(0, 255),
+                    "CUSTOMER_INFORMATION": fake.text(max_nb_chars=32),
+                    "DEALERS_CODE": fake.text(max_nb_chars=32),
+                    "FILE_ARRIVING_DATE": fake.date(pattern="YY/MM/DD"),
+                    "ID": fake.random_int(),
+                    "INVOICE_INFORMATION": fake.text(max_nb_chars=200),
+                    "INVOICE_TYPE": random.randint(0, 100),
+                    "LAST_MODIFIED": fake.date_time_this_decade(),
+                    "SALESMEN_CODE": fake.text(max_nb_chars=32),
+                    "TRANSACTION_DATE": fake.date_time_this_decade(),
+                    "TRANSACTION_IDENTIFIER": fake.text(max_nb_chars=32),
+                    "TRANSACTION_TYPE": random.randint(0, 100),
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": fake.text(max_nb_chars=60),
+                    "BATCH_ID": fake.random_int(min=1, max=1000),
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+                transaction_columns = ", ".join(transaction.keys())
+                transaction_values = ", ".join(["?"] * len(transaction))
+                cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSTRANSACTION ({transaction_columns}) VALUES ({transaction_values})", list(transaction.values()))
+                print(f"{cur.rowcount}, rows inserted into DBSS_CRM_TRANSACTIONSTRANSACTION")
+                # JSON_SALES_STG
+                json_sales = {
+                    # Add your columns and data generation code here
+                    "ID": fake.random_int(),
+                    "TRANSACTION_ID": transaction["ID"],
+                    # ...
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+                json_sales_columns = ", ".join(json_sales.keys())
+                json_sales_values = ", ".join(["?"] * len(json_sales))
+                cur.execute(f"INSERT INTO GDEV1T_STG.JSON_SALES_STG ({json_sales_columns}) VALUES ({json_sales_values})", list(json_sales.values()))
+                print(f"{cur.rowcount}, rows inserted into JSON_SALES_STG")
+                # DBSS_CRM_TRANSACTIONSPAYMENT
+                transactions_payment = {
+                    # Add your columns and data generation code here
+                    "ID": fake.random_int(),
+                    "TRANSACTION_ID": transaction["ID"],
+                    # ...
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+                transactions_payment_columns = ", ".join(transactions_payment.keys())
+                transactions_payment_values = ", ".join(["?"] * len(transactions_payment))
+                cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
+                print(f"{cur.rowcount}, rows inserted into DBSS_CRM_TRANSACTIONSPAYMENT")
+                ref_key += 1
+            con.commit()
+
+
+def aca_fake_data():
     # Connect to Teradata
     ip = "localhost"
     user = "power_user"
@@ -82,4 +152,12 @@ def fake_data_cso(cursor, row_count):
 
 
 if __name__ == '__main__':
-    fake_data()
+    # aca_fake_data()
+    # Example usage
+    teradata_conn_info = {
+        "host": "localhost",
+        "user": "power_user",
+        "password": "power_user",
+        "database": ""
+    }
+    djezzy_fake_data(10, teradata_conn_info)
