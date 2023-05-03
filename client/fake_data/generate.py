@@ -12,9 +12,17 @@ fake = Faker()
 
 def djezzy_fake_data(num_records, teradata_conn_info):
     load_id = fake.uuid4()
+    batch_id = random.randint(1, 5)
     with teradatasql.connect(**teradata_conn_info) as con:
         with con.cursor() as cur:
             ref_key = 1
+            trx_id = 1
+            deletes = ["delete from GDEV1T_STG.DBSS_CRM_TRANSACTIONSTRANSACTION;"
+                , "delete from GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT"
+                , "delete from GDEV1T_STG.JSON_SALES_STG"]
+            for _ in deletes:
+                cur.execute(_)
+                con.commit()
 
             for _ in range(num_records):
                 # DBSS_CRM_TRANSACTIONSTRANSACTION
@@ -23,7 +31,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "CUSTOMER_INFORMATION": fake.text(max_nb_chars=32),
                     "DEALERS_CODE": fake.text(max_nb_chars=32),
                     "FILE_ARRIVING_DATE": fake.date(pattern="%Y-%m-%d"),
-                    "ID": fake.random_int(min=1, max=2147483647),
+                    "ID": trx_id,
                     "INVOICE_INFORMATION": fake.text(max_nb_chars=200),
                     "INVOICE_TYPE": random.randint(0, 10),  # Adjusted range for testing
                     "LAST_MODIFIED": fake.date_time_this_decade(),
@@ -33,7 +41,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "TRANSACTION_TYPE": random.randint(0, 10),  # Adjusted range for testing
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
-                    "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
+                    "BATCH_ID": batch_id,
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
@@ -45,7 +53,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 # JSON_SALES_STG
                 json_sales = {
                     # Add your columns and data generation code here
-                    "ID": fake.random_int(min=1, max=2147483647),
+                    "ID": trx_id + 1,
                     "TRANSACTION_ID": transaction["ID"],
 
                     "AMOUNT_BEFORE_STAMP_DUTY": round(random.uniform(1, 1000), 2),
@@ -97,7 +105,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "DISCOUNT": fake.random_int(min=0, max=100),
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
-                    "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
+                    "BATCH_ID": batch_id,
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
@@ -108,7 +116,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
 
                 # DBSS_CRM_TRANSACTIONSPAYMENT
                 transactions_payment = {
-                    "ID": fake.random_int(),
+                    "ID": trx_id + 2,
                     "TRANSACTION_ID": transaction["ID"],
 
                     "BEFORE_VAT_AMOUNT": round(random.uniform(1, 1000), 6),
@@ -125,7 +133,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
 
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
-                    "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
+                    "BATCH_ID": batch_id,
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
@@ -135,6 +143,11 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
 
                 ref_key += 1
+                trx_id += 1
+
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'JSON_SALES_STG', ref_key)
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSTRANSACTION', ref_key)
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSPAYMENT', ref_key)
             con.commit()
 
             print(f"{ref_key}, rows inserted into JSON_SALES_STG")
@@ -209,14 +222,14 @@ def fake_data_cso(cursor, row_count):
     print(f"{row_count} rows of fake data generated and inserted into STG_ONLINE.CSO_ADDRESS table.")
     print(f"{row_count} rows of fake data generated and inserted into STG_ONLINE.CSO_NEW_PERSON table.")
 
-    cdc_audit = f"""INSERT INTO GDEV1_ETL.CDC_AUDIT  
-                    (SOURCE_NAME, LOAD_ID, BATCH_ID, TABLE_NAME, PROCESSED, RECORDS_COUNT)  
-                    VALUES('CSO','{load_id}',{batch_id},'CSO_ADDRESS',0,{row_count}) ;"""
-    cursor.execute(cdc_audit)
+    audit_table('CSO', cursor, load_id, batch_id, 'CSO_ADDRESS', row_count)
+    audit_table('CSO', cursor, load_id, batch_id, 'CSO_NEW_PERSON', row_count)
 
+
+def audit_table(source_system, cursor, load_id, batch_id, table_name, row_count):
     cdc_audit = f"""INSERT INTO GDEV1_ETL.CDC_AUDIT  
                         (SOURCE_NAME, LOAD_ID, BATCH_ID, TABLE_NAME, PROCESSED, RECORDS_COUNT)  
-                        VALUES('CSO','{load_id}',{batch_id},'CSO_NEW_PERSON',0,{row_count}) ;"""
+                        VALUES('{source_system}','{load_id}',{batch_id},'{table_name}',0,{row_count});"""
     cursor.execute(cdc_audit)
 
 
@@ -229,4 +242,4 @@ if __name__ == '__main__':
         "password": "power_user",
         "database": ""
     }
-    djezzy_fake_data(10, teradata_conn_info)
+    djezzy_fake_data(100, teradata_conn_info)
