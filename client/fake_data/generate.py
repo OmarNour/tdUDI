@@ -41,7 +41,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 transaction_columns = ", ".join(transaction.keys())
                 transaction_values = ", ".join(["?"] * len(transaction))
                 cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSTRANSACTION ({transaction_columns}) VALUES ({transaction_values})", list(transaction.values()))
-                print(f"{cur.rowcount}, rows inserted into DBSS_CRM_TRANSACTIONSTRANSACTION")
+
                 # JSON_SALES_STG
                 json_sales = {
                     # Add your columns and data generation code here
@@ -105,17 +105,24 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 json_sales_columns = ", ".join(json_sales.keys())
                 json_sales_values = ", ".join(["?"] * len(json_sales))
                 cur.execute(f"INSERT INTO GDEV1T_STG.JSON_SALES_STG ({json_sales_columns}) VALUES ({json_sales_values})", list(json_sales.values()))
-                print(f"{cur.rowcount}, rows inserted into JSON_SALES_STG")
+
                 # DBSS_CRM_TRANSACTIONSPAYMENT
                 transactions_payment = {
                     "ID": fake.random_int(),
                     "TRANSACTION_ID": transaction["ID"],
-                    "AMOUNT": round(random.uniform(1, 1000), 2),
-                    "PAYMENT_METHOD": fake.random_element(elements=("Cash", "Credit Card", "Debit Card", "E-Wallet")),
-                    "PAYMENT_DATE": fake.date_between(start_date="-1y", end_date="today"),
-                    "STATUS": fake.random_element(elements=("Paid", "Pending", "Refunded", "Cancelled")),
-                    "CONFIRMATION_CODE": fake.uuid4(),
-                    "CURRENCY": fake.currency_code(),
+
+                    "BEFORE_VAT_AMOUNT": round(random.uniform(1, 1000), 6),
+                    "CDC_CODE": fake.random_int(min=1, max=10),
+                    "CHEQUE_NUMBER": fake.bothify(text="CHQ-?#####"),
+                    "FILE_ARRIVING_DATE": fake.date_this_year(before_today=True, after_today=False).strftime('%y/%m/%d'),
+                    "LAST_MODIFIED": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    "PAID_AMOUNT": round(random.uniform(1, 1000), 6),
+                    "PAYMENT_MODE": fake.random_int(min=1, max=9999),
+                    "SETTLEMENT_DISCOUNT": round(random.uniform(0, 100), 6),
+                    "TAX_PAYMENT": round(random.uniform(0, 100), 6),
+                    "TOTAL_PAID": round(random.uniform(1, 1000), 6),
+                    "VAT": round(random.uniform(0, 100), 6),
+
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
                     "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
@@ -125,10 +132,14 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 }
                 transactions_payment_columns = ", ".join(transactions_payment.keys())
                 transactions_payment_values = ", ".join(["?"] * len(transactions_payment))
-                # cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
-                # print(f"{cur.rowcount}, rows inserted into DBSS_CRM_TRANSACTIONSPAYMENT")
+                cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
+
                 ref_key += 1
             con.commit()
+
+            print(f"{ref_key}, rows inserted into JSON_SALES_STG")
+            print(f"{ref_key}, rows inserted into DBSS_CRM_TRANSACTIONSTRANSACTION")
+            print(f"{ref_key}, rows inserted into DBSS_CRM_TRANSACTIONSPAYMENT")
 
 
 def aca_fake_data():
