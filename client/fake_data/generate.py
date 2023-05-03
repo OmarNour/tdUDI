@@ -242,4 +242,4 @@ if __name__ == '__main__':
         "password": "power_user",
         "database": ""
     }
-    djezzy_fake_data(100, teradata_conn_info)
+    djezzy_fake_data(1000, teradata_conn_info)
