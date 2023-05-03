@@ -10,16 +10,16 @@ import teradatasql
 fake = Faker()
 
 
-def djezzy_fake_data(num_records, teradata_conn_info):
+def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
     load_id = fake.uuid4()
     batch_id = random.randint(1, 5)
     with teradatasql.connect(**teradata_conn_info) as con:
         with con.cursor() as cur:
             ref_key = 1
-            trx_id = 1
-            deletes = ["delete from GDEV1T_STG.DBSS_CRM_TRANSACTIONSTRANSACTION;"
-                , "delete from GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT"
-                , "delete from GDEV1T_STG.JSON_SALES_STG"]
+            trx_id = 1 + start_from
+            deletes = ["delete from STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION;"
+                , "delete from STG_ONLINE.DBSS_CRM_TRANSACTIONSPAYMENT"
+                , "delete from STG_ONLINE.JSON_SALES_STG"]
             for _ in deletes:
                 cur.execute(_)
                 con.commit()
@@ -48,7 +48,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 }
                 transaction_columns = ", ".join(transaction.keys())
                 transaction_values = ", ".join(["?"] * len(transaction))
-                cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSTRANSACTION ({transaction_columns}) VALUES ({transaction_values})", list(transaction.values()))
+                cur.execute(f"INSERT INTO STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION ({transaction_columns}) VALUES ({transaction_values})", list(transaction.values()))
 
                 # JSON_SALES_STG
                 json_sales = {
@@ -112,7 +112,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 }
                 json_sales_columns = ", ".join(json_sales.keys())
                 json_sales_values = ", ".join(["?"] * len(json_sales))
-                cur.execute(f"INSERT INTO GDEV1T_STG.JSON_SALES_STG ({json_sales_columns}) VALUES ({json_sales_values})", list(json_sales.values()))
+                cur.execute(f"INSERT INTO STG_ONLINE.JSON_SALES_STG ({json_sales_columns}) VALUES ({json_sales_values})", list(json_sales.values()))
 
                 # DBSS_CRM_TRANSACTIONSPAYMENT
                 transactions_payment = {
@@ -140,7 +140,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 }
                 transactions_payment_columns = ", ".join(transactions_payment.keys())
                 transactions_payment_values = ", ".join(["?"] * len(transactions_payment))
-                cur.execute(f"INSERT INTO GDEV1T_STG.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
+                cur.execute(f"INSERT INTO STG_ONLINE.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
 
                 ref_key += 1
                 trx_id += 1
@@ -242,4 +242,4 @@ if __name__ == '__main__':
         "password": "power_user",
         "database": ""
     }
-    djezzy_fake_data(1000, teradata_conn_info)
+    djezzy_fake_data(1100, 0, teradata_conn_info)
