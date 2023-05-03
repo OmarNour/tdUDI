@@ -45,12 +45,12 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                 # JSON_SALES_STG
                 json_sales = {
                     # Add your columns and data generation code here
-                    "ID": fake.random_int(),
+                    "ID": fake.random_int(min=1, max=2147483647),
                     "TRANSACTION_ID": transaction["ID"],
 
                     "AMOUNT_BEFORE_STAMP_DUTY": round(random.uniform(1, 1000), 2),
                     "AMOUNT_WITHOUT_VAT": round(random.uniform(1, 1000), 2),
-                    "CDC_CODE": fake.random_int(min=1, max=255),
+                    "CDC_CODE": fake.random_int(min=1, max=9),
                     "CONFIRMATION_CODE": fake.uuid4(),
                     "DEALERS_CODE": fake.bothify(text="??#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
                     "FILE_ARRIVING_DATE": fake.date_this_year(before_today=True, after_today=False),
@@ -80,7 +80,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "PD_TOTAL_AMOUNT_BEFORE_TAX": str(round(random.uniform(1, 1000), 2)),
                     "PD_TOTAL_AMOUNT_WHEN_PAYMENT_IN_CASH": str(round(random.uniform(1, 1000), 2)),
                     "ICC": fake.bothify(text="ICC-?#####"),
-                    "SHOP_ID": fake.random_int(),
+                    "SHOP_ID": fake.random_int(min=1, max=999999),
                     "POSTAL_CODE": fake.zipcode(),
                     "ADDRESS": fake.street_address(),
                     "SALESMEN_CODE": fake.bothify(text="SLSM-?#####"),
@@ -97,7 +97,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "DISCOUNT": fake.random_int(min=0, max=100),
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
-                    "BATCH_ID": fake.random_int(),
+                    "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
@@ -118,7 +118,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "CURRENCY": fake.currency_code(),
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
-                    "BATCH_ID": fake.random_int(),
+                    "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
