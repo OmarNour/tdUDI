@@ -11,6 +11,7 @@ fake = Faker()
 
 
 def djezzy_fake_data(num_records, teradata_conn_info):
+    load_id = fake.uuid4()
     with teradatasql.connect(**teradata_conn_info) as con:
         with con.cursor() as cur:
             ref_key = 1
@@ -31,7 +32,7 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "TRANSACTION_IDENTIFIER": fake.text(max_nb_chars=32),
                     "TRANSACTION_TYPE": random.randint(0, 10),  # Adjusted range for testing
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
-                    "LOAD_ID": fake.text(max_nb_chars=60),
+                    "LOAD_ID": load_id,
                     "BATCH_ID": fake.random_int(min=1, max=100),  # Adjusted range for testing
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
@@ -46,15 +47,65 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     # Add your columns and data generation code here
                     "ID": fake.random_int(),
                     "TRANSACTION_ID": transaction["ID"],
-                    # ...
+
+                    "AMOUNT_BEFORE_STAMP_DUTY": round(random.uniform(1, 1000), 2),
+                    "AMOUNT_WITHOUT_VAT": round(random.uniform(1, 1000), 2),
+                    "CDC_CODE": fake.random_int(min=1, max=255),
+                    "CONFIRMATION_CODE": fake.uuid4(),
+                    "DEALERS_CODE": fake.bothify(text="??#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                    "FILE_ARRIVING_DATE": fake.date_this_year(before_today=True, after_today=False),
+                    "INVOICE_DATE_TIME": fake.date_time_this_year(before_now=True, after_now=False, tzinfo=None).strftime('%Y-%m-%d %H:%M:%S'),
+                    "INVOICE_INFORMATION": fake.text(max_nb_chars=100),
+                    "INVOICE_NUMBER": fake.bothify(text="INV-?#####"),
+                    "LAST_MODIFIED": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    "SALESMAN_CODE": fake.bothify(text="SLSM-?#####"),
+                    "STAMP_DUTY": round(random.uniform(0, 50), 2),
+                    "TOTAL_AMOUNT": round(random.uniform(1, 1000), 2),
+                    "VAT": round(random.uniform(0, 100), 2),
+                    "PROVINCE": fake.state(),
+                    "SHOP_ADDRESS": fake.street_address(),
+                    "PAYMENT_MODES": fake.random_element(elements=("CASH", "CARD", "ONLINE")),
+                    "NAME": fake.name(),
+                    "TITL": fake.job(),
+                    "MSISDN": fake.msisdn(),
+                    "FISCAL_CODE": fake.bothify(text="??######?#", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                    "NOTES": fake.text(max_nb_chars=100),
+                    "INVOICE_TEMPLATE": fake.slug(),
+                    "SHOP_NAME": fake.company(),
+                    "PD_VALUE_ADDED_TAX": fake.random_element(elements=("STANDARD", "REDUCED", "EXEMPT")),
+                    "PD_STAMP_DUTY": str(round(random.uniform(0, 50), 2)),
+                    "PD_TOTAL_AMOUNT_TO_BE_PAID": str(round(random.uniform(1, 1000), 2)),
+                    "PD_SETTLEMENT_DISCOUNT": str(round(random.uniform(0, 100), 2)),
+                    "PD_TOTAL_PRICE_INCLUDING_TAX": str(round(random.uniform(1, 1000), 2)),
+                    "PD_TOTAL_AMOUNT_BEFORE_TAX": str(round(random.uniform(1, 1000), 2)),
+                    "PD_TOTAL_AMOUNT_WHEN_PAYMENT_IN_CASH": str(round(random.uniform(1, 1000), 2)),
+                    "ICC": fake.bothify(text="ICC-?#####"),
+                    "SHOP_ID": fake.random_int(),
+                    "POSTAL_CODE": fake.zipcode(),
+                    "ADDRESS": fake.street_address(),
+                    "SALESMEN_CODE": fake.bothify(text="SLSM-?#####"),
+                    "TITLE_NAME": fake.prefix(),
+                    "ORDER_ID": fake.bothify(text="ORD-?#####"),
+                    "CITY": fake.city(),
+                    "SEQUENCE_NUMBER": fake.bothify(text="SEQ-?#####"),
+                    "AMOUNT_BEFORE_TAX": round(random.uniform(1, 1000), 2),
+                    "UNIT_PRICE_WITHOUT_VAT": round(random.uniform(1, 1000), 2),
+                    "PAYNOW": round(random.uniform(1, 1000), 2),
+                    "DESCRIPTION": fake.text(max_nb_chars=100),
+                    "PRODUCT_CODE": fake.bothify(text="PROD-?#####"),
+                    "QUANTITY": fake.random_int(min=1, max=100),
+                    "DISCOUNT": fake.random_int(min=0, max=100),
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": load_id,
+                    "BATCH_ID": fake.random_int(),
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
                 }
                 json_sales_columns = ", ".join(json_sales.keys())
                 json_sales_values = ", ".join(["?"] * len(json_sales))
-                # cur.execute(f"INSERT INTO GDEV1T_STG.JSON_SALES_STG ({json_sales_columns}) VALUES ({json_sales_values})", list(json_sales.values()))
-                # print(f"{cur.rowcount}, rows inserted into JSON_SALES_STG")
+                cur.execute(f"INSERT INTO GDEV1T_STG.JSON_SALES_STG ({json_sales_columns}) VALUES ({json_sales_values})", list(json_sales.values()))
+                print(f"{cur.rowcount}, rows inserted into JSON_SALES_STG")
                 # DBSS_CRM_TRANSACTIONSPAYMENT
                 transactions_payment = {
                     "ID": fake.random_int(),
@@ -65,6 +116,9 @@ def djezzy_fake_data(num_records, teradata_conn_info):
                     "STATUS": fake.random_element(elements=("Paid", "Pending", "Refunded", "Cancelled")),
                     "CONFIRMATION_CODE": fake.uuid4(),
                     "CURRENCY": fake.currency_code(),
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": load_id,
+                    "BATCH_ID": fake.random_int(),
                     "REF_KEY": ref_key,
                     "INS_DTTM": datetime.now(),
                     "UPD_DTTM": datetime.now()
