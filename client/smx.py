@@ -1,3 +1,5 @@
+import logging
+
 from server.model import *
 
 
@@ -848,7 +850,7 @@ class SMX:
                         col: Column
                         invalid_history_tables = []
                         invalid_lookup_tables = []
-                        for table in Table.get_all_instances():
+                        for table in [x for x in Table.get_all_instances() if x.table_name in all_core_tables]:
                             if table.history_table:
                                 if not (table.key_col and table.start_date_col and table.end_date_col):
                                     invalid_history_tables.append(table.table_name)
@@ -858,6 +860,9 @@ class SMX:
                                     invalid_lookup_tables.append(table.table_name)
                                 elif f"{table.table_name}_DESC" not in col_names:
                                     invalid_lookup_tables.append(table.table_name)
+
+                            if not table.key_col and table.table_kind == 'T':
+                                logging.error(f"No Primary key defined for '{table.schema.schema_name}.{table.table_name}' table!")
 
                         if invalid_history_tables:
                             logging.error(f"These are invalid history tables, {invalid_history_tables}")
@@ -874,6 +879,13 @@ class SMX:
                                 , 'historization_algorithm', 'historization_columns'
                             ]
                         ].drop_duplicates().apply(extract_core_txf_views, axis=1)
+
+                    layer_table: LayerTable
+                    for table_name in [layer_table.table.table_name for layer_table in LayerTable.get_all_instances()
+                                  if layer_table.layer.layer_name == 'STG'
+                                     and not layer_table.table.key_col
+                                     and layer_table.table.table_kind == 'T']:
+                        logging.warning(f"No Primary key defined for '{table_name}' staging table!")
                     ##########################      End Core TXF view       #####################
                     ####################################################  End   ####################################################
                     myid_summary = "\n\nSummary:\n######################\n\n"
@@ -1081,11 +1093,11 @@ def generate_metadata_scripts(smx: SMX):
         for table in source.tables:
             if table.schema.id == smx.src_v_schema.id:
                 source_system_tables_file.write(INSERT_INTO_SOURCE_SYSTEM_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                              SOURCE_NAME=single_quotes(source.source_name),
-                                                                              TABLE_NAME=single_quotes(table.table_name),
-                                                                              IS_TARANSACTIOANL=1 if table.transactional_data else 0
-                                                                              )
-                                      )
+                                                                                        SOURCE_NAME=single_quotes(source.source_name),
+                                                                                        TABLE_NAME=single_quotes(table.table_name),
+                                                                                        IS_TARANSACTIOANL=1 if table.transactional_data else 0
+                                                                                        )
+                                                )
     for layer_table in LayerTable.get_all_instances():
         table = layer_table.table
         for pk_col in table.key_col:
@@ -1097,14 +1109,14 @@ def generate_metadata_scripts(smx: SMX):
                                         )
         if table.schema.id == smx.core_t_schema.id:
             edw_tables_file.write(INSERT_INTO_EDW_TABLES.format(meta_db=smx.meta_t_schema.schema_name,
-                                                                 LAYER_NAME=single_quotes(layer_table.layer.layer_name),
-                                                                 TABLE_NAME=single_quotes(table.table_name),
-                                                                 IS_LOOKUP=1 if table.is_lkp else 0,
-                                                                 IS_HISTORY=1 if table.history_table else 0,
-                                                                 START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
-                                                                 END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
-                                                                 )
-                                   )
+                                                                LAYER_NAME=single_quotes(layer_table.layer.layer_name),
+                                                                TABLE_NAME=single_quotes(table.table_name),
+                                                                IS_LOOKUP=1 if table.is_lkp else 0,
+                                                                IS_HISTORY=1 if table.history_table else 0,
+                                                                START_DATE_COLUMN=single_quotes(table.start_date_col.column_name) if table.history_table else 'NULL',
+                                                                END_DATE_COLUMN=single_quotes(table.end_date_col.column_name) if table.history_table else 'NULL'
+                                                                )
+                                  )
 
     for pipeline in Pipeline.get_all_instances():
         if pipeline.tgt_lyr_table:

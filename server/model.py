@@ -532,10 +532,10 @@ class Table(MyID):
                                                        , case_sensitive=case_sensitive
                                                        , not_null=not_null
                                                        , comma=comma)
-                pi_cols_lst.append(col.column_name) if col.is_pk else None
 
+            pi_cols_lst = list_to_string([col.column_name for col in self.key_col], separator=',')
             pi_index = PI_TEMPLATE.format(unique_pi='unique' if self.unique_pi else ''
-                                          ,pi_cols=list_to_string(_list=pi_cols_lst, separator=',')) if len(pi_cols_lst) > 0 else 'No Primary Index'
+                                          ,pi_cols=pi_cols_lst) if pi_cols_lst else 'No Primary Index'
             self._ddl = DDL_TABLE_TEMPLATE.format(set_multiset=set_multiset
                                                   , schema_name=schema_name
                                                   , table_name=table_name
