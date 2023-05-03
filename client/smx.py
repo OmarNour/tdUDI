@@ -882,9 +882,9 @@ class SMX:
 
                     layer_table: LayerTable
                     for table_name in [layer_table.table.table_name for layer_table in LayerTable.get_all_instances()
-                                  if layer_table.layer.layer_name == 'STG'
-                                     and not layer_table.table.key_col
-                                     and layer_table.table.table_kind == 'T']:
+                                       if layer_table.layer.layer_name == 'STG'
+                                          and not layer_table.table.key_col
+                                          and layer_table.table.table_kind == 'T']:
                         logging.warning(f"No Primary key defined for '{table_name}' staging table!")
                     ##########################      End Core TXF view       #####################
                     ####################################################  End   ####################################################
