@@ -1,9 +1,9 @@
-1- connect using DBC
+1- connect using DBC user
 2- run the following scripts in the same order:
 	01_CREATE_SCHEMAS.sql
 	02_USERS.SQL
 	03_GRANTS.sql
-4- connect using power_user, use the same password in script 02_USERS.SQL
+4- connect using power_user user, use the same password in script 02_USERS.SQL
 5- run the following scripts in the same order:
 	04_TABLES.sql
 	05_DATA.SQL
