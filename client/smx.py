@@ -334,13 +334,23 @@ class SMX:
                 if row.physical_table != '':
                     surrogate_table: Table
                     set_table: Table
+                    ds :DataSet
                     surrogate_table = Table.get_instance(_key=(self.bkey_t_schema.id, row.physical_table))
                     set_table = Table.get_instance(_key=(self.core_t_schema.id, row.key_set_name))
-                    if set_table and surrogate_table:
-                        DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
-                        surrogate_table.is_bkey = True
-                    else:
-                        logging.error(f"Invalid set table {row.key_set_name} or surrogate table {row.physical_table}, processing row:\n {row}")
+
+                    ds = DataSet.get_by_name(self.bkey_set_type.id, row.key_set_name)
+                    valid_ds = True
+                    if ds:
+                        if ds.set_code != row.key_set_id:
+                            valid_ds = False
+                            logging.error(f"Duplicate dataset '{row.key_set_id}', processing row:\n{row}")
+
+                    if valid_ds:
+                        if set_table and surrogate_table:
+                            DataSet(set_type_id=self.bkey_set_type.id, set_code=row.key_set_id, set_table_id=set_table.id, surrogate_table_id=surrogate_table.id)
+                            surrogate_table.is_bkey = True
+                        else:
+                            logging.error(f"Invalid set table {row.key_set_name} or surrogate table {row.physical_table}, processing row:\n {row}")
 
             @log_error_decorator()
             def extract_bkey_domains(row):
