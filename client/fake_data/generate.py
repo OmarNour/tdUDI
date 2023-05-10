@@ -11,6 +11,249 @@ fake = Faker()
 
 
 def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
+    """
+
+    :param num_records:
+    :param start_from:
+    :param teradata_conn_info:
+    :return:
+
+
+    CREATE multiset TABLE STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         CDC_CODE  BYTEINT
+        ,CUSTOMER_INFORMATION  VARCHAR(32) CHARACTER SET latin not CASESPECIFIC
+        ,DEALERS_CODE  VARCHAR(32) CHARACTER SET latin not CASESPECIFIC
+        ,FILE_ARRIVING_DATE  DATE
+        ,ID  INTEGER   not null
+        ,INVOICE_INFORMATION  VARCHAR(200) CHARACTER SET latin not CASESPECIFIC
+        ,INVOICE_TYPE  SMALLINT
+        ,LAST_MODIFIED  TIMESTAMP(0)
+        ,SALESMEN_CODE  VARCHAR(32) CHARACTER SET latin not CASESPECIFIC
+        ,TRANSACTION_DATE  TIMESTAMP(0)
+        ,TRANSACTION_IDENTIFIER  VARCHAR(32) CHARACTER SET latin not CASESPECIFIC
+        ,TRANSACTION_TYPE  SMALLINT
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+
+    CREATE multiset TABLE STG_ONLINE.JSON_SALES_STG
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         AMOUNT_BEFORE_STAMP_DUTY  DECIMAL(16,2)
+        ,AMOUNT_WITHOUT_VAT  DECIMAL(16,2)
+        ,CDC_CODE  BYTEINT
+        ,CONFIRMATION_CODE  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,DEALERS_CODE  VARCHAR(32) CHARACTER SET latin not CASESPECIFIC
+        ,FILE_ARRIVING_DATE  DATE
+        ,ID  INTEGER   not null
+        ,INVOICE_DATE_TIME  TIMESTAMP(0)
+        ,INVOICE_INFORMATION  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,INVOICE_NUMBER  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,LAST_MODIFIED  TIMESTAMP(0)
+        ,SALESMAN_CODE  VARCHAR(32) CHARACTER SET latin not CASESPECIFIC
+        ,STAMP_DUTY  DECIMAL(16,2)
+        ,TOTAL_AMOUNT  DECIMAL(16,2)
+        ,TRANSACTION_ID  INTEGER   --> = DBSS_CRM_TRANSACTIONSTRANSACTION.id
+        ,VAT  DECIMAL(16,2)
+        ,PROVINCE  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,SHOP_ADDRESS  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PAYMENT_MODES  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,NAME  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,TITL  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,MSISDN  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,FISCAL_CODE  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,NOTES  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,INVOICE_TEMPLATE  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,SHOP_NAME  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_VALUE_ADDED_TAX  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_STAMP_DUTY  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_TOTAL_AMOUNT_TO_BE_PAID  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_SETTLEMENT_DISCOUNT  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_TOTAL_PRICE_INCLUDING_TAX  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_TOTAL_AMOUNT_BEFORE_TAX  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PD_TOTAL_AMOUNT_WHEN_PAYMENT_IN_CASH  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,ICC  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,SHOP_ID  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,POSTAL_CODE  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,ADDRESS  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,SALESMEN_CODE  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,TITLE_NAME  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,ORDER_ID  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,CITY  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,SEQUENCE_NUMBER  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,AMOUNT_BEFORE_TAX  DECIMAL(16,2)
+        ,UNIT_PRICE_WITHOUT_VAT  DECIMAL(16,2)
+        ,PAYNOW  DECIMAL(16,2)
+        ,DESCRIPTION  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,PRODUCT_CODE  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,QUANTITY  INTEGER
+        ,DISCOUNT  INTEGER
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+    CREATE multiset TABLE STG_ONLINE.DBSS_CRM_TRANSACTIONSPAYMENT
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         BEFORE_VAT_AMOUNT  DECIMAL(32,6)
+        ,CDC_CODE  BYTEINT
+        ,CHEQUE_NUMBER  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,FILE_ARRIVING_DATE  DATE
+        ,ID  INTEGER   not null
+        ,LAST_MODIFIED  TIMESTAMP(0)
+        ,PAID_AMOUNT  DECIMAL(32,6)
+        ,PAYMENT_MODE  SMALLINT
+        ,SETTLEMENT_DISCOUNT  DECIMAL(32,6)
+        ,TAX_PAYMENT  DECIMAL(32,6)
+        ,TOTAL_PAID  DECIMAL(32,6)
+        ,TRANSACTION_ID  INTEGER   --> = DBSS_CRM_TRANSACTIONSTRANSACTION.id
+        ,VAT  DECIMAL(32,6)
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+
+    CREATE multiset TABLE STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         ID  INTEGER   not null
+        ,CUSTOMER_ID  INTEGER
+        ,CONFIRMATION_CODE  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC --> = JSON_SALES_STG.CONFIRMATION_CODE
+        ,CREATED_AT  TIMESTAMP(0)
+        ,SALES_INFO_ID  INTEGER
+        ,FILE_ARRIVING_DATE  DATE
+        ,STATUS  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,DELIVERY_TYPE  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,LAST_MODIFIED  TIMESTAMP(0)
+        ,BRAND  INTEGER
+        ,ORDERED_AT  TIMESTAMP(0)
+        ,DELIVERY_ADDRESS_ID  INTEGER
+        ,OFFER  VARCHAR(1024) CHARACTER SET latin not CASESPECIFIC
+        ,CORRECTION_FOR  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,DEVICES_RETURNED_AT  TIMESTAMP(0)
+        ,PURCHASE_ORDER_ID  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,CDC_CODE  BYTEINT
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+    CREATE multiset TABLE STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         CART_IMAGE  VARCHAR(100) CHARACTER SET latin not CASESPECIFIC
+        ,CODE  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,COLOR_ID  INTEGER
+        ,COVER_IMAGE  VARCHAR(100) CHARACTER SET latin not CASESPECIFIC
+        ,DISPLAY_ORDER  INTEGER
+        ,FILE_ARRIVING_DATE  DATE
+        ,ID  INTEGER   not null
+        ,ITEM_MODEL_ID  INTEGER
+        ,NAME_PRODUCTSITEMVARIANT  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,OUT_OF_STOCK  INTEGER
+        ,OUT_OF_STOCK_ACTION  VARCHAR(64) CHARACTER SET latin not CASESPECIFIC
+        ,STATUS  INTEGER
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+    CREATE multiset TABLE STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         ID  INTEGER   not null
+        ,CONTRACT_ID  INTEGER   --> = DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT.id
+        ,TYPE_ID  INTEGER   --> = DBSS_PC_PRODUCTSITEMVARIANT.id
+        ,LAST_MODIFIED  TIMESTAMP(0)
+        ,PRICE  DECIMAL(16,6)
+        ,ARTICLE_ID  VARCHAR(4096) CHARACTER SET latin not CASESPECIFIC
+        ,DATA  VARCHAR(5500) CHARACTER SET latin not CASESPECIFIC
+        ,QUANTITY  INTEGER
+        ,CDC_CODE  BYTEINT
+        ,FILE_ARRIVING_DATE  DATE
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+    CREATE multiset TABLE STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD
+        ,FALLBACK
+        ,NO BEFORE JOURNAL
+        ,NO AFTER JOURNAL
+        ,CHECKSUM = DEFAULT
+        ,DEFAULT MERGEBLOCKRATIO
+    (
+         ID  INTEGER   not null
+        ,PRICE  DECIMAL(16,6)
+        ,CONTRACT_ID  INTEGER   -- = DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT.id
+        ,LAST_MODIFIED  TIMESTAMP(0)
+        ,IMSI  VARCHAR(129) CHARACTER SET latin not CASESPECIFIC
+        ,ITEM  VARCHAR(100) CHARACTER SET latin not CASESPECIFIC
+        ,ARTICLE_ID  VARCHAR(128) CHARACTER SET latin not CASESPECIFIC
+        ,MODIFICATION_TYPE  CHAR(1) CHARACTER SET latin not CASESPECIFIC not null
+        ,LOAD_ID  VARCHAR(60) CHARACTER SET latin not CASESPECIFIC not null
+        ,BATCH_ID  INT   not null
+        ,REF_KEY  BIGINT   not null
+        ,INS_DTTM  TIMESTAMP(6)   not null
+        ,UPD_DTTM  TIMESTAMP(6)
+     )
+    unique PRIMARY INDEX ( ID );
+
+    """
     load_id = fake.uuid4()
     batch_id = random.randint(1, 5)
     with teradatasql.connect(**teradata_conn_info) as con:
@@ -19,7 +262,12 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
             trx_id = 1 + start_from
             deletes = ["delete from STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION;"
                 , "delete from STG_ONLINE.DBSS_CRM_TRANSACTIONSPAYMENT"
-                , "delete from STG_ONLINE.JSON_SALES_STG"]
+                , "delete from STG_ONLINE.JSON_SALES_STG"
+                , "delete from STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT"
+                , "delete from STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE"
+                , "delete from STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD"
+                , "delete from STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT"
+                       ]
             for _ in deletes:
                 cur.execute(_)
                 con.commit()
@@ -51,6 +299,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                 cur.execute(f"INSERT INTO STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION ({transaction_columns}) VALUES ({transaction_values})", list(transaction.values()))
 
                 # JSON_SALES_STG
+                confirmation_code = fake.uuid4()
                 json_sales = {
                     # Add your columns and data generation code here
                     "ID": trx_id + 1,
@@ -59,7 +308,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                     "AMOUNT_BEFORE_STAMP_DUTY": round(random.uniform(1, 1000), 2),
                     "AMOUNT_WITHOUT_VAT": round(random.uniform(1, 1000), 2),
                     "CDC_CODE": fake.random_int(min=1, max=9),
-                    "CONFIRMATION_CODE": fake.uuid4(),
+                    "CONFIRMATION_CODE": confirmation_code,
                     "DEALERS_CODE": fake.bothify(text="??#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
                     "FILE_ARRIVING_DATE": fake.date_this_year(before_today=True, after_today=False),
                     "INVOICE_DATE_TIME": fake.date_time_this_year(before_now=True, after_now=False, tzinfo=None).strftime('%Y-%m-%d %H:%M:%S'),
@@ -142,17 +391,127 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                 transactions_payment_values = ", ".join(["?"] * len(transactions_payment))
                 cur.execute(f"INSERT INTO STG_ONLINE.DBSS_CRM_TRANSACTIONSPAYMENT ({transactions_payment_columns}) VALUES ({transactions_payment_values})", list(transactions_payment.values()))
 
+                # DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT
+                order_contract_id = random.randint(1, 1000000)
+                ordered_contract = {
+                    "ID": order_contract_id,
+                    "CUSTOMER_ID": random.randint(1, 1000000),
+                    "CONFIRMATION_CODE": confirmation_code,
+                    "CREATED_AT": fake.date_time_this_decade(),
+                    "SALES_INFO_ID": random.randint(1, 1000000),
+                    "FILE_ARRIVING_DATE": fake.date(pattern="%Y-%m-%d"),
+                    "STATUS": fake.text(max_nb_chars=64),
+                    "DELIVERY_TYPE": fake.text(max_nb_chars=64),
+                    "LAST_MODIFIED": fake.date_time_this_decade(),
+                    "BRAND": random.randint(1, 1000),
+                    "ORDERED_AT": fake.date_time_this_decade(),
+                    "DELIVERY_ADDRESS_ID": random.randint(1, 1000000),
+                    "OFFER": fake.text(max_nb_chars=1024),
+                    "CORRECTION_FOR": fake.text(max_nb_chars=64),
+                    "DEVICES_RETURNED_AT": fake.date_time_this_decade(),
+                    "PURCHASE_ORDER_ID": fake.text(max_nb_chars=64),
+                    "CDC_CODE": fake.random_int(min=1, max=10),
+
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": load_id,
+                    "BATCH_ID": batch_id,
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+
+                ordered_contract_columns = ", ".join(ordered_contract.keys())
+                ordered_contract_values = ", ".join(["?"] * len(ordered_contract))
+                cur.execute(f"INSERT INTO STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT ({ordered_contract_columns}) VALUES ({ordered_contract_values})", list(ordered_contract.values()))
+
+                variant_id = random.randint(1, 1000000)
+                products_item_variant = {
+                    "CART_IMAGE": fake.text(max_nb_chars=100),
+                    "CODE": fake.text(max_nb_chars=64),
+                    "COLOR_ID": random.randint(1, 1000000),
+                    "COVER_IMAGE": fake.text(max_nb_chars=100),
+                    "DISPLAY_ORDER": random.randint(1, 1000000),
+                    "FILE_ARRIVING_DATE": fake.date(pattern="%Y-%m-%d"),
+                    "ID": variant_id,
+                    "ITEM_MODEL_ID": random.randint(1, 1000000),
+                    "NAME_PRODUCTSITEMVARIANT": fake.text(max_nb_chars=64),
+                    "OUT_OF_STOCK": random.randint(0, 1),
+                    "OUT_OF_STOCK_ACTION": fake.text(max_nb_chars=64),
+                    "STATUS": random.randint(0, 1),
+
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": load_id,
+                    "BATCH_ID": batch_id,
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+                products_item_variant_columns = ", ".join(products_item_variant.keys())
+                products_item_variant_values = ", ".join(["?"] * len(products_item_variant))
+                cur.execute(f"INSERT INTO STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT ({products_item_variant_columns}) VALUES ({products_item_variant_values})", list(products_item_variant.values()))
+
+                ordered_contracts_ordered_device = {
+                    "ID": random.randint(1, 1000000),
+                    "CONTRACT_ID": order_contract_id,
+                    "TYPE_ID": variant_id,
+                    "LAST_MODIFIED": fake.date_time_this_decade(),
+                    "PRICE": round(random.uniform(0, 100000), 6),
+                    "ARTICLE_ID": fake.text(max_nb_chars=4096),
+                    "DATA": fake.text(max_nb_chars=5500),
+                    "QUANTITY": random.randint(1, 1000),
+                    "CDC_CODE": random.randint(-128, 127),
+                    "FILE_ARRIVING_DATE": fake.date(pattern="%Y-%m-%d"),
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": load_id,
+                    "BATCH_ID": batch_id,
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+                ordered_contracts_ordered_device_columns = ", ".join(ordered_contracts_ordered_device.keys())
+                ordered_contracts_ordered_device_values = ", ".join(["?"] * len(ordered_contracts_ordered_device))
+                cur.execute(f"INSERT INTO STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE ({ordered_contracts_ordered_device_columns}) VALUES ({ordered_contracts_ordered_device_values})", list(ordered_contracts_ordered_device.values()))
+
+                ordered_contracts_ordered_simcard = {
+                    "ID": random.randint(1, 1000000),
+                    "PRICE": round(random.uniform(0, 100000), 6),
+                    "CONTRACT_ID": order_contract_id,
+                    "LAST_MODIFIED": fake.date_time_this_decade(),
+                    "IMSI": fake.text(max_nb_chars=129),
+                    "ITEM": fake.text(max_nb_chars=100),
+                    "ARTICLE_ID": fake.text(max_nb_chars=128),
+
+                    "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
+                    "LOAD_ID": load_id,
+                    "BATCH_ID": batch_id,
+                    "REF_KEY": ref_key,
+                    "INS_DTTM": datetime.now(),
+                    "UPD_DTTM": datetime.now()
+                }
+                ordered_contracts_ordered_simcard_columns = ", ".join(ordered_contracts_ordered_simcard.keys())
+                ordered_contracts_ordered_simcard_values = ", ".join(["?"] * len(ordered_contracts_ordered_simcard))
+                cur.execute(f"INSERT INTO STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD ({ordered_contracts_ordered_simcard_columns}) VALUES ({ordered_contracts_ordered_simcard_values})", list(ordered_contracts_ordered_simcard.values()))
+
+                ###############################################
                 ref_key += 1
                 trx_id += 1
 
             audit_table('DIRECT SALES', cur, load_id, batch_id, 'JSON_SALES_STG', ref_key)
             audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSTRANSACTION', ref_key)
             audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSPAYMENT', ref_key)
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT', ref_key)
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_PC_PRODUCTSITEMVARIANT', ref_key)
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE', ref_key)
+            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD', ref_key)
             con.commit()
 
             print(f"{ref_key}, rows inserted into JSON_SALES_STG")
             print(f"{ref_key}, rows inserted into DBSS_CRM_TRANSACTIONSTRANSACTION")
             print(f"{ref_key}, rows inserted into DBSS_CRM_TRANSACTIONSPAYMENT")
+            print(f"{ref_key}, rows inserted into DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT")
+            print(f"{ref_key}, rows inserted into DBSS_PC_PRODUCTSITEMVARIANT")
+            print(f"{ref_key}, rows inserted into DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE")
+            print(f"{ref_key}, rows inserted into DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD")
 
 
 def aca_fake_data():
@@ -242,4 +601,4 @@ if __name__ == '__main__':
         "password": "power_user",
         "database": ""
     }
-    djezzy_fake_data(1100, 0, teradata_conn_info)
+    djezzy_fake_data(10, 0, teradata_conn_info)
