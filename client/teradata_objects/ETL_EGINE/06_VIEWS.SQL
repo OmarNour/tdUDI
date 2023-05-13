@@ -6,12 +6,12 @@ where l.layer_name = DS.SOURCE_LAYER;
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_SOURCE_SYSTEM_TABLES AS LOCK ROW FOR ACCESS
 select  t.*
 		,stg_l.src_db stg_src_db		
-		,stg_l.lyr_db stg_t_db  
+		,stg_l.lyr_db stg_db  
 		,stg_l.layer_level stg_layer_level
 		,stg_l.layer_name stg_layer_name
 		
 		,srci_l.src_db srci_src_db
-		,srci_l.lyr_db srci_t_db  
+		,srci_l.lyr_db srci_db  
 		,srci_l.layer_level srci_layer_level
 		,srci_l.layer_name srci_layer_name
 		
@@ -32,8 +32,8 @@ where l.layer_name = KC.LAYER_NAME;
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_PROCESS AS LOCK ROW FOR ACCESS
 select 
 	P.*
-	,tgt_l.src_db src_t_db 
-	,tgt_l.lyr_db tgt_t_db
+	,tgt_l.src_db src_db 
+	,tgt_l.lyr_db tgt_db
 from GDEV1_ETL.PROCESS P ,GDEV1_ETL.LAYERS tgt_l
 where tgt_l.layer_name = p.tgt_layer;
 --------------------------------------------------------------------------------------------------------
@@ -75,9 +75,9 @@ CTE_KEY_COLS as
 	SELECT 
 	P.PROCESS_NAME,
     P.SOURCE_NAME,
-    P.SRC_t_db SRC_DB,
+    P.SRC_DB,
     P.SRC_TABLE,
-    P.tgt_t_db TGT_DB,
+    P.TGT_DB,
     P.TGT_TABLE,
     P.tgt_layer,
     CASE WHEN TBL.IS_HISTORY = 1 THEN 'HISTORY' ELSE P.APPLY_TYPE END APPLY_TYPE,
@@ -182,7 +182,37 @@ FROM CTE_PROCESS P
 	
 	LEFT JOIN CTE_NORMAL_COMMON_COLS NCC
 	ON NCC.PROCESS_NAME=P.PROCESS_NAME;
---------------------------------------------------------------------------------------------------------	
+--------------------------------------------------------------------------------------------------------
+REPLACE VIEW /*VER.01*/ GDEV1_ETL.DWH_TABLES AS LOCK ROW FOR ACCESS
+with 
+DWH_DBs as
+(
+	select layer_name, layer_Level, src_db db_name, 'in' (char(3)) direction from GDEV1_ETL.LAYERS
+	union all
+	select layer_name, layer_Level, lyr_db db_name, 'out' direction from GDEV1_ETL.LAYERS
+)
+,_dwh_tables as
+(	
+	select l.layer_name, v.DataBaseName db_name, v.tablename table_name from DBC.TablesV v, GDEV1_ETL.LAYERS l where l.layer_Level = 0 and src_db =  v.DataBaseName
+	union all
+	select stg_layer_name, stg_db db_name, table_name from GDEV1_ETL.V_SOURCE_SYSTEM_TABLES
+	union all
+	select srci_layer_name, srci_db db_name, table_name from GDEV1_ETL.V_SOURCE_SYSTEM_TABLES
+	union all
+	select TGT_LAYER layer_name, tgt_db db_name , TGT_TABLE table_name from GDEV1_ETL.V_PROCESS
+)
+, dwh_tables as
+(
+	select t.*, d.layer_Level, d.direction
+	from _dwh_tables t ,DWH_DBs d
+	where t.db_name = d.db_name
+)
+select 
+ROW_NUMBER() OVER (order by layer_Level, layer_name, direction, db_name, table_name) id	
+,layer_name, layer_Level, direction, db_name, table_name
+	
+from dwh_tables dbt;
+--------------------------------------------------------------------------------------------------------		
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.ALL_VIEWS_TOKENS AS LOCK ROW FOR ACCESS
 with 
 DWH_DBs as

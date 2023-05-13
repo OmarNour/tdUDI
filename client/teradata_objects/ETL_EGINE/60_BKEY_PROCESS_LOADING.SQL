@@ -72,9 +72,9 @@ BEGIN
 		END IF;
 		
 		select 
-			 P.SRC_T_DB
+			 P.SRC_DB
 			,P.SRC_TABLE
-			,P.TGT_T_DB  
+			,P.TGT_DB  
 			,P.TGT_TABLE               
 			,P.Key_Set_Id
 			,P.Domain_Id
