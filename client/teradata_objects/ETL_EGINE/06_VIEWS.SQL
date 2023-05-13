@@ -2,7 +2,7 @@ REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_SOURCE_SYSTEMS AS LOCK ROW FOR ACCESS
 select DS.*, l.lyr_db,l.src_db,l.layer_level
 from GDEV1_ETL.SOURCE_SYSTEMS DS,GDEV1_ETL.LAYERS l
 where l.layer_name = DS.SOURCE_LAYER;
-
+--------------------------------------------------------------------------------------------------------
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_SOURCE_SYSTEM_TABLES AS LOCK ROW FOR ACCESS
 select  t.*
 		,stg_l.src_db stg_src_db		
@@ -18,17 +18,17 @@ select  t.*
 from GDEV1_ETL.SOURCE_SYSTEM_TABLES t,GDEV1_ETL.LAYERS stg_l ,GDEV1_ETL.LAYERS srci_l
 where stg_l.layer_name = 'STG'
 and srci_l.layer_name = 'SRCI';
-
+--------------------------------------------------------------------------------------------------------
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_EDW_TABLES AS LOCK ROW FOR ACCESS
 select t.*, l.lyr_db,l.src_db,l.layer_level
 from GDEV1_ETL.EDW_TABLES t,GDEV1_ETL.LAYERS l
 where l.layer_name = T.layer_name;
-
+--------------------------------------------------------------------------------------------------------
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_TRANSFORM_KEYCOL AS LOCK ROW FOR ACCESS
 select KC.*, l.lyr_db
 from GDEV1_ETL.TRANSFORM_KEYCOL KC,GDEV1_ETL.LAYERS l
 where l.layer_name = KC.LAYER_NAME;
-
+--------------------------------------------------------------------------------------------------------
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_PROCESS AS LOCK ROW FOR ACCESS
 select 
 	P.*
@@ -36,8 +36,7 @@ select
 	,tgt_l.lyr_db tgt_t_db
 from GDEV1_ETL.PROCESS P ,GDEV1_ETL.LAYERS tgt_l
 where tgt_l.layer_name = p.tgt_layer;
-
-
+--------------------------------------------------------------------------------------------------------
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_EDW_SCRIPTS_COMPOSER AS LOCK ROW FOR ACCESS 
 WITH 
 CTE_KEY_COLS as
@@ -183,5 +182,58 @@ FROM CTE_PROCESS P
 	
 	LEFT JOIN CTE_NORMAL_COMMON_COLS NCC
 	ON NCC.PROCESS_NAME=P.PROCESS_NAME;
+--------------------------------------------------------------------------------------------------------	
+REPLACE VIEW /*VER.01*/ GDEV1_ETL.ALL_VIEWS_TOKENS AS LOCK ROW FOR ACCESS
+with 
+DWH_DBs as
+(
+	select src_db db_name from GDEV1_ETL.LAYERS
+	union
+	select lyr_db db_name from GDEV1_ETL.LAYERS
+)
+,_all_views as
+(
+	select 
+		DataBaseName, tablename, RequestText
+		,ROW_NUMBER() OVER (order by DataBaseName, tablename) id
+	from DBC.TablesV
+	where TableKind = 'v'
+	AND DataBaseName IN (select db_name from DWH_DBs)
+)
 
+, _tokens as
+(
+	select outkey,toknum,trim(oreplace(oreplace(oreplace(oreplace(token,';',''), X'0d', ' '), X'0a', ' '), X'09', ' ')) RequestText_tokens  from table 
+	(
+		strtok_split_to_table(_all_views.id, _all_views.RequestText, ' ')
+		returns (outkey integer , toknum integer, token varchar(1000) character set unicode)
+	) as d
+)
+, tokens as
+(
+	select d.*  from table 
+	(
+		strtok_split_to_table(_tokens.outkey, _tokens.RequestText_tokens, ' ')
+		returns (outkey integer , toknum integer, token varchar(1000) character set unicode)
+	) as d
+)
+, all_views as
+(
+	/*
+		Replace new lines and tabs with space
+	*/
+	select x.DataBaseName, x.tablename, trim(token) RequestText_tokens
+	,toknum
+	
+	from _all_views x
+		join tokens y
+		on x.id = y.outkey
+	where RequestText_tokens <> ''
+)
+select
+ DataBaseName 
+,tablename
+,RequestText_tokens
+from all_views;
+--------------------------------------------------------------------------------------------------------
 
