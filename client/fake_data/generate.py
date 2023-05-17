@@ -275,7 +275,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
             for _ in range(num_records):
                 # DBSS_CRM_TRANSACTIONSTRANSACTION
                 transaction = {
-                    "CDC_CODE": random.randint(-128, 127),  # Adjusted range for BYTEINT
+                    "CDC_CODE": fake.random_int(min=1, max=100),  # Adjusted range for BYTEINT
                     "CUSTOMER_INFORMATION": fake.text(max_nb_chars=32),
                     "DEALERS_CODE": fake.text(max_nb_chars=32),
                     "FILE_ARRIVING_DATE": fake.date(pattern="%Y-%m-%d"),
@@ -307,7 +307,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
 
                     "AMOUNT_BEFORE_STAMP_DUTY": round(random.uniform(1, 1000), 2),
                     "AMOUNT_WITHOUT_VAT": round(random.uniform(1, 1000), 2),
-                    "CDC_CODE": fake.random_int(min=1, max=9),
+                    "CDC_CODE": fake.random_int(min=1, max=100),
                     "CONFIRMATION_CODE": confirmation_code,
                     "DEALERS_CODE": fake.bothify(text="??#####", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
                     "FILE_ARRIVING_DATE": fake.date_this_year(before_today=True, after_today=False),
@@ -369,7 +369,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                     "TRANSACTION_ID": transaction["ID"],
 
                     "BEFORE_VAT_AMOUNT": round(random.uniform(1, 1000), 6),
-                    "CDC_CODE": fake.random_int(min=1, max=10),
+                    "CDC_CODE": fake.random_int(min=1, max=100),
                     "CHEQUE_NUMBER": fake.bothify(text="CHQ-?#####"),
                     "FILE_ARRIVING_DATE": fake.date_this_year(before_today=True, after_today=False).strftime('%y/%m/%d'),
                     "LAST_MODIFIED": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -410,7 +410,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                     "CORRECTION_FOR": fake.text(max_nb_chars=64),
                     "DEVICES_RETURNED_AT": fake.date_time_this_decade(),
                     "PURCHASE_ORDER_ID": fake.text(max_nb_chars=64),
-                    "CDC_CODE": fake.random_int(min=1, max=10),
+                    "CDC_CODE": fake.random_int(min=1, max=100),
 
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
@@ -459,7 +459,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                     "ARTICLE_ID": fake.text(max_nb_chars=4096),
                     "DATA": fake.text(max_nb_chars=5500),
                     "QUANTITY": random.randint(1, 1000),
-                    "CDC_CODE": random.randint(-128, 127),
+                    "CDC_CODE": fake.random_int(min=1, max=100),
                     "FILE_ARRIVING_DATE": fake.date(pattern="%Y-%m-%d"),
                     "MODIFICATION_TYPE": fake.random_element(elements=("I", "U", "D")),
                     "LOAD_ID": load_id,
