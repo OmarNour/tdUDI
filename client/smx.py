@@ -907,13 +907,6 @@ class SMX:
                         logging.warning(f"No Primary key defined for '{table_name}' staging table!")
                     ##########################      End Core TXF view       #####################
                     ####################################################  End   ####################################################
-                    myid_summary = "\n\nSummary:\n######################\n\n"
-                    for class_name in MyID.get_all_classes_instances().keys():
-                        cls_instances_cout = eval(f"{class_name}.count_instances()")
-                        class_count = f'{class_name} count: {cls_instances_cout}\n'
-                        myid_summary += class_count
-
-                    logging.info(myid_summary)
 
                     # MyID.serialize_all()
 

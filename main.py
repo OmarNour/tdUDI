@@ -15,6 +15,13 @@ def start(source_name: str | list | None, with_scripts=True, with_deploy=True):
             deploy()
         # generate_fake_data()
 
+    myid_summary = "\n\nSummary:\n######################\n\n"
+    for class_name in MyID.get_all_classes_instances().keys():
+        cls_instances_cout = eval(f"{class_name}.count_instances()")
+        class_count = f'{class_name} count: {cls_instances_cout}\n'
+        myid_summary += class_count
+
+    logging.info(myid_summary)
     open_folder(smx.current_scripts_path)
 
 
