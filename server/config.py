@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 # smx_path = "/Users/omarnour/Downloads/ACA- Production Citizen SMX.xlsx"
-smx_path = "/Users/omarnour/Downloads/SALES_SMX08May2023.xlsx"
+smx_path = "/Users/omarnour/Downloads/SALES_SMX18May2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/SALES_SMX02APRL2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
 # smx_path = "/Users/omarnour/Downloads/[ACA] SMX_Economic_Units_03-01-2023.xlsx"
