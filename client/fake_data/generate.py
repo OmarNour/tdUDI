@@ -592,6 +592,74 @@ def audit_table(source_system, cursor, load_id, batch_id, table_name, row_count)
     cursor.execute(cdc_audit)
 
 
+import teradatasql
+
+
+def extract_insert_statements(table_name, output_file):
+    path = os.path.join(scripts_path, output_file)
+
+    # Teradata connection parameters
+    host = "localhost"
+    user = "power_user"
+    password = "power_user"
+
+    # Teradata table to extract data from
+
+    # SQL query to extract data from the table
+    query = f"SELECT * FROM {table_name};"
+    print(query)
+    # Connect to Teradata
+    with teradatasql.connect(host=host, user=user, password=password) as conn:
+
+        # Execute the SQL query and fetch the results
+        with conn.cursor() as cur:
+            cur.execute(query)
+            rows = cur.fetchall()
+
+        # Create a SQL file to write the insert statements to
+
+        if os.path.exists(path):
+            os.remove(path)
+
+        # Write insert statements for each row to the SQL file
+        with open(path, "a") as f:
+            f.write(f"delete from {table_name};\n")
+            for row in rows:
+                values = ", ".join([f"'{value}'" if not (isinstance(value, float) or isinstance(value, int)) else str(value) for value in row])
+                insert_statement = f"INSERT INTO {table_name} VALUES ({values});\n"
+                f.write(insert_statement)
+
+        print(f"{len(rows)} rows written to {path}")
+
+
+def extract_insert_statements_x(table_name, output_file):
+    path = os.path.join(scripts_path, output_file)
+    # Connect to the Teradata database
+    with teradatasql.connect(**teradata_conn_info) as conn:
+        # Create a cursor
+        cursor = conn.cursor()
+
+        # Execute the SQL query to select data from the table
+        query = f'SELECT * FROM {table_name};'
+        cursor.execute(query)
+
+        # Fetch all rows from the result set
+        rows = cursor.fetchall()
+
+        # Open the output file in write mode
+        with open(path, 'w') as file:
+            # Iterate over the rows and generate insert statements
+            for row in rows:
+                # Generate the insert statement
+                insert_statement = f'INSERT INTO {table_name} VALUES {str(row)};'
+
+                # Write the insert statement to the file
+                file.write(insert_statement)
+                file.write('\n')
+
+    print(f'Insert statements extracted and saved to {path}.')
+
+
 if __name__ == '__main__':
     # aca_fake_data()
     # Example usage
@@ -601,4 +669,13 @@ if __name__ == '__main__':
         "password": "power_user",
         "database": ""
     }
-    djezzy_fake_data(10, 0, teradata_conn_info)
+    djezzy_fake_data(500, 0, teradata_conn_info)
+
+    extract_insert_statements('STG_ONLINE.JSON_SALES_STG', 'JSON_SALES_STG.sql')
+    extract_insert_statements('STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION', 'DBSS_CRM_TRANSACTIONSTRANSACTION.sql')
+    extract_insert_statements('STG_ONLINE.DBSS_CRM_TRANSACTIONSPAYMENT', 'DBSS_CRM_TRANSACTIONSPAYMENT.sql')
+    extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT', 'DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT.sql')
+    extract_insert_statements('STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT', 'DBSS_PC_PRODUCTSITEMVARIANT.sql')
+    extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE', 'DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE.sql')
+    extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD', 'DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD.sql')
+

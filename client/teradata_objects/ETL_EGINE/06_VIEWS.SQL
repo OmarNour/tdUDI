@@ -183,7 +183,7 @@ FROM CTE_PROCESS P
 	LEFT JOIN CTE_NORMAL_COMMON_COLS NCC
 	ON NCC.PROCESS_NAME=P.PROCESS_NAME;
 --------------------------------------------------------------------------------------------------------
-REPLACE VIEW /*VER.01*/ GDEV1_ETL.DWH_TABLES AS LOCK ROW FOR ACCESS
+REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_DWH_TABLES AS LOCK ROW FOR ACCESS
 with 
 DWH_DBs as
 (
@@ -266,4 +266,57 @@ select
 ,RequestText_tokens
 from all_views;
 --------------------------------------------------------------------------------------------------------
+REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_LINEAGE AS LOCK ROW FOR ACCESS
+WITH 
+DWH_DBs as
+(
+	select src_db db_name from GDEV1_ETL.LAYERS
+	union
+	select lyr_db db_name from GDEV1_ETL.LAYERS
+)
+,_all_views as
+(
+	select 
+		DataBaseName, tablename
+		, trim(oreplace(oreplace(oreplace(oreplace(RequestText,';',''), X'0d', ' '), X'0a', ' '), X'09', ' ')) RequestText
+		,ROW_NUMBER() OVER (order by DataBaseName, tablename) id
+	from DBC.TablesV
+	where TableKind = 'v'
+	AND DataBaseName IN (select db_name from DWH_DBs)
+)
+,RAW_TO_STG AS
+(
+	SELECT DISTINCT  ST.TABLE_NAME RAW_TABLE_NAME
+			, (SELECT lyr_db FROM GDEV1_ETL.LAYERS L WHERE layer_name = 'STG') STG_DB_NAME
+			, dbcv.TABLENAME STG_TABLE_NAME
+	FROM GDEV1_ETL.V_DWH_TABLES st
+		
+		JOIN _all_views dbcv
+		ON dbcv.DATABASENAME = (SELECT lyr_db FROM GDEV1_ETL.LAYERS L WHERE layer_name = 'SRC')		
+		AND dbcv.REQUESTTEXT LIKE  'from%.'||ST.TABLE_NAME
+		AND st.LAYER_NAME = 'SRC'
+	
+)
+, STG_TO_BKEY AS
+(
+	SELECT DISTINCT  TBL.RAW_TABLE_NAME, TBL.STG_TABLE_NAME
+			, VTOKEN.TABLENAME BKEY_INPV
+			, P.TGT_DB 		BKEY_DB_NAME
+			, P.TGT_TABLE 	BKEY_TABLE_NAME
+	FROM RAW_TO_STG TBL
+		
+		JOIN GDEV1_ETL.V_VIEWS_TOKENS VTOKEN 
+		ON VTOKEN.DATABASENAME = (SELECT src_db FROM GDEV1_ETL.LAYERS L WHERE LAYER_LEVEL = 2 AND layer_name = 'BKEY')		
+		AND VTOKEN.REQUESTTEXT_TOKENS LIKE  TBL.STG_DB_NAME||'.'||TBL.STG_TABLE_NAME
+		
+		JOIN GDEV1_ETL.V_PROCESS P
+		ON P.SRC_TABLE = VTOKEN.TABLENAME
+	
+)
+, BKEY_TO_SRCI AS
+(
+	
+)
 
+SELECT * FROM STG_TO_BKEY;
+--------------------------------------------------------------------------------------------------------
