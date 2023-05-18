@@ -300,11 +300,11 @@ class DataBaseEngine(MyID):
             elif "[Error 3804]" in error_msg:
                 tailored_msg = f"View already exists.\n\nStatment:\n{stmt}"
                 logging.warning(tailored_msg)
-            elif "[Error 3706]" in error_msg:
+            elif "[Error 3706]" in error_msg or "[Error 3807]" in error_msg:
                 tailored_msg = f"\n{error_msg}\n\nStatment:\n{stmt}"
                 logging.error(tailored_msg)
-            elif "[Error 3807]" in error_msg:
-                pass  # Object 'XxX' does not exist.
+            # elif "[Error 3807]" in error_msg:
+            #     pass  # Object 'XxX' does not exist.
             else:
                 logging.error(error_msg + f"\n\nStatment:\n{stmt}")
 
