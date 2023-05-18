@@ -267,6 +267,7 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                 , "delete from STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE"
                 , "delete from STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD"
                 , "delete from STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT"
+                , "delete from GDEV1_ETL.CDC_AUDIT"
                        ]
             for _ in deletes:
                 cur.execute(_)
@@ -678,4 +679,5 @@ if __name__ == '__main__':
     extract_insert_statements('STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT', 'DBSS_PC_PRODUCTSITEMVARIANT.sql')
     extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE', 'DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE.sql')
     extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD', 'DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD.sql')
+    extract_insert_statements('GDEV1_ETL.CDC_AUDIT', 'CDC_AUDIT.sql')
 
