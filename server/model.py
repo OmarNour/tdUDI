@@ -535,7 +535,7 @@ class Table(MyID):
 
             pi_cols_lst = list_to_string([col.column_name for col in self.key_col], separator=',')
             pi_index = PI_TEMPLATE.format(unique_pi='unique' if self.unique_pi else ''
-                                          ,pi_cols=pi_cols_lst) if pi_cols_lst else 'No Primary Index'
+                                          , pi_cols=pi_cols_lst) if pi_cols_lst else 'No Primary Index'
             self._ddl = DDL_TABLE_TEMPLATE.format(set_multiset=set_multiset
                                                   , schema_name=schema_name
                                                   , table_name=table_name
@@ -656,16 +656,38 @@ class Domain(MyID):
 
 
 class DomainValue(MyID):
+    __edw_keys = {}
+
     def __init__(self, domain_id, source_key, edw_key, description, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self._domain_id = domain_id
         self.source_key = source_key
         self.edw_key = edw_key
-        self.description = description
+        self._description = description
+        assert self.valid_edw_key_desc(edw_key, description), "Invalid EDW Key Description!"
+
+        if self.domain.data_set.set_table.id not in self.__edw_keys.keys():
+            self.__edw_keys[self.domain.data_set.set_table.id] = {}
+
+        if self.edw_key not in self.__edw_keys[self.domain.data_set.set_table.id].keys():
+            self.__edw_keys[self.domain.data_set.set_table.id][self.edw_key] = self.description
+
+
+
+    @property
+    def description(self):
+        return self._description.lower()
 
     @property
     def domain(self) -> Domain:
         return Domain.get_instance(_id=self._domain_id)
+
+    def valid_edw_key_desc(self, edw_key, desc:str):
+        try:
+            return self.__edw_keys[self.domain.data_set.set_table.id][edw_key] == desc.lower()
+        except:
+            return True
 
 
 class Column(MyID):

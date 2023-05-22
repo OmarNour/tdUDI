@@ -268,32 +268,16 @@ from all_views;
 --------------------------------------------------------------------------------------------------------
 REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_LINEAGE AS LOCK ROW FOR ACCESS
 WITH 
-DWH_DBs as
-(
-	select src_db db_name from GDEV1_ETL.LAYERS
-	union
-	select lyr_db db_name from GDEV1_ETL.LAYERS
-)
-,_all_views as
-(
-	select 
-		DataBaseName, tablename
-		, trim(oreplace(oreplace(oreplace(oreplace(RequestText,';',''), X'0d', ' '), X'0a', ' '), X'09', ' ')) RequestText
-		,ROW_NUMBER() OVER (order by DataBaseName, tablename) id
-	from DBC.TablesV
-	where TableKind = 'v'
-	AND DataBaseName IN (select db_name from DWH_DBs)
-)
-,RAW_TO_STG AS
+RAW_TO_STG AS
 (
 	SELECT DISTINCT  ST.TABLE_NAME RAW_TABLE_NAME
 			, (SELECT lyr_db FROM GDEV1_ETL.LAYERS L WHERE layer_name = 'STG') STG_DB_NAME
 			, dbcv.TABLENAME STG_TABLE_NAME
 	FROM GDEV1_ETL.V_DWH_TABLES st
 		
-		JOIN _all_views dbcv
+		JOIN GDEV1_ETL.ALL_VIEWS_TOKENS dbcv
 		ON dbcv.DATABASENAME = (SELECT lyr_db FROM GDEV1_ETL.LAYERS L WHERE layer_name = 'SRC')		
-		AND dbcv.REQUESTTEXT LIKE  'from%.'||ST.TABLE_NAME
+		AND dbcv.RequestText_tokens LIKE  ST.db_name||'.'||ST.TABLE_NAME
 		AND st.LAYER_NAME = 'SRC'
 	
 )
