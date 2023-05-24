@@ -21,3 +21,7 @@ VALUES	('SRCI', 'GDEV1T_SRCI', 'GDEV1V_SRCI', 3) ;
 INSERT INTO GDEV1_ETL.LAYERS  
 		(layer_name, lyr_db, src_db, layer_Level)  
 VALUES	('CORE', 'GDEV1T_BASE', 'GDEV1V_INP', 4) ;
+
+INSERT INTO GDEV1_ETL.LAYERS  
+		(layer_name, lyr_db, src_db, layer_Level)  
+VALUES	('PL', 'GDEV1T_SEM', 'GDEV1V_INP', 5) ;
