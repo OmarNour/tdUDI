@@ -183,33 +183,4 @@ FROM CTE_PROCESS P
 	LEFT JOIN CTE_NORMAL_COMMON_COLS NCC
 	ON NCC.PROCESS_NAME=P.PROCESS_NAME;
 --------------------------------------------------------------------------------------------------------
-REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_DWH_TABLES AS LOCK ROW FOR ACCESS
-with 
-DWH_DBs as
-(
-	select layer_name, layer_Level, src_db db_name, 'in' (char(3)) direction from GDEV1_ETL.LAYERS
-	union all
-	select layer_name, layer_Level, lyr_db db_name, 'out' direction from GDEV1_ETL.LAYERS
-)
-,_dwh_tables as
-(	
-	select l.layer_name, v.DataBaseName db_name, v.tablename table_name from DBC.TablesV v, GDEV1_ETL.LAYERS l where l.layer_Level = 0 and src_db =  v.DataBaseName
-	union all
-	select stg_layer_name, stg_db db_name, table_name from GDEV1_ETL.V_SOURCE_SYSTEM_TABLES
-	union all
-	select srci_layer_name, srci_db db_name, table_name from GDEV1_ETL.V_SOURCE_SYSTEM_TABLES
-	union all
-	select TGT_LAYER layer_name, tgt_db db_name , TGT_TABLE table_name from GDEV1_ETL.V_PROCESS
-)
-, dwh_tables as
-(
-	select t.*, d.layer_Level, d.direction
-	from _dwh_tables t ,DWH_DBs d
-	where t.db_name = d.db_name
-)
-select 
-ROW_NUMBER() OVER (order by layer_Level, layer_name, direction, db_name, table_name) id	
-,layer_name, layer_Level, direction, db_name, table_name
-	
-from dwh_tables dbt;
---------------------------------------------------------------------------------------------------------
+
