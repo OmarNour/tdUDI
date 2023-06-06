@@ -683,6 +683,8 @@ class SMX:
                                         src_t = Table.get_instance(_key=(self.srci_t_schema.id, src_table.table_name))
                                         if src_t:
                                             src_col = Column.get_instance(_key=(src_t.id, _row.mapped_to_column))
+                                            if src_col is None:
+                                                logging.error(f"Invalid Source Column '{_row.mapped_to_column}', processing row:\n{_row}")
                                         else:
                                             logging.error(f"Invalid Table '{src_table.table_name}', processing row:\n{_row}")
                                     else:
