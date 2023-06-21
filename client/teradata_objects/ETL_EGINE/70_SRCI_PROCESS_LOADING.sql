@@ -1,4 +1,4 @@
-REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
+REPLACE  PROCEDURE /*VER.02*/ GDEV1_ETL.SRCI_PROCESS_LOADING
     (
     IN 		i_TABLE_NAME  			VARCHAR(1000),
     IN 		I_RUN_ID 				BIGINT,
@@ -119,7 +119,7 @@ REPLACE  PROCEDURE /*VER.01*/ GDEV1_ETL.SRCI_PROCESS_LOADING
 			
 			set v_create_new_table = 'create table '||V_TGT_DB||'.'||i_TABLE_NAME||'_new as
 									( select * from '||V_SRC_DB||'.'||i_TABLE_NAME||') 
-									'||V_WITH_DATA_UNIQUE_PI||' ('||V_KEY_COLs||');';
+									'||V_WITH_DATA_PI||' ('||V_KEY_COLs||');';
 			
 			set v_rename_current_table = 'rename table '||V_TGT_DB||'.'||i_TABLE_NAME||' as '||V_TGT_DB||'.'||i_TABLE_NAME||'_old;';
 			set v_rename_new_table = 'rename table '||V_TGT_DB||'.'||i_TABLE_NAME||'_new as '||V_TGT_DB||'.'||i_TABLE_NAME||';';

@@ -497,13 +497,13 @@ def djezzy_fake_data(num_records, start_from=0, teradata_conn_info=None):
                 ref_key += 1
                 trx_id += 1
 
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'JSON_SALES_STG', ref_key)
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSTRANSACTION', ref_key)
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSPAYMENT', ref_key)
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT', ref_key)
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_PC_PRODUCTSITEMVARIANT', ref_key)
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE', ref_key)
-            audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'JSON_SALES_STG', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSTRANSACTION', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_CRM_TRANSACTIONSPAYMENT', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDCONTRACT', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_PC_PRODUCTSITEMVARIANT', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE', ref_key)
+            # audit_table('DIRECT SALES', cur, load_id, batch_id, 'DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD', ref_key)
             con.commit()
 
             print(f"{ref_key}, rows inserted into JSON_SALES_STG")
@@ -670,7 +670,7 @@ if __name__ == '__main__':
         "password": "power_user",
         "database": ""
     }
-    djezzy_fake_data(500, 0, teradata_conn_info)
+    djezzy_fake_data(10, 0, teradata_conn_info)
 
     extract_insert_statements('STG_ONLINE.JSON_SALES_STG', 'JSON_SALES_STG.sql')
     extract_insert_statements('STG_ONLINE.DBSS_CRM_TRANSACTIONSTRANSACTION', 'DBSS_CRM_TRANSACTIONSTRANSACTION.sql')
@@ -679,5 +679,5 @@ if __name__ == '__main__':
     extract_insert_statements('STG_ONLINE.DBSS_PC_PRODUCTSITEMVARIANT', 'DBSS_PC_PRODUCTSITEMVARIANT.sql')
     extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE', 'DBSS_OM_ORDEREDCONTRACTSORDEREDDEVICE.sql')
     extract_insert_statements('STG_ONLINE.DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD', 'DBSS_OM_ORDEREDCONTRACTSORDEREDSIMCARD.sql')
-    extract_insert_statements('GDEV1_ETL.CDC_AUDIT', 'CDC_AUDIT.sql')
+    # extract_insert_statements('GDEV1_ETL.CDC_AUDIT', 'CDC_AUDIT.sql')
 

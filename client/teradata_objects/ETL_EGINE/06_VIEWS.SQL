@@ -37,7 +37,7 @@ select
 from GDEV1_ETL.PROCESS P ,GDEV1_ETL.LAYERS tgt_l
 where tgt_l.layer_name = p.tgt_layer;
 --------------------------------------------------------------------------------------------------------
-REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_EDW_SCRIPTS_COMPOSER AS LOCK ROW FOR ACCESS 
+REPLACE VIEW /*VER.02*/ GDEV1_ETL.V_EDW_SCRIPTS_COMPOSER AS LOCK ROW FOR ACCESS 
 WITH 
 CTE_KEY_COLS as
 (
@@ -104,7 +104,7 @@ CTE_KEY_COLS as
 		from dbc.columnsv v
 		join CTE_PROCESS P 
 		on P.SRC_DB=v.databasename and P.SRC_TABLE=v.tablename
-		and V.columnname not in ('BATCH_ID', 'MODIFICATION_TYPE', 'REF_KEY')
+		and V.columnname not in ('BATCH_ID', 'MODIFICATION_TYPE', 'REF_KEY', 'End_Date', 'Start_Date')
 		
 		INTERSECT
 		
@@ -183,4 +183,36 @@ FROM CTE_PROCESS P
 	LEFT JOIN CTE_NORMAL_COMMON_COLS NCC
 	ON NCC.PROCESS_NAME=P.PROCESS_NAME;
 --------------------------------------------------------------------------------------------------------
-
+REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_EXEC_SCRIPT_LOGS AS LOCK ROW FOR ACCESS 
+select
+ RUN_ID
+,LOAD_ID
+,SOURCE_NAME
+,PROCESS_NAME
+,START_TIMESTAMP
+,END_TIMESTAMP
+,(COALESCE(END_TIMESTAMP, CURRENT_TIMESTAMP ) - START_TIMESTAMP ) DAY(4) TO SECOND TIME_ELAPSED
+,ROWS_COUNT
+,ERROR_CODE
+,ERROR_MSG
+,CREATED_BY
+,SQL_SCRIPT_SEQ
+,SQL_SCRIPT
+from GDEV1_ETL.EXEC_SCRIPT_LOGS;
+--------------------------------------------------------------------------------------------------------
+REPLACE VIEW /*VER.01*/ GDEV1_ETL.V_EXEC_PROCESS_LOGS AS LOCK ROW FOR ACCESS 
+select
+ RUN_ID
+,LOAD_ID
+,SOURCE_NAME
+,PROCESS_NAME
+,START_TIMESTAMP
+,END_TIMESTAMP
+,(COALESCE(END_TIMESTAMP, CURRENT_TIMESTAMP ) - START_TIMESTAMP ) DAY(4) TO SECOND TIME_ELAPSED
+,ROWS_INSERTED_COUNT
+,ROWS_UPDATED_COUNT
+,ROWS_DELETED_COUNT
+,ERROR_CODE
+,ERROR_MSG
+,CREATED_BY
+from GDEV1_ETL.EXEC_PROCESS_LOGS;

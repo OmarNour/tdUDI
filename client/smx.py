@@ -98,6 +98,7 @@ class SMX:
 
     @log_error_decorator()
     def parse_sheet(self, sheet):
+        self.xls: pd.ExcelFile
         sheet_name = sheet.replace('  ', ' ').replace(' ', '_').lower()
         if sheet_name in SHEETS:
             df = self.xls.parse(sheet, encoding='utf-8').replace(np.nan, value='', regex=True)
