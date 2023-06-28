@@ -29,8 +29,8 @@ def start(source_name: str | list | None, with_scripts=True, with_deploy=True):
 if __name__ == '__main__':
     # pipreqs /Users/omarnour/PycharmProjects/tdUDI --force --ignore tests
     try:
-        start(source_name=['Direct Sales'], with_scripts=True, with_deploy=True)
-        # start(source_name=['Insurance_Pension'], with_scripts=True, with_deploy=False)
+        # start(source_name=['Tax_Authority'], with_scripts=True, with_deploy=False)
+        start(source_name=['NAFEZA'], with_scripts=True, with_deploy=False)
         # start(source_name=[], with_scripts=False)
         # start(source_name=[], with_scripts=True)
     except KeyboardInterrupt:

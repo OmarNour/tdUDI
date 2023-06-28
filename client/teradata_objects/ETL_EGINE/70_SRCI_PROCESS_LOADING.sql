@@ -1,4 +1,4 @@
-REPLACE  PROCEDURE /*VER.02*/ GDEV1_ETL.SRCI_PROCESS_LOADING
+REPLACE  PROCEDURE /*VER.03*/ GDEV1_ETL.SRCI_PROCESS_LOADING
     (
     IN 		i_TABLE_NAME  			VARCHAR(1000),
     IN 		I_RUN_ID 				BIGINT,
@@ -36,7 +36,7 @@ REPLACE  PROCEDURE /*VER.02*/ GDEV1_ETL.SRCI_PROCESS_LOADING
 	
 		DECLARE		V_SOURCE_NAME			VARCHAR(500);
 				    
-		declare		V_KEY_COLs
+		declare		V_KEY_COLs, V_PI_COLs
 					, v_create_new_table
 					, v_rename_current_table
 					, v_rename_new_table
@@ -101,6 +101,13 @@ REPLACE  PROCEDURE /*VER.02*/ GDEV1_ETL.SRCI_PROCESS_LOADING
             	leave MAINBLOCK;
 	        end if;
             
+			SELECT 
+			 TRIM( TRAILING  ',' FROM (XMLAGG(trim(PI_Column)|| ',' ORDER BY PI_Column) (VARCHAR(10000)))) PI_Column
+			from GDEV1_ETL.PICOLs
+			WHERE LAYER_NAME = V_TGT_DB
+			AND TABLE_NAME  = i_TABLE_NAME
+			INTO V_PI_COLs;
+			
             SELECT 
 			 TRIM( TRAILING  ',' FROM (XMLAGG(trim(Key_Column)|| ',' ORDER BY Key_Column) (VARCHAR(10000)))) Key_Column
 			from GDEV1_ETL.V_TRANSFORM_KEYCOL
@@ -115,11 +122,16 @@ REPLACE  PROCEDURE /*VER.02*/ GDEV1_ETL.SRCI_PROCESS_LOADING
             	leave MAINBLOCK;
 			end if;
 			
+			if coalesce(V_PI_COLs,'') = ''
+			then
+				set V_PI_COLs = V_KEY_COLs;
+			end if;
+			
 			set v_drop_new_table = 'drop table '||V_TGT_DB||'.'||i_TABLE_NAME||'_new;';
 			
 			set v_create_new_table = 'create table '||V_TGT_DB||'.'||i_TABLE_NAME||'_new as
 									( select * from '||V_SRC_DB||'.'||i_TABLE_NAME||') 
-									'||V_WITH_DATA_PI||' ('||V_KEY_COLs||');';
+									'||V_WITH_DATA_PI||' ('||V_PI_COLs||');';
 			
 			set v_rename_current_table = 'rename table '||V_TGT_DB||'.'||i_TABLE_NAME||' as '||V_TGT_DB||'.'||i_TABLE_NAME||'_old;';
 			set v_rename_new_table = 'rename table '||V_TGT_DB||'.'||i_TABLE_NAME||'_new as '||V_TGT_DB||'.'||i_TABLE_NAME||';';

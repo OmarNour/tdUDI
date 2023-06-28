@@ -2,10 +2,10 @@ from collections import namedtuple
 
 # smx_path = "/Users/omarnour/Downloads/ACA- Production Citizen SMX.xlsx"
 # smx_path = "/Users/omarnour/Downloads/SALES_SMX18May2023.xlsx"
-smx_path = "/Users/omarnour/Downloads/SALES_SMXJune2023.xlsx"
+# smx_path = "/Users/omarnour/Downloads/SALES_SMXJune2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/SALES_SMX02APRL2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/Production_Citizen_SMX.xlsx"
-# smx_path = "/Users/omarnour/Downloads/[ACA] SMX_Economic_Units_03-01-2023.xlsx"
+smx_path = "/Users/omarnour/Downloads/[ACA] SMX_Economic_Units_03-01-2023.xlsx"
 # smx_path = "/Users/omarnour/Downloads/Wasl Schema v1.7.xlsx"
 
 pickle_path = "pickled_objs"
