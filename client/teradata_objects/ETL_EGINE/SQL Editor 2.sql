@@ -1,0 +1,1 @@
+select * from GDEV1T_BASE.AGMT_STS_TYPE;

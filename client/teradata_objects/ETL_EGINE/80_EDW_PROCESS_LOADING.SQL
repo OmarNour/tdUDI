@@ -1,4 +1,4 @@
-REPLACE PROCEDURE /*VER.03*/ GDEV1_ETL.EDW_PROCESS_LOADING
+REPLACE PROCEDURE /*VER.05*/ GDEV1_ETL.EDW_PROCESS_LOADING
     (
     IN 		I_PROCESSNAME  			VARCHAR(1000),
     IN 		I_APPLY_TYPE  			VARCHAR(500),
@@ -67,6 +67,8 @@ REPLACE PROCEDURE /*VER.03*/ GDEV1_ETL.EDW_PROCESS_LOADING
         DECLARE 	V_WITH_DATA_PI			VARCHAR(100) DEFAULT 'WITH DATA AND STATS PRIMARY INDEX';
 		DECLARE 	V_WITH_DATA_UNIQUE_PI	VARCHAR(100) DEFAULT 'WITH DATA AND STATS UNIQUE PRIMARY INDEX';
 	
+		DECLARE 	v_is_history_table 			INTEGER;
+		
         DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN 	
 	        SET V_RETURN_CODE = SQLCODE;
@@ -128,6 +130,20 @@ REPLACE PROCEDURE /*VER.03*/ GDEV1_ETL.EDW_PROCESS_LOADING
             	,V_SET_HISTORY_COLUMNS, V_SET_NORMAL_COMMON_COLUMNS;
             
             
+			select is_history
+			from GDEV1_ETL.V_EDW_TABLES 
+			where table_name = V_TGT_TABLE 
+			and LAYER_NAME = 'CORE' 
+			into v_is_history_table;
+			
+			if v_is_history_table = 1 and V_APPLY_TYPE <> 'HISTORY'
+			THEN
+				set V_RETURN_CODE = -1;
+            	SET V_RETURN_MSG = V_TGT_TABLE||' table is history, but process type is not!';
+            	leave MAINBLOCK;
+			END IF;
+			
+			
 			Select top 1 colname from
 			(
 				SELECT  HISTORY_COLUMN colname
@@ -319,7 +335,7 @@ REPLACE PROCEDURE /*VER.03*/ GDEV1_ETL.EDW_PROCESS_LOADING
 									and exists (
 												select 1 
 												from TMP_INPUT_VIEW_' || V_TGT_TABLE || ' y 
-												where ' || V_KEY_COLUMNS_JOIN || '
+												where ' || V_FULL_KEY_JOIN || '
 												)';
 			SET V_KEYS_IN_BASE = 'SELECT TOP 1 * '||V_FROM_BASE_IN_TMP;
 			

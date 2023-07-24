@@ -18,7 +18,8 @@ FROM GDEV1_ETL.TGT_TABLES_QUEUE QT,
 	  									FROM GDEV1_ETL.V_EXEC_PROCESS_LOGS l
 	 									WHERE l.RUN_ID 			=   Q.RUN_ID
 										and l.SOURCE_NAME		 =   Q.SOURCE_NAME
-										and l.LOAD_ID 					=   Q.LOAD_ID
+										and l.LOAD_ID 					=   Q.LOAD_ID										
+										and l.LAYER_LEVEL 			<   Q.LAYER_LEVEL		
 										and l.ERROR_CODE 		<>  0
 										)
 							QUALIFY ROW_NUMBER()  OVER(PARTITION BY Q.TGT_LAYER, Q.TGT_TABLE  ORDER BY Q.RUN_ID, Q.LAYER_LEVEL, Q.SOURCE_NAME)=1
@@ -28,7 +29,7 @@ FROM GDEV1_ETL.TGT_TABLES_QUEUE QT,
 								from GDEV1_ETL.TGT_TABLES_QUEUE lvl 
 								where lvl.RUN_ID 					=   qq.RUN_ID
 								and lvl.SOURCE_NAME		 =   qq.SOURCE_NAME
-								and  lvl.LAYER_LEVEL 		<   qq.LAYER_LEVEL
+								and lvl.LAYER_LEVEL 		<   qq.LAYER_LEVEL
 								and lvl.TGT_TABLE_STATE < 3
 								
 								)
