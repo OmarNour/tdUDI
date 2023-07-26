@@ -69,7 +69,7 @@ UNIFIED_SOURCE_SYSTEMS = ['UNIFIED_GOV',
                           'UNIFIED_CITY',
                           'UNIFIED_POLICE_STATION',
                           'UNIFIED_DISTRICT',
-                          'UNIFIED_COUNTRY']
+                          'UNIFIED_COUNTRY','UNIFIED_GOVERNORATE', 'UNIFIED_CURRENCY']
 DS_BKEY = 'BKEY'
 DS_BMAP = 'BMAP'
 LayerDtl = namedtuple("LayerDetail", "type level v_db t_db")

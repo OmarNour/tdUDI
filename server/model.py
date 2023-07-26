@@ -827,7 +827,7 @@ class LayerTable(MyID):
                     for dv in domain.values:
                         src_code = str(dv.source_key).replace("'", "''")
                         edw_code = dv.edw_key
-                        desc = dv.description.replace("'", "''")
+                        desc = str(dv.description).replace("'", "''")
                         dml += f"""insert into {schema_name}.{table_name}\n({columns})\nvalues ('{src_code}', {domain_code}, {set_code}, {edw_code}, '{desc}' );\n"""
         return dml
 
