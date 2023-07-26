@@ -60,6 +60,12 @@ class MyID(metaclass=Meta):
     __ids = {}
     __next_id = 1
 
+    @classmethod
+    def reset_class_variables(cls):
+        cls.__instances = {}
+        cls.__ids = {}
+        cls.__next_id = 1
+
     def __init__(self, *args, **kwargs):
         """
         This method assigns a unique ID to the instance and stores the key passed in the kwargs dictionary.
